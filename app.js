@@ -86,7 +86,7 @@
     const now = Date.now();
     return {
       userId, v: 1, created: now, updated: now,
-      settings: { voiceURI: '', rate: 1, volume: 1, dialect: 'auto', reduceMotion: false, strictAccents: false },
+      settings: { voiceURI: '', rate: 1, volume: 1, dialect: 'auto', reduceMotion: false, strictAccents: false, fontScale: 1, lineHeight: 1, contrast: false, easyFont: false },
       goals: { lessonsPerWeek: 3, minutesPerDay: 15, focus: [] },
       placement: null, unlockedLevels: ['A1'], validatedLevels: [],
       lessons: {}, units: {}, levelTests: {},
@@ -95,7 +95,7 @@
       favorites: { words: [], sentences: [], expressions: [], stories: [], lessons: [] },
       searchHistory: [], translatorHistory: [],
       achievements: {}, certificates: [], done: {},
-      lastBackup: null,
+      lastBackup: null, seen: {}, finalExam: { best: 0, attempts: 0, date: 0 },
     };
   }
   S.defaultProg = defaultProg;
@@ -429,7 +429,7 @@
     const data = {
       app: 'languway-spanish', format: FORMAT, exportedAt: Date.now(),
       accountId: S.user.id,
-      user: { id: S.user.id, name: S.user.name, email: S.user.email || null, created: S.user.created }, // sin contraseña ni hash
+      user: { id: S.user.id, name: S.user.name, username: S.user.username || S.user.email || null, created: S.user.created }, // sin contraseña ni hash
       progress: S.prog, words: Array.from(S.words.values()), qstats: Array.from(S.qstats.values()), attempts,
     };
     if (pass) {
@@ -447,6 +447,8 @@
     if (obj.encrypted) return obj.package && obj.package.data ? { ok: true, encrypted: true } : bad('The encrypted backup is damaged.');
     if (!obj.progress || typeof obj.progress !== 'object' || !obj.user || typeof obj.user.id !== 'string') return bad('The backup is missing required data.');
     if (!Array.isArray(obj.words) || !Array.isArray(obj.qstats)) return bad('The backup structure is damaged.');
+    if (obj.words.length > 20000 || obj.qstats.length > 50000) return bad('This backup is too large to be a Languway backup.');
+    if (obj.user.id.length > 100) return bad('The backup is missing required data.');
     const p = obj.progress;
     for (const k of ['lessons', 'units', 'levelTests', 'activity', 'achievements', 'skills', 'counters']) if (p[k] != null && (typeof p[k] !== 'object' || Array.isArray(p[k]))) return bad('The backup structure is damaged (' + k + ').');
     const ignored = { lessons: 0, words: 0, qstats: 0 };
@@ -459,14 +461,22 @@
     if (!Array.isArray(clean.unlockedLevels)) clean.unlockedLevels = ['A1'];
     if (!Array.isArray(clean.validatedLevels)) clean.validatedLevels = [];
     if (!Array.isArray(clean.certificates)) clean.certificates = [];
+    if (!clean.seen || typeof clean.seen !== 'object' || Array.isArray(clean.seen)) clean.seen = {};
+    Object.keys(clean.seen).forEach((k) => { if (typeof clean.seen[k] !== 'number' || k.length > 20) delete clean.seen[k]; });
+    if (clean.settings && !['both', 'es', 'en'].includes(clean.settings.coachLang)) delete clean.settings.coachLang;
+    if (!clean.finalExam || typeof clean.finalExam !== 'object') clean.finalExam = { best: 0, attempts: 0, date: 0 };
+    ['best', 'attempts', 'date'].forEach((k) => { if (typeof clean.finalExam[k] !== 'number' || !isFinite(clean.finalExam[k])) clean.finalExam[k] = 0; });
+    clean.finalExam.best = Math.max(0, Math.min(100, clean.finalExam.best));
+    if (clean.settings && typeof clean.settings.certName !== 'undefined' && !/^[\p{L}][\p{L} .'-]{1,39}$/u.test(String(clean.settings.certName))) delete clean.settings.certName;
+    if (clean.settings && typeof clean.settings.easyRules !== 'boolean') delete clean.settings.easyRules;
     ['searchHistory', 'translatorHistory'].forEach((k) => { if (!Array.isArray(clean[k])) clean[k] = []; });
     clean.unlockedLevels = clean.unlockedLevels.filter((x) => C.level(x));
     if (!clean.unlockedLevels.includes('A1')) clean.unlockedLevels.unshift('A1');
     clean.validatedLevels = clean.validatedLevels.filter((x) => C.level(x));
     Object.keys(clean.lessons).forEach((id) => { if (!C.lessons[id]) { delete clean.lessons[id]; ignored.lessons++; } });
     const known = (id) => !L.dict || !L.dict.built || L.dict.byId.has(id);
-    const words = obj.words.filter((w) => w && typeof w.id === 'string' && typeof w.box === 'number' && (known(w.id) || (ignored.words++, false)));
-    const qstats = obj.qstats.filter((q) => q && typeof q.qid === 'string' && typeof q.right === 'number' && typeof q.wrong === 'number');
+    const words = obj.words.filter((w) => w && typeof w.id === 'string' && typeof w.box === 'number' && w.id.length < 120 && isFinite(w.box) && (known(w.id) || (ignored.words++, false)));
+    const qstats = obj.qstats.filter((q) => q && typeof q.qid === 'string' && q.qid.length < 160 && typeof q.right === 'number' && typeof q.wrong === 'number' && isFinite(q.right) && isFinite(q.wrong));
     const attempts = Array.isArray(obj.attempts) ? obj.attempts.filter((a) => a && typeof a.kind === 'string').slice(-500) : [];
     return { ok: true, data: { user: obj.user, progress: clean, words, qstats, attempts, exportedAt: obj.exportedAt, accountId: obj.accountId }, ignored };
   };
@@ -536,6 +546,53 @@
 ;
 (function (L) {
   'use strict';
+  // Conexión con el servicio de cuentas. La clave publicable es pública por diseño: solo permite
+  // llamar a las funciones de cuenta; las tablas no son accesibles desde el navegador.
+  const BASE = 'https://zmhxsfkogbmyhesdkumn.supabase.co/rest/v1/rpc/';
+  const KEY = 'sb_publishable_pjtzB-WsmA6cJTUAnxgffQ_dLVpRWUS';
+  const K = (L.cloud = {});
+  async function rpc(name, body) {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 20000);
+    try {
+      const r = await fetch(BASE + name, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' });
+      if (!r.ok) return { ok: false, err: 'net' };
+      const j = await r.json();
+      return j && typeof j === 'object' && !Array.isArray(j) ? j : { ok: false, err: 'net' };
+    } catch (e) { return { ok: false, err: 'net' }; } finally { clearTimeout(t); }
+  }
+  K.register = (u, p) => rpc('lws_register', { p_user: u, p_pass: p });
+  K.login = (u, p) => rpc('lws_login', { p_user: u, p_pass: p });
+  K.logout = (t) => rpc('lws_logout', { p_token: t });
+  K.load = (t) => rpc('lws_load', { p_token: t });
+  K.save = (t, data, updated) => rpc('lws_save', { p_token: t, p_data: data, p_updated: Math.floor(updated || 0) });
+  K.changePassword = (t, o, n) => rpc('lws_change_password', { p_token: t, p_old: o, p_new: n });
+  K.issueCert = (t, kind, ref, name) => rpc('lws_issue_cert', { p_token: t, p_kind: kind, p_ref: ref, p_name: name, p_data: {} });
+  K.myCerts = (t) => rpc('lws_my_certs', { p_token: t });
+  K.verifyCert = (id, code) => rpc('lws_verify_cert', { p_id: id, p_code: code });
+  K.deleteAccount = (t, p) => rpc('lws_delete_account', { p_token: t, p_pass: p });
+  // Mensajes (en inglés) para los códigos de error del servicio
+  K.message = function (r, what) {
+    switch (r && r.err) {
+      case 'username': return 'Username must be 3 to 20 characters: lowercase letters, numbers or underscore.';
+      case 'password': return 'Password must be between 8 and 64 characters.';
+      case 'taken': return 'This username is already taken. Please choose another one.';
+      case 'rate': return 'Too many attempts from this connection. Please wait a little and try again.';
+      case 'locked': return 'Too many failed attempts. Please wait ' + (r.secs || 15) + ' seconds and try again.';
+      case 'bad': return what === 'password' ? 'The current password is incorrect.' : 'Incorrect username or password.';
+      case 'name': return 'Escribe un nombre válido (solo letras, espacios, punto, apóstrofo o guion).';
+      case 'notdone': return 'Tu progreso guardado en línea todavía no muestra este nivel completado. Espera unos segundos y vuelve a intentarlo.';
+      case 'none': return 'No existe ningún certificado con ese número.';
+      case 'mismatch': return 'Los datos NO coinciden: este certificado no es auténtico o fue alterado.';
+      case 'auth': return 'Your session has expired. Please sign in again.';
+      case 'size': return 'Your data is too large to save online.';
+      default: return 'Could not reach the server. Check your internet connection and try again.';
+    }
+  };
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
   const A = (L.A = { user: null, GUEST_ID: 'guest-local' });
   const SKEY = 'lws.session';
 
@@ -551,10 +608,12 @@
   }
   function clearSession() { try { localStorage.removeItem(SKEY); sessionStorage.removeItem(SKEY); } catch (e) {} }
 
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  A.validEmail = (e) => EMAIL_RE.test(String(e).trim());
+  const USER_RE = /^[a-z0-9_]{3,20}$/;
+  A.normUser = (u) => String(u || '').trim().toLowerCase();
+  A.validUsername = (u) => USER_RE.test(A.normUser(u));
   A.passwordProblem = (p) => {
     if (!p || p.length < 8) return 'Password must be at least 8 characters.';
+    if (p.length > 64) return 'Password must be at most 64 characters.';
     if (!/[A-Za-z]/.test(p) || !/\d/.test(p)) return 'Password must contain at least one letter and one number.';
     return null;
   };
@@ -565,10 +624,11 @@
     if (!g) { g = { id: A.GUEST_ID, name: 'Guest', created: Date.now(), lastLogin: Date.now(), guest: true }; await L.db.put('users', g); }
     return g;
   }
-  async function findByEmail(email) {
+  // El nombre de usuario se guarda en el campo indexado «email» (clave única del almacén local)
+  async function findByUsername(name) {
     const db = await L.db.open();
     return new Promise((res, rej) => {
-      const r = db.transaction('users').objectStore('users').index('email').get(String(email).trim().toLowerCase());
+      const r = db.transaction('users').objectStore('users').index('email').get(A.normUser(name));
       r.onsuccess = () => res(r.result || null); r.onerror = () => rej(r.error);
     });
   }
@@ -585,64 +645,127 @@
     return A.user;
   };
 
+
+  // ---------- sincronización con la cuenta en línea ----------
+  let pushTimer = null, pushing = false;
+  A.hasCloud = () => !A.isGuest() && !!(A.user && A.user.ct);
+  async function dropToken(msg) {
+    if (!A.user) return;
+    A.user.ct = null; try { await L.db.put('users', A.user); } catch (e) {}
+    if (msg) L.toast(msg, 'err', 7000);
+  }
+  A.push = async function () {
+    if (!A.hasCloud() || !navigator.onLine || pushing || !L.S.prog) return false;
+    pushing = true;
+    try {
+      const data = await L.S.exportData(null);
+      const r = await L.cloud.save(A.user.ct, JSON.stringify(data), L.S.prog.updated);
+      if (!r.ok && r.err === 'auth') await dropToken('Your online session has expired. Sign in again to keep your progress saved online.');
+      return !!r.ok;
+    } catch (e) { return false; } finally { pushing = false; }
+  };
+  A.schedulePush = function () {
+    if (!A.hasCloud()) return;
+    clearTimeout(pushTimer); pushTimer = setTimeout(() => A.push(), 4000);
+  };
+  // Trae el progreso en línea y lo fusiona (nunca pierde nada de ninguno de los dos lados)
+  A.pull = async function (replaceEmpty) {
+    if (!A.hasCloud() || !navigator.onLine) return false;
+    const r = await L.cloud.load(A.user.ct);
+    if (!r.ok) { if (r.err === 'auth') await dropToken('Your online session has expired. Sign in again to keep your progress saved online.'); return false; }
+    if (!r.data) return false;
+    let obj; try { obj = L.safeParse(r.data); } catch (e) { return false; }
+    const v = L.S.validateBackup(obj);
+    if (!v.ok || v.encrypted) return false;
+    try { if (replaceEmpty) await L.S.restoreFrom(v.data); else await L.S.mergeFrom(v.data); return true; } catch (e) { return false; }
+  };
+  L.S.onSave((st) => { if (st === 'saved') A.schedulePush(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && A.hasCloud()) { clearTimeout(pushTimer); A.push(); } });
+  window.addEventListener('online', () => { if (A.hasCloud()) A.push(); });
+
+  async function newLocalUser(username, password, token) {
+    const pw = await L.crypto.hashPassword(password);
+    return { id: L.uid(), name: username, username, email: username, pw, ct: token || null, created: Date.now(), lastLogin: Date.now() };
+  }
+
   // f.keepGuest: mover el progreso de invitado a la cuenta nueva.
   A.signUp = async function (f) {
     const errors = {};
-    const name = String(f.name || '').trim();
-    const email = String(f.email || '').trim().toLowerCase();
-    if (name.length < 2) errors.name = 'Please enter your full name.';
-    if (!A.validEmail(email)) errors.email = 'Please enter a valid email address.';
+    const username = A.normUser(f.username);
+    if (!A.validUsername(username)) errors.username = 'Username must be 3 to 20 characters: lowercase letters, numbers or underscore.';
     const pp = A.passwordProblem(f.password); if (pp) errors.password = pp;
     if (!errors.password && f.password !== f.confirm) errors.confirm = 'Passwords do not match.';
     if (!L.crypto.available()) errors.form = 'For your safety, accounts can only be created over a secure (https://) connection. Please open the site from its https:// address.';
     if (Object.keys(errors).length) return { ok: false, errors };
-    if (await findByEmail(email)) return { ok: false, errors: { email: 'An account with this email already exists on this device.' } };
-    const pw = await L.crypto.hashPassword(f.password);
-    const user = { id: L.uid(), name, email, pw, created: Date.now(), lastLogin: Date.now() };
-    const ops = [{ store: 'users', put: user }, { store: 'progress', put: L.S.defaultProg(user.id) }];
-    const moving = f.keepGuest && A.user && A.user.id === A.GUEST_ID;
-    if (moving) {
-      const np = Object.assign({}, L.S.prog, { userId: user.id, created: Date.now(), updated: Date.now() });
-      ops[1] = { store: 'progress', put: np };
-      L.S.words.forEach((w) => ops.push({ store: 'words', put: Object.assign({}, w, { userId: user.id }) }));
-      L.S.qstats.forEach((q) => ops.push({ store: 'qstats', put: Object.assign({}, q, { userId: user.id }) }));
+    if (!navigator.onLine) return { ok: false, errors: { form: 'You need an internet connection to create an account.' } };
+    const r = await L.cloud.register(username, f.password);
+    if (!r.ok) { const m = L.cloud.message(r); return { ok: false, errors: r.err === 'taken' || r.err === 'username' ? { username: m } : r.err === 'password' ? { password: m } : { form: m } }; }
+    let user = await findByUsername(username);
+    const fresh = !user;
+    if (user) { user.pw = await L.crypto.hashPassword(f.password); user.ct = r.token; user.lastLogin = Date.now(); user.username = username; await L.db.put('users', user); }
+    else {
+      user = await newLocalUser(username, f.password, r.token);
+      const ops = [{ store: 'users', put: user }, { store: 'progress', put: L.S.defaultProg(user.id) }];
+      const moving = f.keepGuest && A.user && A.user.id === A.GUEST_ID;
+      if (moving) {
+        const np = Object.assign({}, L.S.prog, { userId: user.id, created: Date.now(), updated: Date.now() });
+        ops[1] = { store: 'progress', put: np };
+        L.S.words.forEach((w) => ops.push({ store: 'words', put: Object.assign({}, w, { userId: user.id }) }));
+        L.S.qstats.forEach((q) => ops.push({ store: 'qstats', put: Object.assign({}, q, { userId: user.id }) }));
+      }
+      try { await L.db.commit(ops); } catch (e) { L.cloud.logout(r.token); return { ok: false, errors: { form: 'Could not save the account on this device. Check that the browser allows site storage.' } }; }
+      if (moving) { await L.db.deleteUser(A.GUEST_ID); await ensureGuest(); }
     }
-    try { await L.db.commit(ops); } catch (e) { return { ok: false, errors: { form: 'Could not save the account on this device. Check that the browser allows site storage.' } }; }
-    if (moving) { await L.db.deleteUser(A.GUEST_ID); await ensureGuest(); }
     writeSession(user.id, true);
     A.user = user;
     await L.S.load(user);
+    if (!fresh) await A.pull(false);
+    A.push();
     return { ok: true, user };
   };
 
   A.signIn = async function (f) {
     const errors = {};
-    const email = String(f.email || '').trim().toLowerCase();
-    if (!A.validEmail(email)) errors.email = 'Please enter a valid email address.';
+    const username = A.normUser(f.username);
+    if (!A.validUsername(username)) errors.username = 'Please enter your username (3 to 20 characters: lowercase letters, numbers or underscore).';
     if (!f.password) errors.password = 'Please enter your password.';
     if (Object.keys(errors).length) return { ok: false, errors };
     if (!L.crypto.available()) return { ok: false, errors: { form: 'For your safety, sign-in only works over a secure (https://) connection.' } };
     const wait = lockLeft();
     if (wait > 0) return { ok: false, errors: { form: 'Too many failed attempts. Please wait ' + Math.ceil(wait / 1000) + ' seconds and try again.' } };
-    const u = await findByEmail(email);
-    if (!u || !u.pw) {
-      noteFail();
-      await new Promise((r) => setTimeout(r, 450));
-      return { ok: false, errors: { form: 'No local account was found for this email on this device. Local accounts exist only on the device where they were created. If you have a backup file, use “Restore from a backup file”.', missing: true } };
+    let u = await findByUsername(username);
+    const r = navigator.onLine ? await L.cloud.login(username, f.password) : { ok: false, err: 'net' };
+    if (r.ok) {
+      clearFail();
+      const fresh = !u;
+      if (u) { u.pw = await L.crypto.hashPassword(f.password); u.ct = r.token; u.lastLogin = Date.now(); u.username = username; await L.db.put('users', u); }
+      else { u = await newLocalUser(username, f.password, r.token); await L.db.commit([{ store: 'users', put: u }, { store: 'progress', put: L.S.defaultProg(u.id) }]); }
+      writeSession(u.id, !!f.remember);
+      A.user = u;
+      await L.S.load(u);
+      await A.pull(fresh);
+      return { ok: true, user: u };
     }
-    const ok = await L.crypto.verifyPassword(f.password, u.pw);
-    if (!ok) { noteFail(); await new Promise((r) => setTimeout(r, 450)); return { ok: false, errors: { form: 'Incorrect email or password.' } }; }
-    clearFail();
-    u.lastLogin = Date.now();
-    await L.db.put('users', u);
-    writeSession(u.id, !!f.remember);
-    A.user = u;
-    await L.S.load(u);
-    return { ok: true, user: u };
+    if (r.err === 'bad') { noteFail(); await new Promise((x) => setTimeout(x, 450)); return { ok: false, errors: { form: L.cloud.message(r) } }; }
+    if (r.err !== 'net') return { ok: false, errors: { form: L.cloud.message(r) } };
+    // Sin conexión con el servicio: solo se permite entrar si esta cuenta ya existe en este dispositivo
+    if (u && u.pw && (await L.crypto.verifyPassword(f.password, u.pw))) {
+      clearFail(); u.lastLogin = Date.now(); await L.db.put('users', u);
+      writeSession(u.id, !!f.remember); A.user = u; await L.S.load(u);
+      return { ok: true, user: u, offline: true };
+    }
+    if (u && u.pw) { noteFail(); await new Promise((x) => setTimeout(x, 450)); return { ok: false, errors: { form: 'Incorrect username or password.' } }; }
+    return { ok: false, errors: { form: L.cloud.message(r) } };
   };
 
   A.signOut = async function () {
+    clearTimeout(pushTimer);
     await L.S.flush();
+    if (A.hasCloud()) {
+      await Promise.race([A.push(), new Promise((x) => setTimeout(x, 5000))]);
+      const t = A.user.ct; L.cloud.logout(t);
+      A.user.ct = null; try { await L.db.put('users', A.user); } catch (e) {}
+    }
     clearSession();
     A.user = await ensureGuest();
     await L.S.load(A.user);
@@ -650,38 +773,53 @@
 
   A.changePassword = async function (cur, next, confirm) {
     if (A.isGuest()) return { ok: false, error: 'Guests have no password.' };
-    const ok = await L.crypto.verifyPassword(cur, A.user.pw);
-    if (!ok) return { ok: false, error: 'Current password is incorrect.' };
     const pp = A.passwordProblem(next); if (pp) return { ok: false, error: pp };
     if (next !== confirm) return { ok: false, error: 'Passwords do not match.' };
+    if (A.hasCloud()) {
+      if (!navigator.onLine) return { ok: false, error: 'You need an internet connection to change your password.' };
+      const r = await L.cloud.changePassword(A.user.ct, cur, next);
+      if (!r.ok) { if (r.err === 'auth') await dropToken(); return { ok: false, error: L.cloud.message(r, 'password') }; }
+    } else if (!(await L.crypto.verifyPassword(cur, A.user.pw))) return { ok: false, error: 'The current password is incorrect.' };
     A.user.pw = await L.crypto.hashPassword(next);
     await L.db.put('users', A.user);
     return { ok: true };
   };
 
-  // Elimina SOLO los datos locales de la cuenta actual (confirmación en la interfaz)
-  A.deleteCurrent = async function () {
+  // Elimina la cuenta actual (en línea y en este dispositivo). Pide la contraseña si hay cuenta en línea.
+  A.deleteCurrent = async function (password) {
     const id = A.user.id;
+    if (!A.isGuest() && !A.hasCloud()) return { ok: false, error: navigator.onLine ? 'Please sign out and sign in again, then delete the account.' : 'You need an internet connection to delete your account.' };
+    if (A.hasCloud()) {
+      if (!navigator.onLine) return { ok: false, error: 'You need an internet connection to delete an online account.' };
+      const r = await L.cloud.deleteAccount(A.user.ct, password || '');
+      if (!r.ok) { if (r.err === 'auth') await dropToken(); return { ok: false, error: L.cloud.message(r, 'password') }; }
+    }
+    clearTimeout(pushTimer);
     await L.db.deleteUser(id);
     clearSession();
     A.user = await ensureGuest();
     await L.S.load(A.user);
+    return { ok: true };
   };
 
-  // Crea una cuenta local a partir de una copia (nuevo dispositivo) y restaura los datos
-  A.createFromBackup = async function (data, password, confirm) {
-    const email = data.user.email ? String(data.user.email).toLowerCase() : null;
-    const name = data.user.name || 'Learner';
-    if (!email) return { ok: false, error: 'This backup belongs to a guest profile and has no email. Import it from Settings after signing in.' };
+  // Crea una cuenta nueva a partir de una copia (nuevo dispositivo) y restaura los datos
+  A.createFromBackup = async function (data, username, password, confirm) {
+    username = A.normUser(username);
+    const name = username;
+    if (!A.validUsername(username)) return { ok: false, error: 'Username must be 3 to 20 characters: lowercase letters, numbers or underscore.' };
     const pp = A.passwordProblem(password); if (pp) return { ok: false, error: pp };
     if (password !== confirm) return { ok: false, error: 'Passwords do not match.' };
-    if (await findByEmail(email)) return { ok: false, error: 'An account with this email already exists on this device. Sign in and use Import My Data instead.' };
-    const user = { id: L.uid(), name, email, pw: await L.crypto.hashPassword(password), created: Date.now(), lastLogin: Date.now() };
+    if (!navigator.onLine) return { ok: false, error: 'You need an internet connection to create an account.' };
+    if (await findByUsername(username)) return { ok: false, error: 'An account with this username already exists on this device. Sign in and use Import My Data instead.' };
+    const r = await L.cloud.register(username, password);
+    if (!r.ok) return { ok: false, error: L.cloud.message(r) };
+    const user = await newLocalUser(username, password, r.token); user.name = name;
     await L.db.commit([{ store: 'users', put: user }, { store: 'progress', put: L.S.defaultProg(user.id) }]);
     writeSession(user.id, true);
     A.user = user;
     await L.S.load(user);
     await L.S.restoreFrom(data);
+    A.push();
     return { ok: true, user };
   };
 })(window.LWS);
@@ -1009,6 +1147,7 @@
             fb.appendChild(q.t !== 'match' ? h('div', null, 'Respuesta correcta: ', h('b', null, '«' + r.correct + '»')) : h('div', null, 'Parejas correctas: ' + r.correct));
           }
           if (q.why) fb.appendChild(h('div', { class: 'why' }, q.why));
+          if (L.coach) fb.appendChild(L.coach.feedback(q, r, opts));
           if (q.t === 'fill' && !r.ok && r.expectedAll && r.expectedAll.length > 1) fb.appendChild(h('div', { class: 'muted' }, 'También se acepta: ' + r.expectedAll.slice(1).map((x) => '«' + x + '»').join(', ')));
           if (!L.reducedMotion()) card.classList.add(r.ok ? 'pop' : 'shake');
           act.innerHTML = '';
@@ -1266,7 +1405,9 @@
   route('/', () => {
     const root = h('div');
     root.appendChild(continueCard());
-    if (L.A.isGuest() && !L.memoryMode) root.appendChild(h('div', { class: 'alert', style: 'margin-top:16px' }, h('strong', null, 'Tu progreso se guarda en este dispositivo. '), 'Puedes estudiar sin cuenta. Para tener tu perfil y una copia de seguridad con nombre, ', h('a', { href: '#/cuenta' }, 'crea una cuenta local'), '.'));
+    if (S.prog && S.prog.placement && S.currentStage() <= 3 && !((S.prog.done['pre:steps'] || {}).best >= 75)) root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Primeros pasos · First steps'), h('p', null, 'Nuevo en español? New to Spanish? Learn the letters, the numbers and your first words in English, then take a short check.'), h('a', { class: 'btn btn-primary', href: '#/primeros-pasos' }, 'Empezar desde cero')));
+    if (L.coach && S.prog && S.prog.placement) root.appendChild(L.coach.card(2));
+    if (L.A.isGuest() && !L.memoryMode) root.appendChild(h('div', { class: 'alert', style: 'margin-top:16px' }, h('strong', null, 'Tu progreso se guarda en este dispositivo. '), 'Puedes estudiar sin cuenta. Para guardar tu progreso en línea y seguir en otro teléfono, ', h('a', { href: '#/cuenta/crear' }, 'crea una cuenta'), ' (solo nombre de usuario y contraseña).'));
     const backupWarn = backupReminder();
     if (backupWarn) root.appendChild(backupWarn);
     root.appendChild(h('h2', { style: 'margin-top:26px' }, 'Niveles'));
@@ -1338,6 +1479,8 @@
     if (st === 'bloqueado') {
       const prev = C.levels[C.levelIdx(lv.id) - 1];
       root.appendChild(h('div', { class: 'alert warn', style: 'margin-top:14px' }, 'Este nivel todavía está bloqueado. Aprueba el examen final del nivel ' + prev.id + ' para abrirlo, o haz la prueba de nivel. Mientras tanto, puedes repasar las lecciones de niveles anteriores.', h('div', { style: 'margin-top:8px' }, h('a', { class: 'btn btn-primary btn-sm', href: '#/prueba-de-nivel' }, 'Hacer la prueba de nivel'))));
+          root.appendChild(h('div', { class: 'card', style: 'margin-top:14px' }, h('p', null, 'Las lecciones de este nivel se mostrarán cuando llegues a él. Ahora concéntrate en tu nivel actual: ' + (S.currentStage() ? 'nivel ' + S.currentStage() + ' de 30.' : '')), h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Volver a mi ruta')));
+      return root;
     }
     if (S.levelValidated(lv.id)) root.appendChild(h('div', { class: 'alert ok', style: 'margin-top:14px' }, 'Tu prueba de nivel indica que ya dominas este nivel. Todas las lecciones están abiertas para repasar en el orden que quieras.'));
     const units = h('div', { class: 'units' });
@@ -1399,7 +1542,7 @@
     const nav = (back, next, nextLabel) => h('div', { class: 'nav-actions' }, back != null ? h('button', { class: 'btn btn-ghost', onclick: () => go(back) }, '← Anterior') : h('span'), next != null ? h('button', { class: 'btn btn-primary', onclick: () => go(next) }, nextLabel || 'Siguiente →') : null);
     async function check(box, qs, title, label) {
       box.innerHTML = '';
-      const res = await E.run(box, qs, { title, onAnswer: (q, r) => S.recordAnswer(q, r.ok, r.assisted), finishLabel: label || 'Continuar' });
+      const res = await E.run(box, qs, { title, lessonId: id, onAnswer: (q, r) => S.recordAnswer(q, r.ok, r.assisted), finishLabel: label || 'Continuar' });
       await U.save(true);
       return res;
     }
@@ -1441,7 +1584,7 @@
         if (g !== gen) return;
         box.innerHTML = ''; box.appendChild(h('div', { class: 'alert ok' }, '¡Muy bien! Pasa al siguiente paso.')); box.appendChild(nav(1, 3));
       } }, 'Comprobar lo aprendido →'));
-      host.append(h('div', { class: 'card' }, h('h2', null, les.explain.title), U.blocks(les.explain.body)), box, bar);
+      host.append(h('div', { class: 'card' }, h('h2', null, les.explain.title), U.blocks(les.explain.body)), ...[L.coach && L.coach.enHelp(id)].filter(Boolean), box, bar);
     }
     function sListen() {
       const list = h('ul', { class: 'exlist' });
@@ -1475,7 +1618,7 @@
     async function sQuiz() {
       const g = gen;
       cur = 5; drawSteps();
-      const run = async (qs, title) => { host.innerHTML = ''; const box = h('div'); host.appendChild(box); return E.run(box, qs, { title, strictAccents: les.level > 'A2', onAnswer: (q, r) => S.recordAnswer(q, r.ok, r.assisted), finishLabel: 'Ver resultado' }); };
+      const run = async (qs, title) => { host.innerHTML = ''; const box = h('div'); host.appendChild(box); return E.run(box, qs, { title, lessonId: les.id, strictAccents: les.level > 'A2', onAnswer: (q, r) => S.recordAnswer(q, r.ok, r.assisted), finishLabel: 'Ver resultado' }); };
       const res = await run(les.quiz.concat(C.vocabQuestions(les, 2)), 'Examen');
       if (g !== gen) return;
       const pct = L.pct(res.filter((r) => r.ok).length, res.length);
@@ -1583,22 +1726,7 @@
   }, 'Examen final');
 
   // ---------- CERTIFICADO ----------
-  route('/certificado/:lv', ({ params }) => {
-    const lv = params.lv.toUpperCase();
-    const cert = S.prog.certificates.filter((c) => c.level === lv).pop();
-    if (!cert) return U.empty('🎓', 'Todavía no tienes el certificado de este nivel. Aprueba el examen final para obtenerlo.', h('a', { class: 'btn btn-primary', href: '#/aprender/' + lv }, 'Volver al nivel'));
-    const level = C.level(lv);
-    const root = h('div');
-    root.appendChild(U.pageHead('Certificado de finalización', null, [{ t: 'Mi progreso', href: '#/progreso' }, { t: 'Certificado ' + lv }]));
-    root.appendChild(h('div', { class: 'cert', role: 'article', 'aria-label': 'Certificado de finalización del nivel ' + lv },
-      h('div', { html: L.logoSvg(), style: 'width:56px;margin:0 auto' }), h('div', { style: 'font-weight:800;letter-spacing:.1em;text-transform:uppercase' }, 'Languway Spanish'),
-      h('h1', null, 'Certificado de finalización'), h('p', null, 'Se certifica que'), h('div', { class: 'name' }, cert.name || S.user.name),
-      h('p', null, 'ha completado el nivel ', h('b', null, lv + ' — ' + level.name), ' con una nota final de ', h('b', null, cert.score + ' %')),
-      h('p', null, 'Fecha: ' + L.fmtDate(cert.date)), h('p', { style: 'font-size:.85rem' }, 'N.º de certificado: ' + cert.id),
-      h('p', { style: 'font-size:.78rem;color:#5f5f5f' }, 'Certificado de finalización emitido por la plataforma. No es un título oficial ni lo avala ninguna institución externa.')));
-    root.appendChild(h('div', { class: 'nav-actions no-print' }, h('a', { class: 'btn btn-ghost', href: '#/progreso' }, 'Volver'), h('button', { class: 'btn btn-primary', onclick: () => window.print() }, 'Imprimir o guardar como PDF')));
-    return root;
-  }, 'Certificado');
+
 })(window.LWS);
 
 ;
@@ -2448,26 +2576,417 @@
     // niveles y certificados
     const certs = S.prog.certificates;
     root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Certificados'), certs.length ? h('div', null, certs.map((c) => h('a', { class: 'lesson-row', href: '#/certificado/' + c.level }, h('span', { class: 'n' }, '🎓'), h('span', { style: 'flex:1' }, h('strong', null, 'Nivel ' + c.level), h('div', { class: 'muted' }, L.fmtDate(c.date) + ' · ' + c.score + ' %')), h('span', { class: 'chip-tag' }, c.id)))) : h('p', { class: 'muted' }, 'Aprueba el examen final de un nivel para recibir tu certificado de finalización.')));
+    root.appendChild(h('p', { style: 'margin-top:10px' }, h('a', { class: 'btn btn-ghost', href: '#/certificados' }, 'Todos mis certificados y diploma')));
     // logros
     const ag = h('div', { class: 'grid g2' }, S.ACH.map((a) => { const got = S.prog.achievements[a.id]; return h('div', { class: 'ach' + (got ? '' : ' lock') }, h('span', { class: 'ic', 'aria-hidden': 'true' }, a.icon), h('div', null, h('b', null, a.t + (got ? ' ✓' : '')), h('div', { class: 'muted' }, a.d + (got ? ' · ' + L.fmtDate(got) : '')))); }));
     root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Logros'), ag));
     return root;
   }, 'Mi progreso');
 
-  route('/certificado/:lv', ({ params }) => {
-    const c = S.prog.certificates.find((x) => x.level === params.lv.toUpperCase());
-    if (!c) return U.empty('🎓', 'Todavía no tienes el certificado de este nivel. Aprueba el examen final para obtenerlo.', h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Volver a Aprender'));
-    const lv = C.level(c.level);
+
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const { h, route } = L; const C = L.C, S = L.S, U = L.U, A = L.A, E = L.Engine;
+  const SITE = (L.SITE_URL || 'https://2009malek11-source.github.io/LanguWay-Spanish/');
+  const NAME_RE = /^[\p{L}][\p{L} .'-]{1,39}$/u;
+  const LV = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const cleanName = (v) => String(v || '').trim().replace(/\s+/g, ' ');
+  const days = (a, b) => Math.max(1, Math.round((b - a) / 86400000));
+
+  // ---------- sello digital: dibujo único derivado del código firmado por el servidor ----------
+  function sealSvg(id, code) {
+    const hex = String(code || '').toLowerCase().padEnd(20, '0');
+    const nb = (i) => parseInt(hex.substr(i * 2, 2), 16) || 0;
+    const a = 5 + (nb(0) % 8), b = 3 + (nb(1) % 7), c = 7 + (nb(2) % 9);
+    const p1 = (nb(3) / 255) * 6.283, p2 = (nb(4) / 255) * 6.283, p3 = (nb(5) / 255) * 6.283;
+    const path = (R, k) => { let d = ''; for (let i = 0; i <= 360; i += 2) { const t = (i / 180) * Math.PI; const r = R * (0.62 + 0.16 * Math.cos(a * t + p1 * k) + 0.1 * Math.cos(b * t + p2) + 0.07 * Math.cos(c * t + p3 * k)); d += (i ? 'L' : 'M') + (100 + r * Math.cos(t)).toFixed(1) + ' ' + (100 + r * Math.sin(t)).toFixed(1); } return d + 'Z'; };
+    const grp = String(code || '').replace(/(.{4})/g, '$1 ').trim();
+    const ring = 'LANGUWAY SPANISH · SELLO DIGITAL · ' + id + ' · ';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Sello digital ' + id + '">' +
+      '<defs><radialGradient id="sg" cx="40%" cy="35%"><stop offset="0" stop-color="#fff3b0"/><stop offset="0.6" stop-color="#f2c94c"/><stop offset="1" stop-color="#b8860b"/></radialGradient><path id="sr" d="M100 100 m-86 0 a86 86 0 1 1 172 0 a86 86 0 1 1 -172 0"/></defs>' +
+      '<circle cx="100" cy="100" r="97" fill="url(#sg)" stroke="#7a5a00" stroke-width="3"/><circle cx="100" cy="100" r="90" fill="none" stroke="#7a5a00" stroke-width="1"/>' +
+      '<text font-size="7.2" font-family="monospace" fill="#4a3600" letter-spacing="0.6"><textPath href="#sr">' + (ring + ring).slice(0, 118) + '</textPath></text>' +
+      '<circle cx="100" cy="100" r="72" fill="#fffdf0" stroke="#7a5a00" stroke-width="1.2"/>' +
+      '<path d="' + path(70, 1) + '" fill="none" stroke="#b8860b" stroke-width="0.9"/><path d="' + path(62, 2) + '" fill="none" stroke="#7a5a00" stroke-width="0.7"/><path d="' + path(54, 3) + '" fill="none" stroke="#d9ad1f" stroke-width="0.7"/>' +
+      '<circle cx="100" cy="100" r="30" fill="#fff8d6" stroke="#7a5a00" stroke-width="1"/>' +
+      '<text x="100" y="97" text-anchor="middle" font-size="15" font-weight="800" font-family="Georgia,serif" fill="#4a3600">LS</text>' +
+      '<text x="100" y="109" text-anchor="middle" font-size="6" font-family="monospace" fill="#4a3600">VERIFICADO</text>' +
+      '<text x="100" y="178" text-anchor="middle" font-size="7" font-family="monospace" fill="#4a3600" letter-spacing="0.5">' + grp.slice(0, 9) + '</text></svg>';
+  }
+
+  const fmtLevel = (n) => { const st = L.stage(n); return st ? st.level + ' · ' + C.level(st.level).name : ''; };
+
+  function certCard(c) {
+    const when = L.fmtDate(c.issued); const d = c.data || {};
+    const card = h('article', { class: 'cert cert-' + c.kind, 'aria-label': 'Certificado ' + (c.kind === 'final' ? 'final' : c.ref) });
+    if (c.id && c.code) card.appendChild(h('div', { class: 'cert-seal', html: sealSvg(c.id, c.code) }));
+    card.appendChild(h('div', { html: L.logoSvg(), style: 'width:64px;margin:0 auto' }));
+    card.appendChild(h('div', { style: 'letter-spacing:.2em;font-weight:700' }, 'LANGUWAY SPANISH'));
+    let title, line, extra = [];
+    if (c.kind === 'stage') {
+      const n = +c.ref; title = 'Certificado · Nivel ' + n + ' de 30'; line = 'ha completado con éxito el nivel ' + n + ' de 30 (' + fmtLevel(n) + ').';
+      if (d.lessons) extra.push('Lecciones superadas en este nivel del curso: ' + d.lessons);
+      extra.push(n < 30 ? 'Niveles que te quedan para completar los 30: ' + (30 - n) : '¡Has completado los 30 niveles!');
+    } else if (c.kind === 'level') {
+      const i = LV.indexOf(c.ref); title = 'Certificado de nivel ' + c.ref; line = 'ha completado el nivel ' + c.ref + ' — ' + C.level(c.ref).name + '.';
+      if (d.score != null) extra.push('Resultado del examen final del nivel: ' + d.score + ' %');
+      extra.push(i < 5 ? 'Niveles que te quedan (A1–C2): ' + (5 - i) : '¡Has completado todos los niveles!');
+    } else {
+      title = 'Diploma de Español · 30 niveles (A1–C2)'; line = 'ha completado los 30 niveles de español de Languway Spanish y ha aprobado el examen final global.';
+      if (d.score != null) extra.push('Nota del examen final global: ' + d.score + ' %');
+      if (d.lessons) extra.push('Lecciones superadas: ' + d.lessons);
+      if (d.words) extra.push('Palabras guardadas para repaso: ' + d.words);
+      if (d.start) extra.push('Duración del curso: ' + days(d.start, c.issued) + ' días (desde el ' + L.fmtDate(d.start) + ')');
+    }
+    card.appendChild(h('h1', null, title));
+    card.appendChild(h('p', null, 'Se certifica que'));
+    card.appendChild(h('div', { class: 'name' }, c.name));
+    card.appendChild(h('p', null, line));
+    extra.forEach((x) => card.appendChild(h('p', { style: 'margin:.2em 0' }, x)));
+    card.appendChild(h('p', { style: 'margin-top:14px;font-style:italic' }, 'Gracias por tu esfuerzo y tu constancia. ¡Enhorabuena y sigue adelante!'));
+    card.appendChild(h('p', null, 'Fecha: ' + when));
+    if (c.id && c.code) {
+      card.appendChild(h('p', { style: 'font-size:.82rem;margin-top:10px' }, 'N.º ' + c.id + ' · Código: ' + c.code.replace(/(.{4})/g, '$1 ').trim()));
+      card.appendChild(h('p', { style: 'font-size:.78rem;color:#555' }, 'Comprueba su autenticidad en ' + SITE + '#/verificar con el número y el código. El servidor guarda el nombre y la fecha firmados: si alguien cambia un dato, la verificación falla.'));
+    } else {
+      card.appendChild(h('p', { style: 'font-size:.82rem;color:#8a3b00;font-weight:700;margin-top:10px' }, 'Sin sello: no verificado. Inicia sesión con tu cuenta para obtener el sello digital comprobable.'));
+    }
+    card.appendChild(h('p', { style: 'font-size:.75rem;color:#5f5f5f' }, 'Certificado emitido por la plataforma Languway Spanish. No es un título oficial ni está avalado por ninguna institución externa.'));
+    return card;
+  }
+
+  // Muestra un certificado: pide el nombre, emite/recupera el sello en el servidor y dibuja el resultado
+  function certPage(kind, ref, title, eligible, notYet, back) {
     const root = h('div');
-    root.appendChild(h('div', { class: 'no-print' }, U.pageHead('Certificado de finalización', null, [{ t: 'Mi progreso', href: '#/progreso' }, { t: 'Certificado ' + c.level }])));
-    root.appendChild(h('article', { class: 'cert', 'aria-label': 'Certificado de finalización del nivel ' + c.level },
-      h('div', { html: L.logoSvg(), style: 'width:64px;margin:0 auto' }), h('div', { style: 'letter-spacing:.2em;font-weight:700' }, 'LANGUWAY SPANISH'), h('h1', null, 'Certificado de finalización'),
-      h('p', null, 'Se certifica que'), h('div', { class: 'name' }, c.name), h('p', null, 'ha completado el nivel'), h('h2', { style: 'margin:0' }, c.level + ' — ' + lv.name),
-      h('p', null, 'con un resultado del ', h('b', null, c.score + ' %'), ' en el examen final.'), h('p', null, 'Fecha: ' + L.fmtDate(c.date) + ' · N.º ' + c.id),
-      h('p', { style: 'font-size:.85rem;color:#555;margin-top:18px' }, 'Certificado de finalización emitido por la plataforma Languway Spanish. No es un título oficial ni está avalado por ninguna institución externa.')));
-    root.appendChild(h('div', { class: 'row no-print', style: 'justify-content:center;margin-top:16px' }, h('button', { class: 'btn btn-primary', onclick: () => window.print() }, 'Imprimir o guardar como PDF'), h('a', { class: 'btn btn-ghost', href: '#/progreso' }, 'Volver')));
+    root.appendChild(h('div', { class: 'no-print' }, U.pageHead(title, null, [{ t: 'Certificados', href: '#/certificados' }, { t: title }])));
+    if (!eligible()) { root.appendChild(U.empty('🎓', notYet, h('a', { class: 'btn btn-primary', href: back || '#/aprender' }, 'Volver'))); return root; }
+    const out = h('div'); const form = h('div', { class: 'card no-print', style: 'max-width:760px;margin:0 auto 16px' });
+    root.append(form, out);
+    const nameInp = h('input', { class: 'inp', type: 'text', maxlength: 40, autocomplete: 'name', 'aria-label': 'Nombre en el certificado', value: S.prog.settings.certName || '', placeholder: 'Tu nombre completo' });
+    const msg = h('p', { class: 'muted', 'aria-live': 'polite' });
+    const btn = h('button', { class: 'btn btn-primary', type: 'button' }, 'Emitir mi certificado');
+    form.append(h('h3', null, 'Nombre que aparecerá en el certificado'), nameInp, h('div', { class: 'row', style: 'margin-top:10px' }, btn), msg);
+    let busy = false;
+    async function issue() {
+      if (busy) return; const nm = cleanName(nameInp.value);
+      if (!NAME_RE.test(nm)) { msg.textContent = 'Escribe un nombre válido: solo letras, espacios, punto, apóstrofo o guion (2 a 40 caracteres).'; return; }
+      busy = true; btn.disabled = true; msg.textContent = 'Emitiendo…'; out.innerHTML = '';
+      S.prog.settings.certName = nm; S.markProg(); await U.save();
+      let cert = null; let note = '';
+      if (A.hasCloud() && navigator.onLine) {
+        await A.push();
+        const r = await L.cloud.issueCert(A.user.ct, kind, String(ref), nm);
+        if (r.ok) cert = r; else note = L.cloud.message(r);
+      } else note = A.isGuest() ? 'Estás como invitado: el certificado no tendrá sello. Crea una cuenta para obtener el sello digital.' : 'Sin conexión o sin sesión en línea: el certificado se muestra sin sello.';
+      if (!cert) {
+        const t = Date.now(); const local = { kind, ref: String(ref), name: nm, issued: t, data: localData(kind, ref) };
+        cert = local;
+      }
+      out.appendChild(certCard(cert));
+      out.appendChild(h('div', { class: 'row no-print', style: 'justify-content:center;margin-top:16px' }, h('button', { class: 'btn btn-primary', onclick: () => window.print() }, 'Imprimir o guardar como PDF'), h('a', { class: 'btn btn-ghost', href: '#/certificados' }, 'Todos mis certificados')));
+      msg.textContent = note;
+      busy = false; btn.disabled = false; btn.textContent = 'Volver a emitir con este nombre';
+    }
+    btn.addEventListener('click', issue);
+    if (S.prog.settings.certName && NAME_RE.test(S.prog.settings.certName)) issue();
     return root;
-  }, 'Certificado');
+  }
+  function localData(kind, ref) {
+    if (kind === 'stage') { const st = L.stage(+ref); return { lessons: st ? st.lessons.filter((id) => S.lessonDone(id)).length : 0 }; }
+    if (kind === 'level') return { score: (S.prog.levelTests[ref] || {}).best || 0 };
+    return { score: S.prog.finalExam.best, lessons: Object.keys(S.prog.lessons).filter((id) => S.lessonDone(id)).length, words: S.words.size || S.words.length || 0, start: S.prog.created };
+  }
+  const allLevelsDone = () => LV.every((l) => S.levelDone(l));
+  const finalDone = () => allLevelsDone() && S.prog.finalExam.best >= 75;
+
+  route('/certificado-nivel/:n', ({ params }) => { const n = +params.n; return certPage('stage', n, 'Certificado del nivel ' + n + ' de 30', () => n >= 1 && n <= 30 && S.stageDone(n), 'Todavía no has completado todas las lecciones del nivel ' + n + ' de 30.'); }, 'Certificado de nivel');
+  route('/certificado/:lv', ({ params }) => { const lv = String(params.lv).toUpperCase(); return certPage('level', lv, 'Certificado de nivel ' + lv, () => LV.includes(lv) && S.levelDone(lv), 'Todavía no tienes el certificado de este nivel. Aprueba el examen final del nivel para obtenerlo.'); }, 'Certificado');
+  route('/diploma', () => certPage('final', 'F', 'Diploma de Español', finalDone, 'El diploma se obtiene al aprobar los seis niveles (A1–C2) y el examen final global.', '#/examen-final'), 'Diploma');
+
+  // ---------- examen final global ----------
+  route('/examen-final', async () => {
+    const root = h('div'); root.appendChild(U.pageHead('Examen final global', 'Una prueba completa de los seis niveles, de A1 a C2.', [{ t: 'Certificados', href: '#/certificados' }, { t: 'Examen final' }]));
+    if (!allLevelsDone()) { root.appendChild(h('div', { class: 'alert warn' }, 'El examen final global se abre cuando apruebes el examen final de los seis niveles (A1 a C2). Te faltan: ' + LV.filter((l) => !S.levelDone(l)).join(', ') + '.')); return root; }
+    const host = h('div'); root.appendChild(host);
+    const ids = []; LV.forEach((l) => C.lessonList(l).forEach((r) => { if (C.lessons[r.id]) ids.push(r.id); }));
+    async function start() {
+      host.innerHTML = ''; const box = h('div'); host.appendChild(box);
+      const qs = C.sampleBank(ids, 60);
+      const res = await E.run(box, qs, { title: 'Examen final global', strictAccents: true, onAnswer: (q, r) => S.recordAnswer(q, r.ok, r.assisted), finishLabel: 'Ver resultado' });
+      const pct = L.pct(res.filter((r) => r.ok).length, res.length);
+      const f = S.prog.finalExam; f.attempts++; f.date = Date.now(); if (pct > f.best) f.best = pct; S.markProg(); await U.save();
+      host.innerHTML = '';
+      const passed = pct >= 75;
+      const sm = E.summary(res, { pass: 75, headline: passed ? '¡Felicidades! Has aprobado el examen final global' : 'Todavía no' });
+      host.appendChild(h('div', { class: 'card' }, sm.el));
+      host.appendChild(h('div', { class: 'nav-actions' }, passed ? h('a', { class: 'btn btn-primary', href: '#/diploma' }, 'Obtener mi diploma') : h('button', { class: 'btn btn-primary', onclick: start }, 'Intentarlo de nuevo')));
+    }
+    host.appendChild(h('div', { class: 'card' }, h('h2', null, 'Antes de empezar'), h('p', null, '60 preguntas que mezclan vocabulario, gramática, lectura y orden de frases de todos los niveles. Necesitas un 75 % o más. Puedes repetirlo cuando quieras; se guarda tu mejor nota.'),
+      S.prog.finalExam.attempts ? h('p', { class: 'muted' }, 'Tu mejor nota: ' + S.prog.finalExam.best + ' %.') : null, h('button', { class: 'btn btn-primary', onclick: start }, 'Empezar el examen final')));
+    return root;
+  }, 'Examen final global');
+
+  // ---------- índice de certificados ----------
+  route('/certificados', () => {
+    const root = h('div'); root.appendChild(U.pageHead('Mis certificados', 'Un certificado por cada uno de los 30 niveles, uno por cada nivel A1–C2 y el diploma final.'));
+    const row = (href, ok, t, sub) => h(ok ? 'a' : 'div', { class: 'lesson-row' + (ok ? ' done' : ' locked'), href: ok ? href : null }, h('span', { class: 'n' }, ok ? '✓' : '🔒'), h('span', { style: 'flex:1' }, h('strong', null, t), sub ? h('div', { class: 'muted' }, sub) : null), h('span', { class: 'chip-tag ' + (ok ? 'green' : 'gray') }, ok ? 'Ver' : 'Bloqueado'));
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Diploma final'), row('#/diploma', finalDone(), 'Diploma de Español · 30 niveles', finalDone() ? 'Nota: ' + S.prog.finalExam.best + ' %' : allLevelsDone() ? 'Aprueba el examen final global' : 'Se abre al aprobar A1–C2 y el examen final global'),
+      allLevelsDone() && !finalDone() ? h('a', { class: 'btn btn-primary', href: '#/examen-final' }, 'Hacer el examen final global') : null));
+    const cs = h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Niveles A1 a C2')); LV.forEach((l) => cs.appendChild(row('#/certificado/' + l, S.levelDone(l), 'Nivel ' + l + ' — ' + C.level(l).name))); root.appendChild(cs);
+    const ss = h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Los 30 niveles')); for (let n = 1; n <= 30; n++) ss.appendChild(row('#/certificado-nivel/' + n, S.stageDone(n), 'Nivel ' + n + ' de 30', fmtLevel(n))); root.appendChild(ss);
+    root.appendChild(h('p', null, h('a', { href: '#/verificar' }, 'Verificar un certificado')));
+    return root;
+  }, 'Certificados');
+
+  // ---------- verificación pública ----------
+  const verifyView = ({ params }) => {
+    const root = h('div'); root.appendChild(U.pageHead('Verificar un certificado', 'Escribe el número y el código que aparecen en el certificado. Solo el servidor puede confirmar si es auténtico.'));
+    const id = h('input', { class: 'inp', type: 'text', maxlength: 20, autocapitalize: 'characters', spellcheck: 'false', 'aria-label': 'Número del certificado', placeholder: 'LW-XXXXXX-XXXXXX', value: params.id || '' });
+    const code = h('input', { class: 'inp', type: 'text', maxlength: 30, autocapitalize: 'characters', spellcheck: 'false', 'aria-label': 'Código', placeholder: 'Código (20 caracteres)', style: 'margin-top:8px', value: params.code || '' });
+    const res = h('div', { 'aria-live': 'polite', style: 'margin-top:12px' });
+    const btn = h('button', { class: 'btn btn-primary', type: 'button', style: 'margin-top:10px' }, 'Verificar');
+    async function go() {
+      if (!/^LW-[0-9A-Fa-f]{6}-[0-9A-Fa-f]{6}$/.test(id.value.trim())) { res.innerHTML = ''; res.appendChild(h('div', { class: 'alert warn' }, 'El número debe tener el formato LW-XXXXXX-XXXXXX.')); return; }
+      btn.disabled = true; res.textContent = 'Verificando…';
+      const r = await L.cloud.verifyCert(id.value.trim(), code.value.trim()); btn.disabled = false; res.innerHTML = '';
+      if (r.ok) {
+        const t = r.kind === 'stage' ? 'Nivel ' + r.ref + ' de 30' : r.kind === 'level' ? 'Nivel ' + r.ref : 'Diploma final de español (30 niveles)';
+        res.appendChild(h('div', { class: 'alert ok' }, h('strong', null, 'Certificado auténtico. '), 'Emitido a ', h('strong', null, r.name), ' · ' + t + ' · ' + L.fmtDate(r.issued) + (r.data && r.data.score != null ? ' · Nota: ' + r.data.score + ' %' : '') + '.'));
+      } else res.appendChild(h('div', { class: 'alert warn' }, L.cloud.message(r)));
+    }
+    btn.addEventListener('click', go); if (params.id && params.code) go();
+    root.appendChild(h('div', { class: 'card' }, id, code, btn, res));
+    return root;
+  };
+  route('/verificar', (c) => verifyView({ params: {} }), 'Verificar certificado');
+  route('/verificar/:id/:code', verifyView, 'Verificar certificado');
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const { h, route } = L; const C = L.C, S = L.S, U = L.U, E = L.Engine, Q = L.Q;
+  const prep = (q, tag) => { q.s = q.s || 'vocabulario'; return Q.prep(q, 'pre:' + tag, 'A1'); };
+
+  // ---------- contenido: todo con inglés al lado, para quien parte de cero ----------
+  const LETTERS = [
+    ['A a', 'a', 'ah — like “a” in father', 'casa'], ['B b', 'be', 'b — like English b', 'bebé'], ['C c', 'ce', 'k before a, o, u (casa); th/s before e, i (cena)', 'casa, cena'],
+    ['D d', 'de', 'd — softer than English d', 'dado'], ['E e', 'e', 'eh — like “e” in bed', 'mesa'], ['F f', 'efe', 'f — like English f', 'foto'],
+    ['G g', 'ge', 'g in “go” before a, o, u; like a strong h before e, i (gente)', 'gato, gente'], ['H h', 'hache', 'silent! it is never pronounced', 'hola'],
+    ['I i', 'i', 'ee — like “ee” in see', 'isla'], ['J j', 'jota', 'a strong, rough h sound', 'jamón'], ['K k', 'ka', 'k — rare, in foreign words', 'kilo'],
+    ['L l', 'ele', 'l — like English l', 'luna'], ['M m', 'eme', 'm — like English m', 'mamá'], ['N n', 'ene', 'n — like English n', 'nada'],
+    ['Ñ ñ', 'eñe', 'ny — like “ny” in canyon', 'niño'], ['O o', 'o', 'oh — short, like “o” in more', 'ojo'], ['P p', 'pe', 'p — without the puff of air', 'papa'],
+    ['Q q', 'cu', 'k — always written “qu” (que, qui)', 'queso'], ['R r', 'erre', 'a quick tap of the tongue (rr = rolled)', 'pero, perro'], ['S s', 'ese', 's — like English s', 'sol'],
+    ['T t', 'te', 't — without the puff of air', 'taza'], ['U u', 'u', 'oo — like “oo” in moon', 'uno'], ['V v', 'uve', 'same sound as b!', 'vaca'],
+    ['W w', 'uve doble', 'w — rare, in foreign words', 'web'], ['X x', 'equis', 'ks — like “x” in taxi', 'taxi'], ['Y y', 'i griega', 'y as in yes (also the word “and”)', 'yo'], ['Z z', 'zeta', 's (America) or th (Spain)', 'zapato'],
+  ];
+  const NUMS = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte'];
+  const TENS = [['treinta', 30], ['cuarenta', 40], ['cincuenta', 50], ['sesenta', 60], ['setenta', 70], ['ochenta', 80], ['noventa', 90], ['cien', 100]];
+  const WORDS = [['hola', 'hello'], ['adiós', 'goodbye'], ['buenos días', 'good morning'], ['buenas noches', 'good night'], ['por favor', 'please'], ['gracias', 'thank you'], ['de nada', 'you are welcome'],
+    ['sí', 'yes'], ['no', 'no'], ['perdón', 'sorry / excuse me'], ['me llamo…', 'my name is…'], ['¿cómo te llamas?', 'what is your name?'], ['yo', 'I'], ['tú', 'you'], ['agua', 'water'], ['casa', 'house'], ['pan', 'bread'], ['amigo', 'friend']];
+
+  const STEPS = [
+    { id: 'abc', title: '1. The alphabet · El abecedario', body: () => {
+      const box = h('div');
+      box.appendChild(h('p', null, 'Spanish has ', h('b', null, '27 letters'), ': the same 26 as English plus ', h('b', null, 'ñ'), '. Spanish is written almost exactly as it sounds, so once you know the letters you can read any word. Tap a letter to hear its name.'));
+      const t = h('div', { class: 'grid g2' });
+      LETTERS.forEach((l) => t.appendChild(h('div', { class: 'card', style: 'padding:12px' }, h('div', { class: 'row sb' }, h('span', { style: 'font-size:1.6rem;font-weight:800' }, l[0]), L.Audio.btn(l[1], { small: true, name: l[1] })), h('div', null, h('b', null, l[1]), ' — ' + l[2]), h('div', { class: 'muted' }, 'Example: ' + l[3]))));
+      box.appendChild(t); return box; } },
+    { id: 'vowels', title: '2. The five vowels · Las vocales', body: () => {
+      const box = h('div');
+      box.appendChild(h('p', null, 'Spanish has only ', h('b', null, '5 vowel sounds'), ' and they never change. Say them short and clean.'));
+      [['a', 'ah', 'casa'], ['e', 'eh', 'mesa'], ['i', 'ee', 'libro'], ['o', 'oh', 'ojo'], ['u', 'oo', 'luna']].forEach((v) => box.appendChild(h('div', { class: 'row', style: 'margin:8px 0' }, L.Audio.btn(v[2], { small: true, name: v[2] }), h('span', null, h('b', { style: 'font-size:1.3rem' }, v[0]), ' = “' + v[1] + '” as in ', h('b', null, v[2])))));
+      box.appendChild(h('div', { class: 'alert' }, 'Tip: a written accent (á é í ó ú) does not change the sound; it only shows which part of the word is stressed.'));
+      return box; } },
+    { id: 'nums', title: '3. Numbers 0–100 · Los números', body: () => {
+      const box = h('div'); box.appendChild(h('p', null, 'Learn 0 to 20 first. After 20 the numbers follow a pattern: ', h('b', null, 'treinta y uno'), ' = 31, ', h('b', null, 'cuarenta y cinco'), ' = 45.'));
+      const g = h('div', { class: 'grid g3' });
+      NUMS.forEach((w, i) => g.appendChild(h('div', { class: 'card', style: 'padding:10px' }, h('div', { class: 'row sb' }, h('span', { style: 'font-size:1.5rem;font-weight:800' }, String(i)), L.Audio.btn(w, { small: true, name: w })), h('b', null, w))));
+      box.appendChild(g); box.appendChild(h('h3', { style: 'margin-top:14px' }, 'The tens'));
+      const t = h('div', { class: 'grid g3' }); TENS.forEach((x) => t.appendChild(h('div', { class: 'card', style: 'padding:10px' }, h('div', { class: 'row sb' }, h('span', { style: 'font-size:1.5rem;font-weight:800' }, String(x[1])), L.Audio.btn(x[0], { small: true, name: x[0] })), h('b', null, x[0]))));
+      box.appendChild(t); return box; } },
+    { id: 'words', title: '4. First words · Las primeras palabras', body: () => {
+      const box = h('div'); box.appendChild(h('p', null, 'These 18 words and phrases are enough for your first conversation. Tap to listen, then say them out loud.'));
+      WORDS.forEach((w) => box.appendChild(h('div', { class: 'row', style: 'margin:8px 0' }, L.Audio.btn(w[0], { small: true, name: w[0] }), h('span', null, h('b', { style: 'font-size:1.1rem' }, w[0]), ' — ' + w[1]))));
+      return box; } },
+    { id: 'how', title: '5. How Spanish works · Cómo funciona el español', body: () => {
+      const box = h('div');
+      [['Questions and exclamations start with an upside-down mark', '¿Cómo estás? ¡Qué bien! — the opening mark ¿ or ¡ tells you the sentence is a question or exclamation before you read it.'],
+       ['Every noun is masculine or feminine', 'el libro (the book, masculine) · la casa (the house, feminine). Most words ending in -o are masculine and in -a are feminine.'],
+       ['Plural: add -s (or -es)', 'un libro → dos libros · una flor → dos flores.'],
+       ['Adjectives usually come AFTER the noun and agree with it', 'una casa blanca (a white house) · unos libros blancos.'],
+       ['Days and months do not start with a capital letter', 'lunes, martes, enero, febrero.'],
+       ['You can often drop “I / you / he”', '“Hablo español” already means “I speak Spanish”: the verb ending shows who does the action.']]
+        .forEach((x, i) => box.appendChild(h('div', { class: 'card', style: 'padding:12px;margin:8px 0' }, h('b', null, (i + 1) + '. ' + x[0]), h('div', null, x[1]))));
+      return box; } },
+  ];
+
+  // Prueba de Primeros pasos: 15 preguntas sencillas
+  function testQs() {
+    const q = [];
+    ['b', 'g', 'j', 'ñ', 'h'].forEach((k) => { const l = LETTERS.find((x) => x[0][0].toLowerCase() === k); q.push(prep(Q.listen(l[1], 'Listen: which letter name do you hear? / ¿Qué letra oyes?', l[1], LETTERS.filter((x) => x[1] !== l[1]).map((x) => x[1]).sort(() => 0.5 - Math.random()).slice(0, 3), 'You heard «' + l[1] + '», the name of the letter ' + l[0] + '.'), 'l' + k)); });
+    [3, 7, 12, 15, 20].forEach((n) => { const w = NUMS[n]; q.push(prep(Q.listen(w, 'Listen: which number do you hear? / ¿Qué número oyes?', String(n), [String(n + 1), String(n === 0 ? 10 : n - 1), String(n + 10)].filter((v) => v !== String(n)).slice(0, 3), 'You heard «' + w + '» = ' + n + '.'), 'n' + n)); });
+    [['hola', 'hello', ['goodbye', 'thank you', 'water']], ['gracias', 'thank you', ['please', 'sorry', 'yes']], ['agua', 'water', ['bread', 'house', 'friend']], ['por favor', 'please', ['you are welcome', 'good night', 'sorry']], ['adiós', 'goodbye', ['hello', 'yes', 'no']]]
+      .forEach((w) => q.push(prep(Q.mc('What does «' + w[0] + '» mean? / ¿Qué significa «' + w[0] + '»?', w[1], w[2], '«' + w[0] + '» means “' + w[1] + '”.'), 'w' + w[0])));
+    return L.shuffle(q);
+  }
+
+  route('/primeros-pasos', () => {
+    const root = h('div');
+    const d = S.prog.done['pre:steps'] = S.prog.done['pre:steps'] || { n: 0, best: 0, attempts: 0 };
+    root.appendChild(U.pageHead('Primeros pasos · First steps', 'Empieza desde cero. Start from zero: letters, numbers and your first words, explained in English.'));
+    root.appendChild(h('div', { class: 'alert' }, h('strong', null, 'No Spanish at all? Perfect. '), 'Read the 5 steps below (about 15 minutes), tap the speaker buttons to listen, then take the short check at the end. After that, your lessons start easily.'));
+    STEPS.forEach((s, i) => root.appendChild(h('a', { class: 'lesson-row', href: '#/primeros-pasos/' + s.id }, h('span', { class: 'n' }, S.prog.seen && S.prog.seen['pre_' + s.id] ? '✓' : String(i + 1)), h('span', { style: 'flex:1' }, h('strong', null, s.title)), h('span', { class: 'chip-tag gray' }, 'Abrir'))));
+    root.appendChild(h('a', { class: 'lesson-row' + (d.best >= 75 ? ' done' : ''), href: '#/primeros-pasos/prueba' }, h('span', { class: 'n' }, '★'), h('span', { style: 'flex:1' }, h('strong', null, 'Check · La prueba de Primeros pasos'), h('div', { class: 'muted' }, '15 easy questions. You need 75%.' + (d.attempts ? ' Best: ' + d.best + '%' : ''))), h('span', { class: 'chip-tag ' + (d.best >= 75 ? 'green' : 'gray') }, d.best >= 75 ? '✓ ' + d.best + ' %' : 'Empezar')));
+    root.appendChild(h('div', { class: 'row', style: 'margin-top:14px' }, h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Ir a mis lecciones')));
+    return root;
+  }, 'Primeros pasos');
+
+  route('/primeros-pasos/:id', async ({ params }) => {
+    const root = h('div');
+    if (params.id === 'prueba') {
+      root.appendChild(U.pageHead('La prueba de Primeros pasos', 'Easy check: letters, numbers and first words. 75% to pass.', [{ t: 'Primeros pasos', href: '#/primeros-pasos' }, { t: 'Prueba' }]));
+      const host = h('div'); root.appendChild(host);
+      const start = async () => {
+        host.innerHTML = ''; const box = h('div'); host.appendChild(box);
+        const res = await E.run(box, testQs(), { title: 'Primeros pasos', onAnswer: (q, r) => S.recordAnswer(q, r.ok, r.assisted), finishLabel: 'Ver resultado' });
+        const pct = L.pct(res.filter((r) => r.ok).length, res.length);
+        const d = S.prog.done['pre:steps'] = S.prog.done['pre:steps'] || { n: 0, best: 0, attempts: 0 }; d.best = Math.max(d.best, pct); d.attempts++; S.markProg(); await U.save();
+        host.innerHTML = ''; const sm = E.summary(res, { pass: 75, headline: pct >= 75 ? '¡Muy bien! You are ready for lesson 1' : 'Casi. Review the steps and try again' });
+        host.appendChild(h('div', { class: 'card' }, sm.el));
+        host.appendChild(h('div', { class: 'nav-actions' }, pct >= 75 ? h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Empezar la lección 1') : h('a', { class: 'btn btn-primary', href: '#/primeros-pasos' }, 'Repasar los pasos'), pct >= 75 ? null : h('button', { class: 'btn btn-ghost', onclick: start }, 'Intentarlo de nuevo')));
+      };
+      host.appendChild(h('div', { class: 'card' }, h('p', null, '15 short questions. Some play a sound: make sure your volume is on.'), h('button', { class: 'btn btn-primary', onclick: start }, 'Start')));
+      return root;
+    }
+    const s = STEPS.find((x) => x.id === params.id);
+    if (!s) return U.empty('🔤', 'Ese paso no existe.', h('a', { class: 'btn btn-primary', href: '#/primeros-pasos' }, 'Volver'));
+    root.appendChild(U.pageHead(s.title, null, [{ t: 'Primeros pasos', href: '#/primeros-pasos' }, { t: s.title }]));
+    root.appendChild(h('div', { class: 'card' }, s.body()));
+    S.prog.seen = S.prog.seen || {}; S.prog.seen['pre_' + s.id] = Date.now(); S.markProg();
+    const i = STEPS.indexOf(s); const nx = STEPS[i + 1];
+    root.appendChild(h('div', { class: 'nav-actions' }, i ? h('a', { class: 'btn btn-ghost', href: '#/primeros-pasos/' + STEPS[i - 1].id }, '← Back') : null, h('a', { class: 'btn btn-primary', href: nx ? '#/primeros-pasos/' + nx.id : '#/primeros-pasos/prueba' }, nx ? 'Next →' : 'Take the check →')));
+    return root;
+  }, 'Primeros pasos');
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const { h, route } = L; const U = L.U;
+  L.SITE_URL = 'https://2009malek11-source.github.io/LanguWay-Spanish/';
+
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+  const isSamsung = /SamsungBrowser/i.test(ua);
+  const isFirefox = /Firefox|FxiOS/i.test(ua);
+  const isEdge = /Edg\//.test(ua);
+  const inApp = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|Snapchat|TikTok|Telegram|WhatsApp|; wv\)/i.test(ua);
+  const standalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+    try { const ta = h('textarea', { style: 'position:fixed;left:-9999px', 'aria-hidden': 'true' }); ta.value = t; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e) { return false; }
+  }
+  L.copyText = copyText;
+  async function share() {
+    const data = { title: 'Languway Spanish', text: 'Aprende español en español con Languway Spanish.', url: L.SITE_URL };
+    if (navigator.share) { try { await navigator.share(data); } catch (e) { if (e && e.name !== 'AbortError') L.toast('No se pudo abrir el menú de compartir. Copia el enlace.', 'err', 4000); } return; }
+    L.toast((await copyText(L.SITE_URL)) ? 'Tu navegador no tiene menú de compartir: el enlace se ha copiado.' : 'No se pudo compartir. Copia el enlace manualmente.', '', 4500);
+  }
+  L.shareSite = share;
+
+  // Bloque reutilizable: instalar, compartir, QR
+  L.installBlock = function () {
+    const box = h('div');
+    const status = h('div', { 'aria-live': 'polite' });
+    const btn = h('button', { class: 'btn btn-primary', type: 'button', onclick: async () => {
+      const ev = window.__bip;
+      if (!ev) { L.toast('Tu navegador no ofrece la instalación automática. Sigue los pasos de abajo.', '', 5000); const d = document.querySelector('details.how.sel-os'); d && (d.open = true, d.scrollIntoView({ behavior: 'smooth', block: 'center' })); return; }
+      ev.prompt(); try { const r = await ev.userChoice; if (r.outcome === 'accepted') L.toast('Instalando…', 'ok'); } catch (e) {}
+      window.__bip = null; paint();
+    } }, h('span', { 'aria-hidden': 'true' }, '📲'), ' Instalar la aplicación');
+    function paint() {
+      status.innerHTML = '';
+      if (standalone() || window.__installed) { status.appendChild(h('div', { class: 'alert ok' }, 'La aplicación ya está instalada y abierta como app.')); btn.hidden = true; return; }
+      btn.hidden = false;
+      if (inApp) status.appendChild(h('div', { class: 'alert warn' }, 'Estás dentro del navegador de otra aplicación (WhatsApp, Instagram, Facebook…). Desde aquí no se puede instalar. Pulsa «Abrir en el navegador» (menú ⋮ o «compartir») y vuelve a esta página.'));
+      else if (!window.__bip && !isIOS) status.appendChild(h('div', { class: 'alert' }, 'Si el botón no instala la aplicación, usa los pasos detallados de abajo: dependen de tu dispositivo.'));
+      if (isIOS) status.appendChild(h('div', { class: 'alert' }, 'En iPhone y iPad no existe el botón automático: hay que usar el menú Compartir de Safari (pasos abajo).'));
+    }
+    paint(); window.addEventListener('appinstalled', paint, { once: true }); setTimeout(paint, 1500);
+
+    const act = h('div', { class: 'inst-actions' }, btn,
+      h('button', { class: 'btn btn-ghost', type: 'button', onclick: share }, h('span', { 'aria-hidden': 'true' }, '📤'), ' Compartir'),
+      h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await copyText(L.SITE_URL); L.toast(ok ? 'Enlace copiado.' : 'No se pudo copiar. Selecciónalo y cópialo a mano.', ok ? 'ok' : 'err', 2500); } }, h('span', { 'aria-hidden': 'true' }, '📋'), ' Copiar enlace'));
+    box.append(status, act);
+    return box;
+  };
+
+  const STEPS = [
+    { id: 'android', t: 'Android · Chrome', on: () => isAndroid && !isSamsung && !isFirefox, steps: [
+      'Abre esta página en Chrome (no dentro de WhatsApp, Instagram u otra app).',
+      'Pulsa el botón «Instalar la aplicación» de esta página. Si aparece un aviso, elige «Instalar».',
+      'Si no aparece: toca el menú ⋮ (arriba a la derecha) y elige «Instalar aplicación» o «Añadir a la pantalla de inicio».',
+      'Confirma con «Instalar». El icono de Languway Spanish aparecerá en tu pantalla de inicio o en el cajón de aplicaciones.'] },
+    { id: 'samsung', t: 'Android · Samsung Internet', on: () => isSamsung, steps: [
+      'Abre la página en Samsung Internet.', 'Toca el menú ☰ (abajo a la derecha).', 'Elige «Añadir página a» y después «Pantalla de inicio» (o «Instalar»).', 'Confirma con «Añadir».'] },
+    { id: 'ios', t: 'iPhone y iPad · Safari', on: () => isIOS, steps: [
+      'Abre esta página en Safari. En iPhone y iPad solo Safari puede instalar (en Chrome u otros navegadores no aparece la opción, aunque en iOS 16.4 o superior sí aparece en el menú Compartir de otros navegadores).',
+      'Toca el botón Compartir (el cuadrado con una flecha hacia arriba), abajo en iPhone o arriba en iPad.',
+      'Desliza el menú hacia arriba y elige «Añadir a pantalla de inicio». Si no la ves, pulsa «Editar acciones» y actívala.',
+      'Deja el nombre «Languway Spanish» y pulsa «Añadir» (arriba a la derecha).',
+      'Abre la aplicación desde el icono nuevo de tu pantalla de inicio.'] },
+    { id: 'firefox', t: 'Android · Firefox', on: () => isAndroid && isFirefox, steps: [
+      'Abre la página en Firefox.', 'Toca el menú ⋮.', 'Elige «Instalar» (o «Añadir a la pantalla de inicio»).', 'Confirma con «Añadir».'] },
+    { id: 'desk', t: 'Ordenador · Chrome o Edge (Windows, Mac, Linux)', on: () => !isIOS && !isAndroid && !isFirefox, steps: [
+      'Abre esta página en Chrome o Edge.',
+      'Pulsa «Instalar la aplicación» o el icono de instalar que aparece a la derecha de la barra de direcciones (un monitor con una flecha).',
+      'Si no lo ves: menú ⋮ › «Guardar y compartir» › «Instalar Languway Spanish» (Chrome), o menú ⋯ › «Aplicaciones» › «Instalar este sitio como una aplicación» (Edge).',
+      'Confirma con «Instalar». Se abrirá en su propia ventana y podrás anclarla a la barra de tareas.'] },
+    { id: 'mac', t: 'Mac · Safari (macOS Sonoma o posterior)', on: () => /Macintosh/.test(ua) && !isIOS && /Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua), steps: [
+      'Abre la página en Safari.', 'En el menú «Archivo» elige «Añadir al Dock».', 'Deja el nombre y pulsa «Añadir».'] },
+    { id: 'ffdesk', t: 'Ordenador · Firefox', on: () => !isIOS && !isAndroid && isFirefox, steps: [
+      'Firefox de escritorio no instala aplicaciones web.', 'Abre la página en Chrome o Edge y sigue los pasos de «Ordenador», o guarda la página en marcadores (Ctrl/Cmd + D).'] },
+  ];
+  const FIX = [
+    'La página debe abrirse con https:// (la dirección de GitHub Pages ya lo usa). Con http:// o abriendo el archivo desde tu carpeta no se puede instalar.',
+    'No uses el modo privado o incógnito: la instalación y el guardado del progreso pueden no funcionar.',
+    'Abre el enlace en el navegador del sistema (Chrome, Safari, Edge o Samsung Internet), no en el navegador interno de otras aplicaciones.',
+    'Actualiza tu navegador a la última versión y recarga la página.',
+    'Si ya la instalaste antes y la borraste, espera unos minutos o borra los datos del sitio (en Configuración › Avanzado puedes limpiar la copia de la aplicación sin perder tu progreso) y recarga.',
+    'Si nada funciona, usa la aplicación desde el navegador: funciona igual y puedes guardar un marcador. También puedes guardar la página como marcador en la pantalla de inicio.'
+  ];
+
+  route('/instalar', () => {
+    const root = h('div');
+    root.appendChild(U.pageHead('Instalar y compartir', 'Usa Languway Spanish como una aplicación en tu pantalla de inicio, o comparte el enlace con quien quieras.'));
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Instalar la aplicación'), h('p', { class: 'muted' }, 'Instalada se abre más rápido, a pantalla completa, y funciona sin conexión una vez cargada. No ocupa casi espacio y no necesita ninguna tienda de aplicaciones.'), L.installBlock()));
+    const sec = h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Pasos detallados'), h('p', { class: 'muted' }, 'Elegimos primero el que corresponde a tu dispositivo.'));
+    const mine = STEPS.filter((s) => s.on()).map((s) => s.id);
+    STEPS.forEach((s) => sec.appendChild(h('details', { class: 'how' + (mine[0] === s.id ? ' sel-os' : ''), open: mine[0] === s.id ? '' : null }, h('summary', null, s.t), h('ol', null, s.steps.map((x) => h('li', null, x))))));
+    root.appendChild(sec);
+    root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Si no se instala'), h('ol', null, FIX.map((x) => h('li', { style: 'margin:6px 0' }, x)))));
+    const link = h('input', { class: 'inp', readonly: '', value: L.SITE_URL, 'aria-label': 'Enlace de Languway Spanish', onfocus: (e) => e.target.select() });
+    root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Compartir'),
+      h('p', { class: 'muted' }, 'Envía el enlace o enseña el código QR para que otra persona lo abra con la cámara de su teléfono.'),
+      h('div', { class: 'field' }, h('label', { for: 'site-link' }, 'Enlace'), link),
+      h('div', { class: 'inst-actions' },
+        h('button', { class: 'btn btn-primary', type: 'button', onclick: share }, h('span', { 'aria-hidden': 'true' }, '📤'), ' Compartir'),
+        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await copyText(L.SITE_URL); L.toast(ok ? 'Enlace copiado.' : 'No se pudo copiar. Selecciónalo y cópialo a mano.', ok ? 'ok' : 'err', 2500); } }, h('span', { 'aria-hidden': 'true' }, '📋'), ' Copiar enlace'),
+        h('a', { class: 'btn btn-ghost', target: '_blank', rel: 'noopener noreferrer', href: 'https://wa.me/?text=' + encodeURIComponent('Aprende español en español con Languway Spanish: ' + L.SITE_URL) }, 'WhatsApp'),
+        h('a', { class: 'btn btn-ghost', target: '_blank', rel: 'noopener noreferrer', href: 'https://t.me/share/url?url=' + encodeURIComponent(L.SITE_URL) + '&text=' + encodeURIComponent('Languway Spanish') }, 'Telegram'),
+        h('a', { class: 'btn btn-ghost', href: 'mailto:?subject=' + encodeURIComponent('Languway Spanish') + '&body=' + encodeURIComponent('Aprende español en español: ' + L.SITE_URL) }, 'Correo')),
+      h('p', { class: 'muted' }, 'WhatsApp y Telegram se abren en una pestaña nueva solo si los pulsas.')));
+    root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Código QR'),
+      h('div', { class: 'qr-box' }, h('img', { src: 'qr.png', alt: 'Código QR que abre Languway Spanish', width: '260', height: '260' }),
+        h('div', null, h('p', null, 'Apunta la cámara de tu teléfono al código para abrir la aplicación.'), h('a', { class: 'btn btn-ghost', href: 'qr.png', download: 'languway-spanish-qr.png' }, h('span', { 'aria-hidden': 'true' }, '📲'), ' Descargar el código QR')))));
+    return root;
+  }, 'Instalar y compartir');
 })(window.LWS);
 
 ;
@@ -2488,6 +3007,16 @@
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Apariencia'),
       h('div', { class: 'field' }, h('label', { for: 'set-theme' }, 'Tema'), theme),
       h('div', { class: 'field' }, h('label', { for: 'set-motion' }, motion, ' Reducir animaciones'), h('p', { class: 'muted' }, 'También se respeta la opción de tu sistema.'))));
+
+
+    // Lectura y accesibilidad
+    const sel = (id, opts, cur, key) => h('select', { class: 'inp', id, onchange: async (e) => { await setSetting(key, +e.target.value); L.applyPrefs(); } }, opts.map(([v, t]) => h('option', { value: v, selected: Math.abs(cur - v) < 0.001 ? '' : null }, t)));
+    const chk = (id, key, on) => h('input', { type: 'checkbox', id, checked: on ? '' : null, onchange: async (e) => { await setSetting(key, e.target.checked); L.applyPrefs(); } });
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Lectura y accesibilidad'),
+      h('div', { class: 'field' }, h('label', { for: 'set-fs' }, 'Tamaño del texto'), sel('set-fs', [[0.9, 'Pequeño'], [1, 'Normal'], [1.15, 'Grande'], [1.3, 'Muy grande']], st.fontScale || 1, 'fontScale')),
+      h('div', { class: 'field' }, h('label', { for: 'set-lh' }, 'Espacio entre líneas'), sel('set-lh', [[1, 'Normal'], [1.15, 'Amplio'], [1.3, 'Muy amplio']], st.lineHeight || 1, 'lineHeight')),
+      h('div', { class: 'field' }, h('label', { for: 'set-contrast' }, chk('set-contrast', 'contrast', st.contrast === true), ' Alto contraste')),
+      h('div', { class: 'field' }, h('label', { for: 'set-easy' }, chk('set-easy', 'easyFont', st.easyFont === true), ' Letra de lectura fácil (más espaciada)'))));
 
     // Audio
     const audio = h('section', { class: 'card' }, h('h2', null, 'Audio'));
@@ -2540,9 +3069,24 @@
 
     // Sesión
     if (!A.isGuest()) root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Sesión'), h('p', null, 'Has iniciado sesión como ' + A.user.name + '. Cerrar sesión no borra tus datos.'), h('button', { class: 'btn btn-ghost', onclick: async () => { await A.signOut(); L.refreshAcct(); L.toast('Sesión cerrada. Tus datos siguen en este dispositivo.', 'ok', 3500); location.hash = '#/'; L.render(); } }, 'Cerrar sesión')));
+
+    // Avanzado
+    const info = h('p', { class: 'muted', 'aria-live': 'polite' }, 'Calculando el espacio…');
+    (async () => { try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); info.textContent = 'Espacio usado por Languway Spanish en este dispositivo: ' + (e.usage / 1048576).toFixed(1) + ' MB.'; } else info.textContent = 'Este navegador no informa del espacio usado.'; } catch (e) { info.textContent = 'No se pudo calcular el espacio.'; } })();
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Avanzado'), info,
+      h('div', { class: 'field' }, h('h3', null, 'Instalar y compartir'), h('p', { class: 'muted' }, 'Instala la aplicación, comparte el enlace o muestra el código QR.'), h('a', { class: 'btn btn-primary', href: '#/instalar' }, h('span', { 'aria-hidden': 'true' }, '📲'), ' Instalar y compartir')),
+      h('div', { class: 'field' }, h('h3', null, 'Almacenamiento seguro'), h('p', { class: 'muted' }, 'Pide al navegador que no borre tu progreso cuando falte espacio. El navegador puede aceptar o rechazar la petición.'),
+        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { try { const ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; L.toast(ok ? 'Almacenamiento protegido.' : 'El navegador no lo ha concedido (instalar la aplicación suele ayudar).', ok ? 'ok' : '', 5000); } catch (e) { L.toast('No disponible en este navegador.', 'err'); } } }, 'Proteger mi progreso')),
+      h('div', { class: 'field' }, h('h3', null, 'Actualizar la aplicación'), h('p', { class: 'muted' }, 'Busca una versión nueva de los archivos de la aplicación. Tu progreso no se toca.'),
+        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (!reg) { L.toast('No hay versión instalada que actualizar. Recarga la página.', ''); return; } await reg.update(); L.toast('Comprobado. Si hay una novedad, verás el aviso de actualización.', 'ok', 4500); } catch (e) { L.toast('No se pudo comprobar ahora (¿sin conexión?).', 'err'); } } }, 'Buscar actualizaciones')),
+      h('div', { class: 'field' }, h('h3', null, 'Limpiar la copia de la aplicación'), h('p', { class: 'muted' }, 'Borra los archivos guardados para el modo sin conexión y vuelve a descargarlos. No borra tu cuenta ni tu progreso. Úsalo si algo se ve raro tras una actualización.'),
+        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await L.modal({ title: '¿Limpiar la copia de la aplicación?', body: 'Se recargará la página. Tu cuenta y tu progreso no se borran.', escValue: false, actions: [{ label: 'Cancelar', value: false }, { label: 'Limpiar y recargar', value: true, primary: true }] }); if (!ok) return; try { await S.flush(); if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : []; await Promise.all(regs.map((r) => r.unregister())); } catch (e) {} location.reload(); } }, 'Limpiar y recargar')),
+      h('div', { class: 'field' }, h('h3', null, 'Restablecer los ajustes'), h('p', { class: 'muted' }, 'Vuelve al aspecto, audio y ejercicios por defecto. No borra lecciones ni palabras.'),
+        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await L.modal({ title: '¿Restablecer los ajustes?', body: 'Se recuperan los valores por defecto de apariencia, audio y ejercicios.', escValue: false, actions: [{ label: 'Cancelar', value: false }, { label: 'Restablecer', value: true, primary: true }] }); if (!ok) return; Object.assign(S.prog.settings, S.defaultProg('x').settings); S.markProg(); await U.save(true); L.applyPrefs(); document.documentElement.setAttribute('data-motion', 'auto'); L.render(); } }, 'Restablecer'))));
+
     // Privacidad y créditos
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Privacidad y créditos'),
-      h('p', null, 'Languway Spanish no recoge datos personales, no usa publicidad ni rastreadores y no carga código de terceros. Lo que guardas (progreso, preferencias, cuenta local) se queda en este dispositivo.'),
+      h('p', null, 'Languway Spanish no usa publicidad ni rastreadores y no carga código de terceros. Sin cuenta, tu progreso se queda solo en este dispositivo. Si creas una cuenta, solo pedimos un nombre de usuario y una contraseña (nunca un correo): se guardan junto con tu progreso para que puedas continuar en otro teléfono. La contraseña se guarda cifrada y puedes borrar tu cuenta cuando quieras desde «Account & Backup».'),
       h('p', null, 'Las voces que oyes son las de tu dispositivo. El micrófono solo se activa cuando pulsas «Grabar», y la grabación no sale de tu dispositivo.'),
       h('p', { class: 'muted' }, 'Las lecciones, textos, ejercicios, historias e iconos son contenido original de Languway. El logotipo pertenece a sus autores. Los certificados son de finalización de la plataforma y no son títulos oficiales.')));
     // Nuestros trabajos
@@ -2557,11 +3101,224 @@
 ;
 (function (L) {
   'use strict';
+  const { h, route } = L; const C = L.C, S = L.S, U = L.U;
+  const DAY = 86400000;
+  // Secciones que el entrenador vigila: ruta -> [clave, nombre ES, nombre EN, enlace]
+  const SECTIONS = {
+    '/gramatica': ['gram', 'Gramática', 'Grammar'],
+    '/vocabulario': ['vocab', 'Vocabulario', 'Vocabulary'],
+    '/pronunciacion': ['pron', 'Pronunciación', 'Pronunciation'],
+    '/escuchar': ['listen', 'Comprensión auditiva', 'Listening'],
+    '/leer': ['read', 'Lectura', 'Reading'],
+    '/escribir': ['write', 'Escritura', 'Writing'],
+    '/historias': ['stories', 'Historias', 'Stories'],
+    '/repaso': ['review', 'Repaso diario', 'Daily review'],
+  };
+  const HREF = { gram: '#/gramatica', vocab: '#/vocabulario', pron: '#/pronunciacion', listen: '#/escuchar', read: '#/leer', write: '#/escribir', stories: '#/historias', review: '#/repaso' };
+
+  const C2 = (L.coach = {});
+  C2.lang = () => (S.prog && S.prog.settings && S.prog.settings.coachLang) || 'both';
+  // Muestra la versión en español, en inglés o en ambos según la preferencia
+  C2.pair = function (es, en, cls) {
+    const m = C2.lang(); const box = h('div', { class: cls || '' });
+    if (m !== 'en') box.appendChild(h('div', { lang: 'es' }, es));
+    if (m !== 'es') box.appendChild(h('div', { lang: 'en', class: m === 'both' ? 'muted coach-en' : '' }, en));
+    return box;
+  };
+  C2.touch = function (path) {
+    if (!S.prog) return;
+    const key = Object.keys(SECTIONS).find((p) => path === p || path.startsWith(p + '/'));
+    if (!key) return;
+    const k = SECTIONS[key][0];
+    S.prog.seen = S.prog.seen || {};
+    if (Date.now() - (S.prog.seen[k] || 0) > 600000) { S.prog.seen[k] = Date.now(); S.markProg(); }
+  };
+
+  // ---- índice pregunta -> lección (para enlazar la regla) ----
+  let qIdx = null;
+  function lessonOf(q, fallback) {
+    if (!qIdx) {
+      qIdx = new Map();
+      Object.keys(C.lessons).forEach((id) => { const les = C.lessons[id]; [].concat(les.practice || [], les.quiz || []).forEach((x) => { if (x && x.id) qIdx.set(x.id, id); }); });
+    }
+    return qIdx.get(q.id) || fallback || null;
+  }
+  // Explicación en inglés («en palabras sencillas») para las lecciones A1 y A2
+  C2.enHelp = function (id) {
+    const e = C.enHelp && C.enHelp[id]; if (!e || C2.lang() === 'es') return null;
+    return h('div', { class: 'card en-help', lang: 'en' }, h('h3', null, 'In simple words · En palabras sencillas'), e.lines.map((x) => h('p', { html: x })));
+  };
+  C2.openRule = function (lessonId) {
+    const les = C.lessons[lessonId]; if (!les) return;
+    const body = h('div', null,
+      h('p', { class: 'muted' }, 'Lección: ' + les.title + ' (' + les.level + ')'),
+      h('div', { class: 'card' }, h('h3', null, les.explain.title), U.blocks(les.explain.body)), C2.enHelp(les.id),
+      les.vocab.length ? h('div', { class: 'card' }, h('h3', null, 'Vocabulary · Vocabulario'), h('ul', { class: 'exlist' }, les.vocab.map((v) => h('li', null, h('b', null, v[0]), ' — ' + v[2], v[4] ? h('div', { class: 'muted' }, v[4]) : null)))) : null);
+    L.modal({ title: 'Entrenador · Coach', body, actions: [{ label: 'Cerrar', value: null, primary: true }], closeLabel: 'Cerrar' });
+  };
+
+  function terms(q, r) {
+    const out = []; const seen = new Set();
+    const add = (t) => { t = String(t || '').trim().toLowerCase().replace(/^[¿¡«"']+|[?!»"'.,;:]+$/g, ''); if (!t || seen.has(t)) return; seen.add(t); const g = C.gloss && C.gloss[t]; if (g) out.push([t, Array.isArray(g) ? g.join(' / ') : g]); };
+    (String(q.q || '').match(/«([^»]{1,40})»/g) || []).forEach((m) => add(m.slice(1, -1)));
+    add(r.correct); add(q.a);
+    return out.slice(0, 4);
+  }
+
+  // Bloque de explicación que se añade a la corrección de cada pregunta
+  C2.feedback = function (q, r, opts) {
+    const box = h('div', { class: 'coach', role: 'note' });
+    box.appendChild(h('div', { class: 'coach-h' }, h('strong', null, 'Entrenador'), ' · Coach'));
+    if (r.ok) {
+      box.appendChild(C2.pair('Muy bien: es la respuesta correcta. Fíjate en la explicación para recordarla.', 'Well done: that is the correct answer. Read the explanation so you remember why.'));
+      if (r.kind === 'tilde') box.appendChild(C2.pair('Cuidado con la tilde: se escribe «' + r.correct + '».', 'Watch the accent mark: it is written «' + r.correct + '».'));
+    } else {
+      const given = r.given ? '«' + r.given + '»' : null;
+      if (r.kind === 'tilde') box.appendChild(C2.pair('Tu respuesta casi es correcta, pero falta la tilde. En español la tilde puede cambiar el significado (por ejemplo, «si» y «sí»).', 'Your answer is almost right, but the written accent is missing. In Spanish an accent can change the meaning (for example, «si» and «sí»).'));
+      else if (r.kind === 'ortografia') box.appendChild(C2.pair('Tu respuesta es muy parecida; revisa letra por letra cómo se escribe la palabra.', 'Your answer is very close; check the spelling letter by letter.'));
+      else if (r.kind === 'empty') box.appendChild(C2.pair('No escribiste nada. Intenta responder siempre: equivocarse también enseña.', 'You did not write anything. Always try to answer: mistakes teach too.'));
+      else {
+        box.appendChild(C2.pair(given ? 'Elegiste ' + given + ', pero la respuesta correcta es «' + r.correct + '».' : 'La respuesta correcta es «' + r.correct + '».', given ? 'You chose ' + given + ', but the correct answer is «' + r.correct + '».' : 'The correct answer is «' + r.correct + '».'));
+        box.appendChild(C2.pair('Lee la explicación de arriba y compárala con tu respuesta. Si sigue sin quedar claro, abre la regla.', 'Read the explanation above and compare it with your answer. If it is still unclear, open the rule.'));
+      }
+    }
+    const tl = terms(q, r);
+    if (tl.length) box.appendChild(h('div', { class: 'coach-gl' }, h('b', null, 'Vocabulary · Vocabulario: '), tl.map((t, i) => h('span', null, (i ? ' · ' : '') + '«' + t[0] + '» = ' + t[1]))));
+    const lid = lessonOf(q, opts && opts.lessonId);
+    if (lid && C.lessons[lid]) box.appendChild(h('div', { class: 'row', style: 'margin-top:8px' }, h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => C2.openRule(lid) }, 'Ver la regla · See the rule'), h('a', { class: 'btn btn-ghost', href: '#/entrenador/regla/' + lid }, 'Modo fácil · Easy mode')));
+    return box;
+  };
+
+  // ---- consejos del entrenador (inicio y página propia) ----
+  C2.tips = function () {
+    const tips = []; const now = Date.now();
+    const st = S.stats();
+    if (!S.prog) return tips;
+    const due = S.dueWords().length;
+    if (due) tips.push({ es: 'Tienes ' + due + (due === 1 ? ' palabra' : ' palabras') + ' para repasar hoy. Repasar a tiempo es lo que fija el vocabulario.', en: 'You have ' + due + (due === 1 ? ' word' : ' words') + ' to review today. Reviewing on time is what makes vocabulary stick.', href: '#/repaso', label: 'Repasar ahora · Review now' });
+    // Lecciones sin superar
+    const failed = Object.keys(S.prog.lessons).filter((id) => { const r = S.prog.lessons[id]; return r && !r.done && r.attempts > 0 && C.lessons[id]; });
+    if (failed.length) { const id = failed[0]; tips.push({ es: 'La lección «' + C.lessons[id].title + '» todavía no está superada (necesitas ' + S.PASS + ' %). Repasa la explicación y vuelve a intentarlo.', en: 'The lesson “' + C.lessons[id].title + '” is not passed yet (you need ' + S.PASS + '%). Review the explanation and try again.', href: '#/leccion/' + id, label: 'Abrir la lección · Open the lesson' }); }
+    // Temas débiles
+    const weak = S.weakTags(2);
+    if (weak.length) tips.push({ es: 'Te equivocas más en: ' + weak.join(', ') + '. Practica estos temas con ejercicios nuevos.', en: 'You make most mistakes in: ' + weak.join(', ') + '. Practise these topics with new exercises.', href: '#/errores', label: 'Practicar errores · Practise mistakes' });
+    // Secciones sin visitar hace tiempo
+    if (st.lessons >= 2) {
+      const seen = S.prog.seen || {};
+      Object.keys(SECTIONS).forEach((p) => {
+        const k = SECTIONS[p][0]; if (k === 'review') return;
+        const t = seen[k]; const days = t ? Math.floor((now - t) / DAY) : null;
+        if (days === null) tips.push({ es: 'Todavía no has entrado en «' + SECTIONS[p][1] + '». Dedícale unos minutos esta semana.', en: 'You have not opened “' + SECTIONS[p][2] + '” yet. Spend a few minutes on it this week.', href: HREF[k], label: SECTIONS[p][1] + ' · ' + SECTIONS[p][2], low: true });
+        else if (days >= 4) tips.push({ es: 'Hace ' + days + ' días que no entras en «' + SECTIONS[p][1] + '». Vuelve a leerla para no olvidar lo aprendido.', en: 'It has been ' + days + ' days since you opened “' + SECTIONS[p][2] + '”. Go back to it so you do not forget what you learned.', href: HREF[k], label: SECTIONS[p][1] + ' · ' + SECTIONS[p][2] });
+      });
+    }
+    // Inactividad
+    const la = S.lastActivity();
+    if (la) { const d = Math.floor((now - new Date(la + 'T12:00:00').getTime()) / DAY); if (d >= 3) tips.unshift({ es: 'Hace ' + d + ' días que no estudias. Con 10 minutos hoy retomas el ritmo.', en: 'You have not studied for ' + d + ' days. Ten minutes today will get you back on track.', href: '#/', label: 'Continuar · Continue' }); }
+    // Habilidad más floja
+    const ws = S.weakSkills(); if (ws.length) tips.push({ es: 'Tu habilidad más floja ahora mismo es «' + ws[0].s + '» (' + ws[0].p + ' %). Practícala un poco cada día.', en: 'Your weakest skill right now is “' + ws[0].s + '” (' + ws[0].p + '%). Practise it a little every day.', href: '#/progreso', label: 'Ver mi progreso · See my progress' });
+    return tips.sort((a, b) => (a.low ? 1 : 0) - (b.low ? 1 : 0));
+  };
+  C2.card = function (max, full) {
+    const tips = C2.tips(); const list = tips.slice(0, max || 3);
+    const card = h('section', { class: 'card coach-card' }, h('h2', null, 'Tu entrenador · Your coach'));
+    if (!list.length) card.appendChild(C2.pair('Vas muy bien: no hay nada pendiente. Sigue con la siguiente lección.', 'You are doing great: nothing is pending. Carry on with the next lesson.'));
+    list.forEach((t) => card.appendChild(h('div', { class: 'coach-tip' }, C2.pair(t.es, t.en), h('a', { class: 'btn btn-ghost', href: t.href }, t.label))));
+    if (!full && tips.length > list.length) card.appendChild(h('a', { href: '#/entrenador' }, 'Ver todos los consejos · See all tips'));
+    return card;
+  };
+
+  route('/entrenador', () => {
+    const root = h('div');
+    root.appendChild(U.pageHead('Entrenador', 'Tu guía personal: corrige, explica y te recuerda qué repasar. / Your personal guide: it corrects, explains and reminds you what to review.'));
+    root.appendChild(h('div', { class: 'alert' }, h('strong', null, 'Cómo funciona · How it works: '), 'el entrenador usa tus resultados guardados en este dispositivo y las explicaciones de cada lección. No es un chat ni envía tus datos a ningún sitio. / The coach uses your results saved on this device and each lesson’s explanations. It is not a chat and sends your data nowhere.'));
+    root.appendChild(h('div', { class: 'card' }, h('h2', null, 'Reglas y explicaciones · Rules'), h('p', null, 'Todas las reglas de todas las lecciones, explicadas frase por frase. / Every rule from every lesson, explained one sentence at a time.'), h('a', { class: 'btn btn-primary', href: '#/entrenador/reglas' }, 'Abrir la biblioteca de reglas · Open the rules library')));
+    root.appendChild(C2.card(50, true));
+    const sel = h('select', { class: 'inp', 'aria-label': 'Idioma del entrenador · Coach language' }, [['both', 'Español + English'], ['es', 'Solo español'], ['en', 'English only']].map((o) => h('option', { value: o[0], selected: C2.lang() === o[0] ? '' : null }, o[1])));
+    sel.addEventListener('change', () => { S.prog.settings.coachLang = sel.value; S.markProg(); U.save(true); L.toast('Guardado · Saved', 'ok'); });
+    root.appendChild(h('div', { class: 'card' }, h('h3', null, 'Idioma del entrenador · Coach language'), sel));
+    return root;
+  }, 'Entrenador');
+
+  // ---------- biblioteca de reglas (todas las explicaciones de todas las lecciones) ----------
+  const stripTags = (t) => String(t || '').replace(/<[^>]*>/g, ' ');
+  const blockText = (b) => (typeof b === 'string' ? stripTags(b) : b && b.t === 'table' ? b.head.concat([].concat.apply([], b.rows)).map(stripTags).join(' ') : b && b.t === 'ex' ? b.list.join(' ') : b && b.t === 'tip' ? b.text : b && b.t === 'compare' ? b.cols.map((c) => c.title + ' ' + stripTags(c.text)).join(' ') : '');
+  let ruleIdx = null;
+  function rules() {
+    if (ruleIdx) return ruleIdx;
+    ruleIdx = [];
+    C.levels.forEach((lv) => C.lessonList(lv.id).forEach((r) => {
+      const les = C.lessons[r.id]; if (!les || !les.explain) return;
+      ruleIdx.push({ id: r.id, level: les.level, title: les.explain.title, lesson: les.title, hay: L.stripAcc(L.norm([les.explain.title, les.title, les.topic, les.goal].join(' ') + ' ' + les.explain.body.map(blockText).join(' '))) });
+    }));
+    return ruleIdx;
+  }
+  // Divide un párrafo en frases cortas (una por línea) sin romper las etiquetas ni las abreviaturas
+  function sentences(html) {
+    return String(html).split(/(?<=[.!?:;])\s+(?=[A-ZÁÉÍÓÚÑ¿¡«<(])/).map((x) => x.trim()).filter(Boolean);
+  }
+  function easyBlocks(blocks) {
+    const box = h('div', { class: 'explain easy' });
+    blocks.forEach((b) => {
+      if (typeof b === 'string') sentences(b).forEach((x, i) => box.appendChild(h('p', { html: x, class: i === 0 ? 'easy-first' : '' })));
+      else box.appendChild(U.blocks([b]));
+    });
+    return box;
+  }
+
+  route('/entrenador/reglas', ({ q }) => {
+    const root = h('div');
+    root.appendChild(U.pageHead('Reglas y explicaciones', 'Todas las reglas de todas las lecciones en un solo lugar. Busca un tema y ábrelo en modo fácil. / All the rules from every lesson in one place. Search a topic and open it in easy mode.'));
+    const search = h('input', { class: 'inp', type: 'search', 'aria-label': 'Buscar una regla · Search a rule', placeholder: 'Buscar (p. ej. ser, estar, subjuntivo, tilde)… / Search…', value: (q && q.q) || '' });
+    const chips = h('div', { class: 'row' });
+    let lvl = '';
+    ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'].forEach((x) => { const b = h('button', { type: 'button', class: 'btn btn-ghost', 'aria-pressed': x === '' ? 'true' : 'false', onclick: () => { lvl = x; chips.querySelectorAll('button').forEach((y) => y.setAttribute('aria-pressed', y === b ? 'true' : 'false')); draw(); } }, x || 'Todos · All'); chips.appendChild(b); });
+    root.appendChild(h('div', { class: 'card' }, search, h('div', { style: 'margin-top:10px' }, chips)));
+    const host = h('div', { class: 'grid g3', style: 'margin-top:12px' }); root.appendChild(host);
+    function draw() {
+      const nx = L.stripAcc(L.norm(search.value)); host.innerHTML = '';
+      const list = rules().filter((r) => (!lvl || r.level === lvl) && (!nx || r.hay.includes(nx))).slice(0, 120);
+      if (!list.length) { host.appendChild(U.empty('🔎', 'No hay reglas que coincidan. / No matching rules.')); return; }
+      list.forEach((r) => host.appendChild(h('a', { class: 'card', href: '#/entrenador/regla/' + r.id, style: 'text-decoration:none;color:inherit' }, h('div', { class: 'row sb' }, h('span', { class: 'chip-tag' }, r.level), h('span', { class: 'muted' }, r.id)), h('h3', null, r.title), h('p', { class: 'muted' }, r.lesson))));
+    }
+    search.addEventListener('input', L.debounce(draw, 150)); draw();
+    return root;
+  }, 'Reglas');
+
+  route('/entrenador/regla/:id', ({ params }) => {
+    const les = C.lessons[params.id];
+    const root = h('div');
+    if (!les || !les.explain) { root.appendChild(U.empty('🧭', 'No encontramos esta regla.', h('a', { class: 'btn btn-primary', href: '#/entrenador/reglas' }, 'Ver todas las reglas'))); return root; }
+    root.appendChild(U.pageHead(les.explain.title, 'Nivel ' + les.level + ' · Lección: ' + les.title));
+    let easy = !(S.prog.settings && S.prog.settings.easyRules === false);
+    const host = h('div', { class: 'card' });
+    const tog = h('button', { type: 'button', class: 'btn btn-ghost', 'aria-pressed': String(easy) });
+    function draw() {
+      host.innerHTML = '';
+      tog.textContent = easy ? 'Modo fácil: activado · Easy mode: on' : 'Modo fácil: desactivado · Easy mode: off';
+      tog.setAttribute('aria-pressed', String(easy));
+      host.appendChild(h('div', { class: 'easy-goal' }, h('b', null, 'Qué vas a aprender · What you will learn: '), les.goal || ''));
+      host.appendChild(easy ? easyBlocks(les.explain.body) : U.blocks(les.explain.body));
+    }
+    tog.addEventListener('click', () => { easy = !easy; S.prog.settings.easyRules = easy; S.markProg(); draw(); });
+    root.appendChild(h('div', { class: 'row', style: 'margin-bottom:10px' }, tog, h('a', { class: 'btn btn-ghost', href: '#/entrenador/reglas' }, 'Todas las reglas · All rules')));
+    draw(); root.appendChild(host);
+    const en = C2.enHelp(les.id); if (en) root.appendChild(en);
+    root.appendChild(C2.pair('Lee una frase a la vez. Si algo no se entiende, mira los ejemplos de abajo y escucha cada uno.', 'Read one sentence at a time. If something is unclear, look at the examples below and listen to each one.', 'muted'));
+    if (les.vocab && les.vocab.length) root.appendChild(h('div', { class: 'card' }, h('h3', null, 'Vocabulario de esta regla · Vocabulary'), h('ul', { class: 'exlist' }, les.vocab.map((v) => h('li', null, L.Audio.btn(v[0], { small: true, name: v[0] }), h('span', null, h('b', null, v[0]), ' — ' + v[2], v[3] ? h('div', { class: 'muted' }, v[3]) : null, v[4] ? h('div', { class: 'muted' }, v[4]) : null))))));
+    root.appendChild(h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/leccion/' + les.id }, 'Practicar esta lección · Practise this lesson')));
+    return root;
+  }, 'Regla');
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
   const { h, route } = L; const S = L.S, A = L.A, U = L.U;
 
   function field(id, label, type, o) {
     o = o || {};
-    const inp = h('input', { id, type, name: id, autocomplete: o.auto || 'off', required: o.required ? '' : null, 'aria-describedby': id + '-err', value: o.value || '', inputmode: o.inputmode || null });
+    const inp = h('input', { id, type, name: id, autocomplete: o.auto || 'off', required: o.required ? '' : null, 'aria-describedby': id + '-err', value: o.value || '', inputmode: o.inputmode || null, maxlength: o.maxlength || null });
     const err = h('div', { class: 'err', id: id + '-err', role: 'alert' });
     const wrap = h('div', { class: 'field' }, h('label', { for: id }, label), inp, err);
     wrap.setErr = (m) => { err.textContent = m || ''; inp.classList.toggle('bad', !!m); inp.setAttribute('aria-invalid', m ? 'true' : 'false'); };
@@ -2573,10 +3330,11 @@
     f.appendChild(b); return f;
   }
   const secureWarn = () => (!L.crypto.available() ? h('div', { class: 'alert err', role: 'alert' }, 'For your safety, this page only works over a secure (https://) connection. Please open the site from its https:// address.') : null);
-  const limits = () => h('details', { class: 'alert' }, h('summary', { style: 'cursor:pointer;font-weight:700' }, 'How local accounts work'),
-    h('p', null, 'Your account and learning progress are stored only on this device, inside this browser. Nothing syncs automatically between phones.'),
-    h('p', null, 'To use your progress on another phone, export a backup file here and import it on the other device. Clearing browser data or uninstalling the app can erase local data that has not been backed up.'),
-    h('p', null, 'Your password is never stored as plain text. Keep your device locked and protected: anyone who controls an unlocked device can see what is on it.'));
+  const limits = () => h('details', { class: 'alert' }, h('summary', { style: 'cursor:pointer;font-weight:700' }, 'How accounts work'),
+    h('p', null, 'An account needs only a username and a password. No email address and no other personal information is asked for.'),
+    h('p', null, 'When you are signed in, your progress is also saved online under your username, so you can continue on another phone by signing in there. Your password is never stored as plain text.'),
+    h('p', null, h('strong', null, 'There is no email, so a forgotten password cannot be reset. '), 'Choose a password you will remember, and keep a backup file as a safety copy.'),
+    h('p', null, 'You can also learn without an account: your progress is then saved only on this device. Anyone who controls an unlocked device can see what is on it.'));
 
   function authView(mode, q) {
     const root = h('div', { class: 'auth-box' });
@@ -2588,18 +3346,19 @@
     card.appendChild(formErr);
     const f = {};
     const form = h('form', { novalidate: '' });
-    if (!sign) form.appendChild(f.name = field('name', 'Full Name', 'text', { auto: 'name' }));
-    form.appendChild(f.email = field('email', 'Email Address', 'email', { auto: 'email', inputmode: 'email' }));
+    form.appendChild(f.username = field('username', 'Username', 'text', { auto: 'username', maxlength: 20 }));
+    f.username.inp.setAttribute('autocapitalize', 'none'); f.username.inp.setAttribute('autocorrect', 'off'); f.username.inp.setAttribute('spellcheck', 'false');
+    if (!sign) form.appendChild(h('p', { class: 'muted', style: 'margin-top:-8px' }, '3 to 20 characters: lowercase letters, numbers or underscore (_).'));
     form.appendChild(f.password = pwToggle(field('password', 'Password', 'password', { auto: sign ? 'current-password' : 'new-password' })));
     if (!sign) {
-      form.appendChild(h('p', { class: 'muted', style: 'margin-top:-8px' }, 'At least 8 characters, with a letter and a number.'));
+      form.appendChild(h('p', { class: 'muted', style: 'margin-top:-8px' }, '8 to 64 characters, with at least one letter and one number.'));
       form.appendChild(f.confirm = field('confirm', 'Confirm Password', 'password', { auto: 'new-password' }));
     }
     let remember, keep;
     if (sign) {
       remember = h('input', { type: 'checkbox', id: 'remember', checked: '' });
       form.appendChild(h('div', { class: 'row sb', style: 'margin-bottom:14px' }, h('label', { for: 'remember' }, remember, ' Remember Me'), h('a', { href: '#/cuenta/olvide' }, 'Forgot Password?')));
-    } else if (S.stats().answered || S.stats().words) {
+    } else if (S.stats().answered || S.stats().words || S.prog.placement) {
       keep = h('input', { type: 'checkbox', id: 'keep', checked: '' });
       form.appendChild(h('div', { class: 'field' }, h('label', { for: 'keep' }, keep, ' Keep the progress I already made on this device')));
     }
@@ -2607,13 +3366,13 @@
     form.appendChild(btn);
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      formErr.hidden = true; ['name', 'email', 'password', 'confirm'].forEach((k) => f[k] && f[k].setErr(''));
+      formErr.hidden = true; ['username', 'password', 'confirm'].forEach((k) => f[k] && f[k].setErr(''));
       btn.disabled = true; btn.textContent = sign ? 'Signing in…' : 'Creating account…';
       let res;
       try {
         res = sign
-          ? await A.signIn({ email: f.email.inp.value, password: f.password.inp.value, remember: remember.checked })
-          : await A.signUp({ name: f.name.inp.value, email: f.email.inp.value, password: f.password.inp.value, confirm: f.confirm.inp.value, keepGuest: !!(keep && keep.checked) });
+          ? await A.signIn({ username: f.username.inp.value, password: f.password.inp.value, remember: remember.checked })
+          : await A.signUp({ username: f.username.inp.value, password: f.password.inp.value, confirm: f.confirm.inp.value, keepGuest: !!(keep && keep.checked) });
       } catch (err) { res = { ok: false, errors: { form: 'Something went wrong. Please try again.' } }; }
       btn.disabled = false; btn.textContent = sign ? 'Sign In' : 'Create Account';
       if (!res.ok) {
@@ -2623,7 +3382,7 @@
         return;
       }
       L.refreshAcct();
-      L.toast('Welcome, ' + res.user.name + '!', 'ok');
+      L.toast(res.offline ? 'Signed in without internet. Sign in again when you are online to save your progress online.' : 'Welcome, ' + res.user.name + '!', 'ok', res.offline ? 5000 : 3000);
       const next = S.nextLesson();
       location.hash = !sign && !S.prog.placement ? '#/prueba-de-nivel' : (S.prog.lastLesson ? '#/' : '#/');
     });
@@ -2640,9 +3399,9 @@
   route('/cuenta/olvide', () => {
     const root = h('div', { class: 'auth-box' });
     root.appendChild(h('div', { class: 'card' }, h('h1', { id: 'page-title', tabindex: '-1' }, 'Forgot Password?'),
-      h('p', null, 'This is a local account: your password is protected on this device and cannot be reset by email. We cannot recover it for you.'),
+      h('p', null, 'Accounts use only a username and a password, with no email address, so we cannot send you a reset link and we cannot recover the password for you.'),
       h('p', null, h('strong', null, 'Your options:')),
-      h('ul', null, h('li', null, 'Try again — check Caps Lock and the email you used.'), h('li', null, 'If you have a backup file from before, create a new local account from it with “Restore from a backup file”. Your learning progress comes back.'), h('li', null, 'If you have no backup, you can create a new account. The old local data stays on this device until you delete it.')),
+      h('ul', null, h('li', null, 'Try again: check Caps Lock and the exact username you used.'), h('li', null, 'If you have a backup file from before, create a new account from it with “Restore from a backup file”. Your learning progress comes back.'), h('li', null, 'Or create a new account and start again. You can keep learning as a guest in the meantime.')),
       h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/cuenta/entrar' }, 'Back to Sign In'), restoreAccountButton(), h('a', { class: 'btn btn-ghost', href: '#/cuenta/crear' }, 'Create Account'))));
     return root;
   }, 'Forgot Password');
@@ -2684,16 +3443,17 @@
   function restoreAccountButton() {
     return h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => {
       const v = await readBackup(); if (!v) return;
-      if (!v.data.user.email) { L.toast('This backup belongs to a guest profile. Sign in or continue as a guest, then use Import My Data.', 'err', 7000); return; }
-      const pw = h('input', { type: 'password', class: 'inp', autocomplete: 'new-password', 'aria-label': 'New password' });
+      if (!(v.data.user.username || v.data.user.email)) { L.toast('This backup belongs to a guest profile. Sign in or continue as a guest, then use Import My Data.', 'err', 7000); return; }
+      const un = h('input', { type: 'text', class: 'inp', autocomplete: 'username', maxlength: 20, autocapitalize: 'none', spellcheck: 'false', 'aria-label': 'Username', placeholder: 'Username' });
+      const pw = h('input', { type: 'password', class: 'inp', style: 'margin-top:8px', autocomplete: 'new-password', 'aria-label': 'New password', placeholder: 'New password' });
       const pw2 = h('input', { type: 'password', class: 'inp', style: 'margin-top:8px', autocomplete: 'new-password', 'aria-label': 'Confirm new password', placeholder: 'Confirm Password' });
       const err = h('div', { class: 'err', role: 'alert' });
       const sm = S.dataSummary(v.data);
-      const body = h('div', null, h('p', null, 'Backup for ', h('strong', null, v.data.user.name), ' (' + v.data.user.email + ') — ' + sm.lessons + ' lessons completed, ' + sm.words + ' saved words.'),
-        h('p', null, 'Choose a password for the new local account on this device. Passwords are never stored in backup files.'), pw, pw2, err);
+      const body = h('div', null, h('p', null, 'Backup for ', h('strong', null, v.data.user.username || v.data.user.name), ' — ' + sm.lessons + ' lessons completed, ' + sm.words + ' saved words.'),
+        h('p', null, 'Choose a username and a password for the account. Passwords are never stored in backup files.'), un, pw, pw2, err);
       const r = await L.modal({ title: 'Restore account', body, actions: [{ label: 'Cancel', value: null }, { label: 'Restore Backup', value: 'ok', primary: true }] });
       if (r !== 'ok') return;
-      const res = await A.createFromBackup(v.data, pw.value, pw2.value);
+      const res = await A.createFromBackup(v.data, un.value, pw.value, pw2.value);
       if (!res.ok) { L.toast(res.error, 'err', 7000); return; }
       L.refreshAcct(); L.toast('Account restored. Welcome back, ' + res.user.name + '!', 'ok', 4000); location.hash = '#/';
     } }, 'Restore from a backup file');
@@ -2733,8 +3493,8 @@
   async function importFlow() {
     const v = await readBackup(); if (!v) return;
     const d = v.data;
-    if (d.accountId && d.accountId !== S.user.id && d.user && d.user.email && S.user.email && d.user.email !== S.user.email) {
-      const go = await L.modal({ title: 'Different account', body: 'This backup was made for another account (' + d.user.email + '). You can still use its progress for the current account.', actions: [{ label: 'Cancel', value: null }, { label: 'Continue', value: 'ok', primary: true }] });
+    if (d.accountId && d.accountId !== S.user.id && d.user && (d.user.username || d.user.email) && S.user.email && (d.user.username || d.user.email) !== S.user.email) {
+      const go = await L.modal({ title: 'Different account', body: 'This backup was made for another account (' + (d.user.username || d.user.email) + '). You can still use its progress for the current account.', actions: [{ label: 'Cancel', value: null }, { label: 'Continue', value: 'ok', primary: true }] });
       if (go !== 'ok') return;
     }
     const cur = S.currentSummary(), inc = S.dataSummary(d);
@@ -2759,11 +3519,17 @@
   }
   async function deleteFlow() {
     const guest = A.isGuest();
+    const online = A.hasCloud();
     const inp = h('input', { type: 'text', class: 'inp', 'aria-label': 'Type DELETE to confirm', autocomplete: 'off', placeholder: 'DELETE' });
-    const r = await L.modal({ title: guest ? 'Delete guest progress' : 'Delete local account', body: h('div', null, h('p', null, 'This permanently deletes ' + (guest ? 'the progress saved as a guest' : 'this account and all its learning data') + ' from this device. It cannot be undone. Export a backup first if you want to keep it.'), h('p', null, 'Type ', h('strong', null, 'DELETE'), ' to confirm.'), inp), escValue: false, actions: [{ label: 'Cancel', value: false }, { label: 'Delete everything', value: true, danger: true }] });
+    const pw = online ? h('input', { type: 'password', class: 'inp', style: 'margin-top:8px', autocomplete: 'current-password', 'aria-label': 'Your password', placeholder: 'Your password' }) : null;
+    const r = await L.modal({ title: guest ? 'Delete guest progress' : 'Delete account', body: h('div', null, h('p', null, 'This permanently deletes ' + (guest ? 'the progress saved as a guest' : 'this account and all its learning data' + (online ? ', online and on this device' : ' from this device')) + '. It cannot be undone. Export a backup first if you may want it later.'), h('p', null, 'Type DELETE to confirm.' + (online ? ' Then enter your password.' : '')), inp, pw), actions: [{ label: 'Cancel', value: false }, { label: 'Delete', value: true, danger: true }] });
     if (!r) return;
     if (inp.value.trim() !== 'DELETE') { L.toast('Not deleted: you did not type DELETE.', 'err', 4000); return; }
-    try { await A.deleteCurrent(); L.refreshAcct(); L.toast('Local data deleted.', 'ok'); location.hash = '#/'; L.render(); } catch (e) { L.toast('Could not delete the data.', 'err'); }
+    try {
+      const res = await A.deleteCurrent(pw ? pw.value : null);
+      if (!res.ok) { L.toast(res.error, 'err', 6000); return; }
+      L.refreshAcct(); L.toast('Account data deleted.', 'ok'); location.hash = '#/'; L.render();
+    } catch (e) { L.toast('Could not delete the data.', 'err'); }
   }
   async function passwordFlow() {
     const a = h('input', { type: 'password', class: 'inp', autocomplete: 'current-password', 'aria-label': 'Current password', placeholder: 'Current password' });
@@ -2782,21 +3548,21 @@
     const guest = A.isGuest();
     const who = h('section', { class: 'card' });
     if (guest) {
-      who.append(h('h2', null, 'You are learning as a guest'), h('p', null, 'Your progress is saved on this device. Create a local account to have a named profile, then export backups to move between phones.'),
+      who.append(h('h2', null, 'You are learning as a guest'), h('p', null, 'Your progress is saved on this device only. Create an account with just a username and a password to keep your progress online and continue on any phone.'),
         h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/cuenta/crear' }, 'Create Account'), h('a', { class: 'btn btn-ghost', href: '#/cuenta/entrar' }, 'Sign In'), restoreAccountButton()));
     } else {
-      who.append(h('h2', null, A.user.name), h('p', { class: 'muted' }, A.user.email + ' · Account created ' + L.fmtDate(A.user.created) + ' · Last local sign-in ' + L.fmtDateTime(A.user.lastLogin)),
-        h('div', { class: 'row' }, h('button', { class: 'btn btn-ghost', onclick: passwordFlow }, 'Change password'), h('button', { class: 'btn btn-ghost', onclick: async () => { await A.signOut(); L.refreshAcct(); L.toast('Signed out. Your data stays on this device.', 'ok', 3500); location.hash = '#/'; L.render(); } }, 'Sign Out')));
+      who.append(h('h2', null, A.user.name), h('p', { class: 'muted' }, '@' + (A.user.username || A.user.email) + ' · ' + (A.hasCloud() ? 'Saved online' : 'Not connected online: sign in again to sync') + ' · Account created ' + L.fmtDate(A.user.created) + ' · Last sign-in ' + L.fmtDateTime(A.user.lastLogin)),
+        h('div', { class: 'row' }, h('button', { class: 'btn btn-ghost', onclick: passwordFlow }, 'Change password'), h('button', { class: 'btn btn-ghost', onclick: async () => { await A.signOut(); L.refreshAcct(); L.toast('Signed out. Your progress is saved in your account.', 'ok', 3500); location.hash = '#/'; L.render(); } }, 'Sign Out')));
     }
     root.appendChild(who);
     const last = S.prog.lastBackup;
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Backup and transfer'),
       h('p', null, last ? 'Last backup: ' + L.fmtDateTime(last) + '.' : 'You have not made a backup yet.'),
-      h('p', null, 'To use your progress on another phone: 1) tap ', h('strong', null, 'Export My Data'), ' here; 2) send the file to the other phone (messages, email, cloud drive — your choice); 3) open the app there, sign in or create a local account, and tap ', h('strong', null, 'Import My Data'), '.'),
+      h('p', null, 'To use your progress on another phone: 1) tap ', h('strong', null, 'Export My Data'), ' here; 2) send the file to the other phone (messages, email, cloud drive — your choice); 3) open the app there, sign in or create an account, and tap ', h('strong', null, 'Import My Data'), '.'),
       h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', onclick: exportFlow }, 'Export My Data'), h('button', { class: 'btn btn-ghost', onclick: importFlow }, 'Import My Data')),
-      h('p', { class: 'muted', style: 'margin-top:12px' }, 'Local storage does not sync automatically between devices. A backup is the only way to recover your progress if browser data is cleared or the app is removed.')));
+      h('p', { class: 'muted', style: 'margin-top:12px' }, 'When you are signed in, your progress is also saved online. A backup file is an extra safety copy you keep yourself.')));
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Storage on this device'), storageInfo()));
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Delete local data'), h('p', null, 'Signing out never deletes anything. Use this only if you want to erase this ' + (guest ? 'guest progress' : 'account') + ' from this device.'), h('button', { class: 'btn btn-danger', onclick: deleteFlow }, guest ? 'Delete guest progress' : 'Delete local account')));
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, guest ? 'Delete guest progress' : 'Delete account'), h('p', null, 'Signing out never deletes anything. Use this only if you want to erase this ' + (guest ? 'guest progress from this device.' : 'account and its progress for good.')), h('button', { class: 'btn btn-danger', onclick: deleteFlow }, guest ? 'Delete guest progress' : 'Delete local account')));
     root.appendChild(h('div', { style: 'margin-top:16px' }, limits()));
     return root;
   }, 'Account & Backup');
@@ -2823,7 +3589,7 @@
   'use strict';
   const { h, route } = L; const C = L.C, S = L.S, U = L.U, E = L.Engine;
   const OK_T = new Set(['mc', 'fill', 'order', 'read']);
-  const PER = 4, NEED = 3;
+  const PER = 5, NEED = 4, BLOCKS = 6;   // 6 bloques x 5 = 30 preguntas exactas
 
   // Preguntas de un nivel (1–30): salen de las lecciones de esa etapa
   const poolCache = {};
@@ -2860,14 +3626,17 @@
       (tested[n] = tested[n] || []).push(pass);
       return pass;
     }
-    // 1) búsqueda binaria
-    while (hi - lo > 1 && blockN < 9) {
+    // 1) búsqueda binaria (como máximo 5 bloques)
+    while (hi - lo > 1 && blockN < BLOCKS - 1) {
       const mid = Math.ceil((lo + hi) / 2);
       if (await probe(mid)) lo = mid; else hi = mid;
     }
-    // 2) confirmación con preguntas nuevas: el nivel superado y el primero fallado
-    if (lo >= 1 && !(await probe(lo))) { hi = lo; lo = Math.max(0, lo - 1); }
-    if (hi <= L.STAGES && hi === lo + 1 && (await probe(hi))) { lo = hi; }
+    // 2) confirmación con preguntas nuevas hasta completar exactamente 30 preguntas
+    while (blockN < BLOCKS) {
+      const n = Math.max(1, lo);
+      const ok = await probe(n);
+      if (lo >= 1 && !ok) { hi = lo; lo = lo - 1; } else if (lo === 0 && ok) { lo = 1; }
+    }
     const stage = Math.min(L.STAGES, lo + 1);
     return { stage, passedTop: lo, probes, skillAgg, date: Date.now() };
   }
@@ -2882,16 +3651,17 @@
       host.appendChild(h('div', { class: 'card' }, h('h2', null, mandatory ? 'Tu examen de colocación' : 'Antes de empezar'),
         h('ul', null,
           h('li', null, 'Tu ruta tiene ', h('strong', null, '30 niveles'), ', del A1 al C2.'),
-          h('li', null, 'La prueba empieza en un nivel medio y sube o baja según tus respuestas (unas 25-30 preguntas).'),
+          h('li', null, 'La prueba empieza en un nivel medio y sube o baja según tus respuestas (30 preguntas en total).'),
           h('li', null, 'Mide vocabulario, gramática, lectura y orden de frases. Responde sin ayuda y sin traductor.'),
-          h('li', null, 'Al terminar, tu nivel se abre y los anteriores quedan disponibles para repasar.')),
+          h('li', null, 'Al terminar, tu nivel se abre y los anteriores quedan disponibles para repasar. Los niveles siguientes se abren cuando termines el tuyo.')),
+        h('p', null, h('strong', null, '¿No sabes nada de español? '), 'No pasa nada: pulsa el botón de abajo y empezarás desde el principio, con las letras y los números.'),
         h('p', { class: 'muted' }, 'La prueba es una estimación: si el resultado no te parece justo, puedes repetirla en Configuración.'),
         !mandatory && S.prog.placement ? h('div', { class: 'alert' }, 'Tu resultado actual: nivel ' + S.startStage() + ' de 30.') : null,
         h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', onclick: async () => {
           const r = await runTest(host);
           S.applyPlacement({ stage: r.stage, passedTop: r.passedTop, probes: r.probes, date: r.date });
           S.count('placements'); await U.save(); result(r);
-        } }, 'Empezar la prueba'), mandatory ? null : h('a', { class: 'btn btn-ghost', href: '#/' }, 'Cancelar'))));
+        } }, 'Empezar la prueba (30 preguntas)'), h('button', { class: 'btn btn-ghost', onclick: async () => { S.applyPlacement({ stage: 1, passedTop: 0, probes: [], date: Date.now() }); S.count('placements'); await U.save(); location.hash = '#/primeros-pasos'; } }, 'No sé nada de español'), mandatory ? null : h('a', { class: 'btn btn-ghost', href: '#/' }, 'Cancelar'))));
     }
     function result(r) {
       host.innerHTML = '';
@@ -3016,6 +3786,10 @@
     inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
     swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
     ext: '<path d="M8 16L18 6M10 6h8v8"/>',
+    download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/>',
+    share: '<circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.3 10.8l6.4-3.6M8.3 13.2l6.4 3.6"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    qr: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 14h2v2M14 18h2M18 18h2v2h-2z"/>',
     paw: '<circle cx="7" cy="10" r="1.8"/><circle cx="12" cy="7" r="1.8"/><circle cx="17" cy="10" r="1.8"/><path d="M8 17c0-3 2-5 4-5s4 2 4 5c0 2-2 2-4 1-2 1-4 1-4-1z"/>',
     sun: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>',
     train: '<rect x="6" y="3" width="12" height="14" rx="3"/><path d="M6 11h12M9 21l2-4M15 21l-2-4"/><circle cx="9.5" cy="14" r=".8" fill="currentColor"/><circle cx="14.5" cy="14" r=".8" fill="currentColor"/>',
@@ -3027,7 +3801,7 @@
     '✍': 'pencil', '💬': 'chat', '🗣': 'chat', '🔍': 'search', '🔎': 'search', '🏠': 'home', '🔤': 'type', '📈': 'trend', '🎯': 'target', '☰': 'menu',
     '✅': 'checkCircle', '✓': 'check', '🏆': 'trophy', '🏅': 'trophy', '🔥': 'flame', '🎉': 'sparkles', '✨': 'sparkles', '🎙': 'mic', '📝': 'note', '📜': 'note',
     '📊': 'bars', '🌐': 'globe', '🛠': 'wrench', '⚙': 'gear', '👤': 'user', '⚠': 'alert', '💡': 'bulb', '🃏': 'cards', '📭': 'inbox', '↔': 'swap', '↗': 'ext',
-    '🐱': 'paw', '🏖': 'sun', '🚆': 'train', '🚲': 'bike',
+    '🐱': 'paw', '🏖': 'sun', '🚆': 'train', '📲': 'download', '📤': 'share', '📋': 'copy', '🚲': 'bike',
   };
   const RX = new RegExp('(' + Object.keys(MAP).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')[\\uFE0E\\uFE0F]?', 'g');
   const NS = 'http://www.w3.org/2000/svg';
@@ -3080,7 +3854,7 @@
   const MORE = [
     ['/leer', 'Leer'], ['/escribir', 'Escribir'], ['/frases', 'Construcción de frases'], ['/conversacion', 'Conversación'],
     ['/historias', 'Historias'], ['/practica', 'Práctica'], ['/repaso', 'Repaso diario'], ['/errores', 'Práctica de errores'],
-    ['/favoritos', 'Favoritos'], ['/configuracion', 'Configuración'],
+    ['/favoritos', 'Favoritos'], ['/primeros-pasos', 'Primeros pasos'], ['/entrenador', 'Entrenador'], ['/certificados', 'Certificados'], ['/instalar', 'Instalar y compartir'], ['/configuracion', 'Configuración'],
   ];
   L.NAV = NAV; L.MORE = MORE;
 
@@ -3093,6 +3867,15 @@
     const b = $('#theme-btn'); if (b) { b.setAttribute('aria-checked', String(t === 'dark')); b.setAttribute('aria-label', t === 'dark' ? 'Cambiar al modo claro' : 'Cambiar al modo oscuro'); b.setAttribute('title', b.getAttribute('aria-label')); }
   }
   L.applyTheme = applyTheme;
+  // Preferencias de lectura (tamaño, interlineado, contraste, fuente) — se aplican en toda la app
+  L.applyPrefs = function () {
+    const st = (L.S && L.S.prog && L.S.prog.settings) || {}; const r = document.documentElement;
+    const clamp = (v, a, b, d) => (typeof v === 'number' && v >= a && v <= b ? v : d);
+    r.style.setProperty('--fs', String(clamp(st.fontScale, 0.85, 1.4, 1)));
+    r.style.setProperty('--lh', String(clamp(st.lineHeight, 1, 1.5, 1)));
+    r.setAttribute('data-contrast', st.contrast === true ? 'high' : 'normal');
+    r.setAttribute('data-font', st.easyFont === true ? 'easy' : 'normal');
+  };
   (function initialTheme() {
     let t = null; try { t = localStorage.getItem('lws.theme'); } catch (e) {}
     if (!t) t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -3100,7 +3883,7 @@
   })();
 
   const ICONS = { '/': '🏠', '/aprender': '📚', '/vocabulario': '🔤', '/gramatica': '🧩', '/escuchar': '🎧', '/pronunciacion': '🗣️', '/traductor': '🌐', '/progreso': '📈',
-    '/leer': '📖', '/escribir': '✍️', '/frases': '🧱', '/conversacion': '💬', '/historias': '📜', '/practica': '🎯', '/repaso': '🔁', '/errores': '🛠️', '/favoritos': '⭐', '/configuracion': '⚙️' };
+    '/leer': '📖', '/escribir': '✍️', '/frases': '🧱', '/conversacion': '💬', '/historias': '📜', '/practica': '🎯', '/repaso': '🔁', '/errores': '🛠️', '/favoritos': '⭐', '/instalar': '📲', '/configuracion': '⚙️' };
   function glare(el) { const g = $('.gglare'); if (!g || L.reducedMotion()) return; const r = el.getBoundingClientRect(), pr = el.parentNode.getBoundingClientRect(); g.style.left = (r.left - pr.left) + 'px'; g.style.width = r.width + 'px'; g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
   // Indicador de progreso circular para tareas con espera (p. ej. crear una copia)
   L.ring = function (msg) {
@@ -3163,6 +3946,7 @@
     if (o) { const f = $('#drawer a'); f && f.focus(); } else if (b) b.focus();
   }
   L.refreshAcct = function () {
+    L.applyPrefs();
     const b = $('#acct-btn'); if (!b) return;
     b.textContent = L.A.isGuest() ? 'Sign In' : (L.A.user.name || '').split(' ')[0];
     b.setAttribute('aria-label', L.A.isGuest() ? 'Sign In or create an account' : 'Account of ' + L.A.user.name);
@@ -3184,6 +3968,7 @@
     const view = $('#view');
     // La prueba de nivel es obligatoria antes de estudiar
     if (L.S.prog && !L.S.prog.placement && !/^\/(prueba-de-nivel|cuenta|configuracion)/.test(path)) { location.replace('#/prueba-de-nivel'); return; }
+    if (L.coach) L.coach.touch(path);
     let match = null;
     for (const r of routes) { const m = r.re.exec(path); if (m) { match = { r, params: r.keys.reduce((o, k, i) => { try { o[k] = decodeURIComponent(m[i + 1]); } catch (e) { o[k] = ''; } return o; }, {}) }; break; } }
     $$('[data-p]').forEach((a) => { const p = a.getAttribute('data-p'); const on = p === '/' ? path === '/' : path === p || path.startsWith(p + '/'); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'); });
@@ -3257,7 +4042,7 @@
     try {
       L.dict.build();
       buildShell();
-      try { await L.A.init(); } catch (e) {
+      try { await L.A.init(); if (L.A.hasCloud()) L.A.pull(false).then((ok) => { if (ok) { L.refreshAcct && L.refreshAcct(); L.render(); } }); } catch (e) {
         
         L.memoryMode = true;
         L.A.user = { id: L.A.GUEST_ID, name: 'Guest', guest: true };
@@ -3265,7 +4050,7 @@
         L.db.commit = async () => true;
         document.body.appendChild(h('div', { class: 'banner', role: 'alert' }, 'Este navegador no permite guardar datos del sitio (¿modo privado?). Puedes aprender, pero el progreso se perderá al cerrar.'));
       }
-      document.documentElement.setAttribute('data-motion', L.S.prog.settings.reduceMotion ? 'reduce' : 'auto');
+      document.documentElement.setAttribute('data-motion', L.S.prog.settings.reduceMotion ? 'reduce' : 'auto'); L.applyPrefs();
       L.refreshAcct(); setupIndicators(); setupSW();
       L.Audio.ready();
       window.addEventListener('hashchange', L.render);

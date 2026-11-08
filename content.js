@@ -1,3 +1,6 @@
+// Guarda el aviso de instalación del navegador para usarlo desde el botón «Instalar»
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__bip = e; });
+window.addEventListener('appinstalled', function () { window.__bip = null; window.__installed = true; });
 if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.innerHTML = ''; } }
 
 ;
@@ -1919,23 +1922,23 @@ window.LWS = window.LWS || {};
       { t: 'table', head: ['Grado', 'Fórmulas'], rows: [['Acuerdo total', 'Estoy totalmente de acuerdo. / Coincido plenamente contigo. / No podría estar más de acuerdo.'], ['Acuerdo parcial', 'En parte tienes razón, pero... / Hasta cierto punto sí. / Estoy de acuerdo, aunque con matices.'], ['Desacuerdo suave', 'No lo veo del todo así. / Permíteme discrepar. / Me temo que no comparto esa opinión.'], ['Desacuerdo firme', 'Discrepo rotundamente. / De ninguna manera. / Eso no se sostiene.']] },
       '<b>Atención con el subjuntivo:</b> las fórmulas de acuerdo con «que» suelen llevar indicativo si afirman («Estoy de acuerdo en que es necesario»), pero las negativas piden subjuntivo («No estoy de acuerdo en que sea necesario»).',
       'Para suavizar un desacuerdo se usa el <b>condicional de cortesía</b> y los atenuantes: «Yo diría que no es tan sencillo», «Quizá habría que matizar eso». Para reforzar el acuerdo: «¡Exacto!», «Totalmente», «Eso es».',
-      'Para <b>ceder el turno</b> o interrumpir con educación: «Perdona que te interrumpa, pero...», «¿Me permites una objeción?».',
+      'Para <b>interrumpir o pedir la palabra</b> con educación: «Perdona que te interrumpa, pero...», «¿Me permites una objeción?».',
       { t: 'ex', list: ['Coincido contigo en que hay que actuar ya.', 'En parte tienes razón, pero falta un dato.', 'No estoy de acuerdo en que sea la mejor opción.', 'Me temo que no comparto esa opinión.'] },
     ] },
     listen: ['Coincido contigo en que hay que actuar ya.', 'En parte tienes razón, pero me gustaría matizar algo.', 'Discrepo rotundamente de esa conclusión.', 'Perdona que te interrumpa, pero creo que no es así.', 'Es difícil rebatir esos datos.'],
     practice: [
-      mc('¿Qué frase expresa un desacuerdo suave?', 'Me temo que no comparto esa opinión.', ['Estoy totalmente de acuerdo.', 'No podría estar más de acuerdo.', 'Coincido plenamente contigo.'], 'Me temo que... suaviza el desacuerdo.', { tag: 'acuerdo' }),
+      mc('¿Qué frase expresa un desacuerdo suave?', 'Me temo que no comparto esa opinión.', ['Estoy totalmente de acuerdo contigo.', 'No podría estar más de acuerdo con eso.', 'Coincido plenamente con tu análisis.'], 'Me temo que... suaviza el desacuerdo; las otras tres frases expresan acuerdo.', { tag: 'acuerdo' }),
       mc('No estoy de acuerdo en que ___ la mejor opción. (ser)', 'sea', ['es', 'será', 'fue'], 'Fórmula negativa de opinión: subjuntivo.', { tag: 'acuerdo' }),
       fill('Estoy de acuerdo en que ___ necesario actuar. (ser, indicativo)', 'es', 'Fórmula afirmativa: indicativo.', { tag: 'acuerdo' }),
-      order('En parte tienes razón pero falta algo', 'Acuerdo parcial.', { tag: 'acuerdo', alts: ['En parte tienes razón, pero falta algo'] }),
+      order('En parte tienes razón pero falta algo', 'Acuerdo parcial.', { tag: 'acuerdo', alts: ['Tienes razón en parte, pero falta algo'] }),
     ],
     quiz: [
-      mc('«Discrepar» significa...', 'no estar de acuerdo', ['estar de acuerdo', 'interrumpir', 'resumir'], 'Discrepar = no coincidir.', { tag: 'vocabulario' }),
+      mc('«Discrepar» significa...', 'no estar de acuerdo', ['estar de acuerdo del todo', 'interrumpir con educación', 'resumir lo dicho antes'], 'Discrepar = no coincidir.', { tag: 'vocabulario' }),
       mc('¿Qué expresión indica acuerdo parcial?', 'Hasta cierto punto sí.', ['De ninguna manera.', 'Discrepo rotundamente.', 'Eso no se sostiene.'], 'Hasta cierto punto = parcial.', { tag: 'acuerdo' }),
       mc('No creo que Ana ___ razón. (tener)', 'tenga', ['tiene', 'tendrá', 'tenía'], 'No creer que + subjuntivo.', { tag: 'acuerdo' }),
       listen('Discrepo rotundamente de esa conclusión.', 'Escucha: ¿qué actitud muestra?', 'Desacuerdo firme', ['Acuerdo total', 'Duda', 'Agradecimiento'], 'Dice «discrepo rotundamente».', { tag: 'acuerdo' }),
-      dict('Coincido contigo en que hay que actuar ya.', 'Revisa la «c» doble de «coincido» y «actuar».', { tag: 'dictado' }),
-      mc('«Matizar» sirve para...', 'añadir precisión a lo dicho', ['rechazar todo', 'cambiar de tema', 'terminar la reunión'], 'Matizar = precisar.', { tag: 'vocabulario' }),
+      dict('Coincido contigo en que hay que actuar ya.', 'Cuidado con «coincido» (con «c» y luego «i») y con «hay» (con «h»).', { tag: 'dictado' }),
+      mc('«Matizar» sirve para...', 'precisar lo que se ha dicho', ['rechazar lo que dice otro', 'cambiar de tema con cortesía', 'terminar la reunión pronto'], 'Matizar = precisar.', { tag: 'vocabulario' }),
       match([['rotundamente', 'Sin ninguna duda'], ['coincidir con', 'Tener la misma opinión'], ['rebatir', 'Contestar con argumentos'], ['en parte', 'No del todo']], 'Repasa el vocabulario del acuerdo.', { tag: 'vocabulario' }),
     ],
   });
@@ -1946,7 +1949,7 @@ window.LWS = window.LWS || {};
     vocab: [
       ['a mi juicio', 'expresión', 'Según mi opinión personal.', 'A mi juicio, la medida llega tarde.', 'In my judgment, the measure comes too late.'],
       ['dudar que', 'expresión', 'No estar seguro de que algo sea cierto.', 'Dudo que lleguen a tiempo.', 'I doubt they will arrive on time.'],
-      ['no creer que', 'expresión', 'Pensar que algo probablemente no es verdad.', 'No creo que sea una buena idea.', 'I do not think it is a good idea.'],
+      ['no creer que', 'expresión', 'Pensar que algo no es cierto o no es probable.', 'No creo que sea una buena idea.', 'I do not think it is a good idea.'],
       ['resulta que', 'expresión', 'Introduce un dato nuevo o sorprendente.', 'Resulta que el museo estaba cerrado.', 'It turns out the museum was closed.'],
       ['sostener que', 'expresión', 'Afirmar algo con firmeza.', 'Sostiene que la culpa fue del sistema.', 'He maintains that the system was to blame.'],
       ['cuestionable', 'adjetivo', 'Que se puede poner en duda.', 'Es una decisión cuestionable.', 'It is a debatable decision.', ['discutible']],
@@ -1955,24 +1958,24 @@ window.LWS = window.LWS || {};
       'La regla de fondo: el <b>indicativo</b> presenta algo como información o certeza; el <b>subjuntivo</b> lo presenta como duda, valoración o algo no afirmado.',
       { t: 'table', head: ['Estructura', 'Modo', 'Ejemplo'], rows: [['Creo / Pienso / Opino que', 'indicativo', 'Creo que tienes razón.'], ['No creo / No pienso que', 'subjuntivo', 'No creo que tengas razón.'], ['Dudo que / No estoy seguro de que', 'subjuntivo', 'Dudo que sea cierto.'], ['Es evidente / Está claro / Es verdad que', 'indicativo', 'Es evidente que hay un problema.'], ['No es evidente / No es verdad que', 'subjuntivo', 'No es verdad que todos estén de acuerdo.'], ['Es increíble / Es lógico / Es una pena que', 'subjuntivo', 'Es lógico que se queje.'], ['Me parece que', 'indicativo', 'Me parece que es tarde.'], ['No me parece que', 'subjuntivo', 'No me parece que sea justo.']] },
       '<b>Valoraciones:</b> con «es + adjetivo de valor + que» (importante, necesario, injusto, lógico, raro, una lástima) se usa subjuntivo aunque el hecho sea real: «Es raro que no haya llamado».',
-      '<b>Matiz con creer:</b> en preguntas y en negativas con intención de duda se usa subjuntivo: «¿Crees que sea posible?». Pero «¿Crees que es posible?» es también correcto si quien pregunta no duda.',
-      '<b>Tiempo del subjuntivo:</b> si el verbo principal está en presente, usa presente de subjuntivo («No creo que venga»). Si se refiere al pasado: pretérito perfecto («No creo que haya llegado») o imperfecto («No creía que llegara»).',
+      '<b>Matiz con creer:</b> en las negativas («No creo que sea posible») se usa subjuntivo. En las preguntas lo normal es el indicativo («¿Crees que es posible?»); el subjuntivo es posible cuando quien pregunta expresa duda o escepticismo («¿De verdad crees que sea posible?»).',
+      '<b>Tiempo del subjuntivo:</b> con verbo principal en presente, se usa el presente de subjuntivo para el presente o el futuro («No creo que venga») y el pretérito perfecto para una acción ya terminada («No creo que haya llegado»). Con verbo principal en pasado, se usa el imperfecto («No creía que llegara»).',
       { t: 'ex', list: ['Creo que tienes razón.', 'No creo que tengas razón.', 'Es evidente que hay un problema.', 'Es una pena que no hayas venido.'] },
     ] },
     listen: ['Creo que tienes razón.', 'No creo que sea una buena idea.', 'Dudo que lleguen a tiempo.', 'Es evidente que hay un problema.', 'Es una pena que no hayas venido.'],
     practice: [
       mc('No creo que ___ razón. (tener, tú)', 'tengas', ['tienes', 'tendrás', 'tenías'], 'No creer que + subjuntivo.', { tag: 'subjuntivo-opinion' }),
-      mc('Es evidente que el plan ___. (fallar)', 'falla', ['falle', 'fallara', 'fallaría'], 'Es evidente que + indicativo.', { tag: 'subjuntivo-opinion' }),
+      mc('Es evidente que el plan ___. (fallar)', 'falla', ['falle', 'fallara', 'fallase'], 'Es evidente que + indicativo.', { tag: 'subjuntivo-opinion' }),
       fill('Dudo que ellos ___ a tiempo. (llegar)', 'lleguen', 'Dudar que + subjuntivo: lleguen.', { tag: 'subjuntivo-opinion' }),
       order('No me parece que sea justo', 'No parecer que + subjuntivo.', { tag: 'subjuntivo-opinion' }),
     ],
     quiz: [
       mc('Es lógico que ___ cansado. (estar, él)', 'esté', ['está', 'estará', 'estaba'], 'Valoración: es lógico que + subjuntivo.', { tag: 'subjuntivo-opinion' }),
-      mc('No creo que Pedro ___ ayer. (venir, pasado)', 'haya venido', ['ha venido', 'vino', 'viene'], 'No creer que + pretérito perfecto de subjuntivo.', { tag: 'subjuntivo-opinion' }),
+      mc('No creo que Pedro ___ ayer. (venir, pasado)', 'haya venido', ['ha venido', 'vendrá', 'habría venido'], 'No creer que + pretérito perfecto de subjuntivo.', { tag: 'subjuntivo-opinion' }),
       mc('¿Qué frase es correcta?', 'Está claro que hay un error.', ['Está claro que haya un error.', 'No está claro que hay un error.', 'Está claro que hubiera un error.'], 'Está claro que + indicativo.', { tag: 'subjuntivo-opinion' }),
-      listen('Es una pena que no hayas venido.', 'Escucha: ¿qué lamenta la persona?', 'Que el otro no haya venido', ['Que llueva', 'Que ella llegue tarde', 'Que el tren salga'], 'Dice «es una pena que no hayas venido».', { tag: 'subjuntivo-opinion' }),
+      listen('Es una pena que no hayas venido.', 'Escucha: ¿qué lamenta la persona?', 'Que el otro no haya venido', ['Que el tren salga con retraso', 'Que ella no haya llegado a tiempo', 'Que llueva todo el fin de semana'], 'Dice «es una pena que no hayas venido».', { tag: 'subjuntivo-opinion' }),
       dict('Dudo que lleguen a tiempo.', 'Revisa la «ll» de «lleguen».', { tag: 'dictado' }),
-      mc('«Cuestionable» significa...', 'que se puede poner en duda', ['muy claro', 'muy barato', 'obligatorio'], 'Cuestionable = discutible.', { tag: 'vocabulario' }),
+      mc('«Cuestionable» significa...', 'que se puede poner en duda', ['que no admite ninguna duda', 'que resulta muy fácil de hacer', 'que se exige por ley'], 'Cuestionable = discutible.', { tag: 'vocabulario' }),
       match([['a mi juicio', 'Según mi opinión'], ['dudar que', 'No estar seguro de algo'], ['resulta que', 'Introduce un dato nuevo'], ['sostener que', 'Afirmar con firmeza']], 'Repasa el vocabulario de opinión.', { tag: 'vocabulario' }),
     ],
   });
@@ -1986,11 +1989,11 @@ window.LWS = window.LWS || {};
       ['a pesar de', 'locución', 'Indica una dificultad que no impide algo.', 'A pesar de la lluvia, salimos.', 'Despite the rain, we went out.'],
       ['puesto que', 'locución', 'Introduce una causa ya conocida.', 'Puesto que ya lo sabes, no insisto.', 'Since you already know, I will not insist.'],
       ['por ende', 'locución', 'Por eso; como consecuencia.', 'Subieron los precios; por ende, compramos menos.', 'Prices rose; hence, we buy less.'],
-      ['por ello', 'locución', 'Introduce una consecuencia ya conocida.', 'Hay mucho tráfico; por ello, llegaremos tarde.', 'There is heavy traffic; for that reason, we will arrive late.'],
+      ['por ello', 'locución', 'Por la razón que se acaba de mencionar.', 'Hay mucho tráfico; por ello, llegaremos tarde.', 'There is heavy traffic; for that reason, we will arrive late.'],
     ],
     explain: { title: 'Conectores y su modo verbal', body: [
       'Un buen argumento no es una lista de ideas: los <b>conectores</b> muestran cómo se relacionan. Cada tipo tiene sus formas y, a veces, exige un modo verbal concreto.',
-      { t: 'table', head: ['Función', 'Conectores', 'Modo'], rows: [['Oposición', 'sin embargo, no obstante, en cambio, ahora bien', 'indicativo'], ['Concesión', 'aunque, a pesar de que, si bien', 'indicativo (hecho) / subjuntivo (hipótesis)'], ['Causa', 'porque, puesto que, ya que, dado que', 'indicativo'], ['Consecuencia', 'por tanto, por consiguiente, así que, de ahí que', 'indicativo; «de ahí que» + subjuntivo'], ['Finalidad', 'para que, a fin de que', 'subjuntivo'], ['Adición', 'además, asimismo, incluso', 'indicativo'], ['Condición', 'siempre que, a menos que, con tal de que', 'subjuntivo']] },
+      { t: 'table', head: ['Función', 'Conectores', 'Modo'], rows: [['Oposición', 'sin embargo, no obstante, en cambio, ahora bien', 'indicativo'], ['Concesión', 'aunque, a pesar de que, si bien', 'aunque: indicativo (hecho) / subjuntivo (hipótesis); si bien: indicativo'], ['Causa', 'porque, puesto que, ya que, dado que', 'indicativo'], ['Consecuencia', 'por tanto, por consiguiente, así que, de ahí que', 'indicativo; «de ahí que» + subjuntivo'], ['Finalidad', 'para que, a fin de que', 'subjuntivo'], ['Adición', 'además, asimismo, incluso', 'indicativo'], ['Condición', 'siempre que, a menos que, con tal de que', 'subjuntivo']] },
       '<b>Aunque:</b> con indicativo expresa un hecho conocido («Aunque llueve, saldré»); con subjuntivo, una posibilidad o un obstáculo que no importa («Aunque llueva, saldré»).',
       '<b>A pesar de</b> va con sustantivo o infinitivo («A pesar de estar cansado»); con verbo conjugado se dice «a pesar de que».',
       '<b>Orden del discurso:</b> en primer lugar, en segundo lugar, por último; por una parte... por otra parte; en conclusión, en definitiva.',
@@ -1998,19 +2001,19 @@ window.LWS = window.LWS || {};
     ] },
     listen: ['El plan es bueno; no obstante, es caro.', 'A pesar de la lluvia, salimos de excursión.', 'Puesto que ya lo sabes, no insisto.', 'Ella ahorra; él, en cambio, gasta todo.', 'Hay mucho tráfico, de ahí que lleguemos tarde.'],
     practice: [
-      mc('«No obstante» expresa...', 'oposición', ['causa', 'finalidad', 'adición'], 'No obstante = sin embargo.', { tag: 'conectores' }),
+      mc('«No obstante» expresa...', 'oposición', ['consecuencia', 'finalidad', 'adición'], 'No obstante = sin embargo.', { tag: 'conectores' }),
       mc('Aunque ___ mañana, iremos. (llover; posibilidad)', 'llueva', ['llueve', 'llovió', 'lloverá'], 'Aunque + subjuntivo: obstáculo hipotético.', { tag: 'conectores' }),
       fill('Hay mucho tráfico, de ahí que ___ tarde. (llegar, nosotros)', 'lleguemos', 'De ahí que + subjuntivo.', { tag: 'conectores' }),
-      order('A pesar de la lluvia salimos', 'A pesar de + sustantivo.', { tag: 'conectores', alts: ['A pesar de la lluvia, salimos'] }),
+      order('A pesar de la lluvia salimos', 'A pesar de + sustantivo.', { tag: 'conectores', alts: ['Salimos a pesar de la lluvia'] }),
     ],
     quiz: [
       mc('Estudio mucho ___ que apruebe. (finalidad)', 'para', ['porque', 'aunque', 'sin embargo'], 'Para que + subjuntivo = finalidad.', { tag: 'conectores' }),
-      mc('¿Qué conector indica consecuencia?', 'por consiguiente', ['puesto que', 'aunque', 'en parte'], 'Por consiguiente = por tanto.', { tag: 'conectores' }),
-      mc('Iré ___ que tú me acompañes. (condición)', 'siempre que', ['porque', 'aunque', 'ya que'], 'Siempre que + subjuntivo = condición.', { tag: 'conectores' }),
+      mc('¿Qué conector indica consecuencia?', 'por tanto', ['puesto que', 'aunque', 'en cambio'], 'Por tanto expresa consecuencia; puesto que, causa; aunque, concesión; en cambio, contraste.', { tag: 'conectores' }),
+      mc('Iré ___ tú me acompañes. (condición)', 'siempre que', ['puesto que', 'por consiguiente', 'dado que'], 'Siempre que + subjuntivo expresa condición; los otros conectores no admiten este subjuntivo.', { tag: 'conectores' }),
       listen('Ella ahorra; él, en cambio, gasta todo.', 'Escucha: ¿qué relación hay entre las dos personas?', 'Contraste', ['Causa', 'Igualdad', 'Finalidad'], '«En cambio» marca contraste.', { tag: 'conectores' }),
       dict('El plan es bueno; no obstante, es caro.', 'Revisa el punto y coma y la coma.', { tag: 'dictado' }),
-      mc('«Puesto que» introduce...', 'una causa conocida', ['una consecuencia', 'una finalidad', 'una duda'], 'Puesto que = ya que.', { tag: 'vocabulario' }),
-      match([['no obstante', 'Oposición'], ['por consiguiente', 'Consecuencia'], ['puesto que', 'Causa conocida'], ['por ende', 'Por eso']], 'Repasa los conectores.', { tag: 'vocabulario' }),
+      mc('«Puesto que» introduce...', 'una causa conocida', ['una consecuencia lógica', 'una finalidad clara', 'una oposición fuerte'], 'Puesto que = ya que.', { tag: 'vocabulario' }),
+      match([['no obstante', 'Oposición'], ['por consiguiente', 'Consecuencia'], ['puesto que', 'Causa conocida'], ['a pesar de', 'Dificultad que no impide algo']], 'Repasa los conectores.', { tag: 'vocabulario' }),
     ],
   });
 
@@ -2027,27 +2030,27 @@ window.LWS = window.LWS || {};
     ],
     explain: { title: 'Correos que se leen y se responden', body: [
       'Un correo profesional eficaz es <b>breve, claro y accionable</b>: el lector debe saber en segundos qué se le pide y para cuándo.',
-      { t: 'table', head: ['Parte', 'Recomendación', 'Ejemplo'], rows: [['Asunto', 'Concreto, con la acción', 'Solicitud de presupuesto: reforma oficina'], ['Saludo', 'Según la relación', 'Estimada Sra. Ruiz: / Hola, Marta:'], ['Apertura', 'Motivo en la primera frase', 'Le escribo para confirmar la reunión del jueves.'], ['Cuerpo', 'Un tema por párrafo', 'Adjunto el informe. Falta revisar el punto tres.'], ['Petición', 'Verbo claro y plazo', '¿Podría enviarme los datos antes del viernes?'], ['Cierre', 'Disponibilidad y despedida', 'Quedo a la espera de sus noticias. Un cordial saludo,']] },
+      { t: 'table', head: ['Parte', 'Recomendación', 'Ejemplo'], rows: [['Asunto', 'Concreto, con la acción', 'Solicitud de presupuesto: reforma de la oficina'], ['Saludo', 'Según la relación', 'Estimada Sra. Ruiz: / Hola, Marta:'], ['Apertura', 'Motivo en la primera frase', 'Le escribo para confirmar la reunión del jueves.'], ['Cuerpo', 'Un tema por párrafo', 'Adjunto el informe. Falta revisar el punto tres.'], ['Petición', 'Verbo claro y plazo', '¿Podría enviarme los datos antes del viernes?'], ['Cierre', 'Disponibilidad y despedida', 'Quedo a la espera de sus noticias. Un cordial saludo,']] },
       '<b>Peticiones corteses:</b> «¿Podría + infinitivo?», «Le agradecería que + imperfecto de subjuntivo», «Le ruego que + presente de subjuntivo» (más formal): «Le ruego que confirme su asistencia».',
       '<b>Seguimiento:</b> «Le escribo de nuevo en relación con mi correo del día 5», «Como le comenté en mi mensaje anterior...», «Solo quería recordarle que...».',
-      '<b>Registro:</b> evita abreviaturas de chat, mayúsculas continuas y signos de exclamación repetidos. Revisa adjuntos antes de enviar: «Adjunto» sin archivo es el error más común.',
+      '<b>Registro:</b> evita abreviaturas de chat, mayúsculas continuas y signos de exclamación repetidos. Revisa los adjuntos antes de enviar: es muy habitual escribir «adjunto» y olvidar el archivo.',
       { t: 'ex', list: ['Me dirijo a usted para consultarle un plazo.', 'Le ruego que confirme su asistencia.', 'Quedo a la espera de sus noticias.', 'Puede ponerse en contacto conmigo por teléfono.'] },
     ] },
     listen: ['Me dirijo a usted para consultarle un plazo.', 'Le ruego que confirme su asistencia antes del viernes.', 'Quedo a la espera de sus noticias.', 'Escribo a Marta con copia a Luis.', 'Reciba un cordial saludo.'],
     practice: [
-      mc('¿Qué asunto es más claro?', 'Solicitud de presupuesto: reforma de la oficina', ['Hola', 'Urgente!!!', 'Pregunta'], 'El asunto debe ser concreto.', { tag: 'correo-profesional' }),
+      mc('¿Qué asunto es más claro?', 'Presupuesto: confirmar antes del lunes', ['Información muy importante para usted', 'URGENTE!!! Leer este mensaje ya', 'Quería preguntarle una cosa sobre lo de ayer'], 'El asunto debe ser concreto.', { tag: 'correo-profesional' }),
       mc('Le ruego que ___ su asistencia. (confirmar)', 'confirme', ['confirma', 'confirmará', 'confirmó'], 'Rogar que + subjuntivo.', { tag: 'correo-profesional' }),
-      fill('Le agradecería que me ___ lo antes posible. (responder)', 'respondiera', 'Le agradecería que + imperfecto de subjuntivo.', { tag: 'correo-profesional' }),
+      fill('Le agradecería que me ___ lo antes posible. (responder)', ['respondiera', 'respondiese'], 'Le agradecería que + imperfecto de subjuntivo.', { tag: 'correo-profesional' }),
       order('Quedo a la espera de sus noticias', 'Fórmula de cierre.', { tag: 'correo-profesional' }),
     ],
     quiz: [
-      mc('«Con copia a» sirve para...', 'indicar quién recibe también el mensaje', ['pedir perdón', 'adjuntar un archivo', 'cambiar el asunto'], 'Con copia a = CC.', { tag: 'correo-profesional' }),
-      mc('¿Cuál es una apertura profesional?', 'Le escribo para confirmar la reunión.', ['Oye, te cuento una cosa.', 'Hola!!! Qué tal todo', 'Buenas, tío'], 'El motivo va en la primera frase.', { tag: 'correo-profesional' }),
-      mc('¿Cuál es el cierre más profesional?', 'Quedo a la espera de sus noticias. Un cordial saludo.', ['Chao', 'Bss', 'Hasta la vista'], 'Fórmula de cierre profesional.', { tag: 'correo-profesional' }),
-      listen('Le ruego que confirme su asistencia antes del viernes.', 'Escucha: ¿qué se pide?', 'Confirmar la asistencia', ['Enviar un adjunto', 'Cambiar la fecha', 'Cancelar la reunión'], 'Dice «confirme su asistencia».', { tag: 'correo-profesional' }),
+      mc('«Con copia a» sirve para...', 'indicar quién recibe también el mensaje', ['pedir disculpas por el retraso en responder', 'añadir un archivo al mensaje que se envía', 'cambiar el asunto del correo anterior'], 'Con copia a = CC.', { tag: 'correo-profesional' }),
+      mc('¿Cuál es una apertura profesional?', 'Le escribo para confirmar la reunión.', ['Oye, te cuento una cosa sobre la reunión.', 'Hola!!! ¿Qué tal todo por ahí?', 'Buenas, tío, a ver si me echas un cable'], 'El motivo va en la primera frase.', { tag: 'correo-profesional' }),
+      mc('¿Cuál es el cierre más profesional?', 'Quedo a su disposición. Atentamente,', ['Cuando puedas me contestas, ¿vale? Bss', 'Nada más por hoy. Un besote y chao.', 'Hasta la vista, ya hablamos pronto.'], 'Fórmula de cierre profesional.', { tag: 'correo-profesional' }),
+      listen('Le ruego que confirme su asistencia antes del viernes.', 'Escucha: ¿qué se pide?', 'Confirmar la asistencia', ['Enviar un archivo adjunto', 'Cambiar la fecha de la cita', 'Cancelar la reunión del viernes'], 'Dice «confirme su asistencia».', { tag: 'correo-profesional' }),
       dict('Quedo a la espera de sus noticias.', 'Revisa la «q» de «quedo».', { tag: 'dictado' }),
-      mc('Un buen correo profesional tiene...', 'un tema por párrafo y un plazo claro', ['muchos signos de exclamación', 'párrafos larguísimos', 'ninguna petición'], 'Claro y accionable.', { tag: 'correo-profesional' }),
-      match([['dirigirse a', 'Escribir a alguien'], ['con copia a', 'Otro destinatario'], ['cordial saludo', 'Despedida profesional'], ['ponerse en contacto', 'Comunicarse']], 'Repasa el vocabulario del correo.', { tag: 'vocabulario' }),
+      mc('Un buen correo profesional tiene...', 'un tema por párrafo y un plazo claro', ['párrafos largos con varios temas mezclados', 'abreviaturas de chat para ir más rápido', 'muchos signos de exclamación'], 'Claro y accionable.', { tag: 'correo-profesional' }),
+      match([['dirigirse a', 'Escribir a alguien en concreto'], ['con copia a', 'Otro destinatario del mensaje'], ['cordial saludo', 'Despedida profesional'], ['quedar a la espera', 'Esperar una respuesta']], 'Repasa el vocabulario del correo.', { tag: 'vocabulario' }),
     ],
   });
 
@@ -2060,12 +2063,12 @@ window.LWS = window.LWS || {};
       ['el contraargumento', 'sustantivo', 'Argumento que se opone a otro.', 'Conviene anticipar un contraargumento.', 'It is useful to anticipate a counterargument.'],
       ['rotundo', 'adjetivo', 'Claro, firme y sin dudas.', 'Su rechazo fue rotundo.', 'His rejection was emphatic.'],
       ['polémico', 'adjetivo', 'Que provoca discusión.', 'Es un tema muy polémico.', 'It is a very controversial subject.'],
-      ['el encabezado', 'sustantivo', 'Título de una noticia en la prensa.', 'El encabezado llamó mi atención.', 'The headline caught my attention.'],
+      ['el encabezado', 'sustantivo', 'Título de una noticia o de un artículo en la prensa.', 'El encabezado llamó mi atención.', 'The headline caught my attention.', ['titular']],
     ],
     explain: { title: 'Estructura de un artículo de opinión', body: [
       'El artículo de opinión defiende un <b>punto de vista</b> con argumentos. A diferencia de la noticia, es subjetivo; a diferencia del ensayo, es breve y está pensado para el lector general.',
       { t: 'table', head: ['Parte', 'Función', 'Recursos'], rows: [['Titular', 'Atraer y adelantar el tema', 'pregunta, afirmación rotunda, juego de palabras'], ['Introducción', 'Plantear el tema y la tesis', 'Cada vez más personas..., Se habla mucho de...'], ['Desarrollo', 'Argumentar con datos y ejemplos', 'En primer lugar, Además, Por ejemplo, Según un estudio...'], ['Contraargumento', 'Reconocer la postura contraria y rebatirla', 'Es cierto que... pero; Se dirá que...; Sin duda... aunque'], ['Conclusión', 'Cerrar y reforzar la tesis', 'En definitiva, Por todo ello']] },
-      '<b>Concesión y refutación:</b> «Es cierto que + indicativo, pero...» y «Es verdad que + indicativo, sin embargo...» reconocen al adversario antes de rebatirlo. «Aunque + subjuntivo» presenta su argumento como no decisivo.',
+      '<b>Concesión y refutación:</b> «Es cierto que + indicativo, pero...» y «Es verdad que + indicativo, sin embargo...» reconocen al adversario antes de rebatirlo. «Aunque + subjuntivo» presenta la objeción como un obstáculo poco decisivo.',
       '<b>Recursos retóricos:</b> la pregunta retórica («¿Hasta cuándo vamos a tolerarlo?»), el uso de la primera persona del plural para implicar al lector («Debemos pensar...»), la enumeración y el contraste.',
       '<b>Verbos para citar fuentes:</b> sostener, afirmar, señalar, advertir, subrayar. «Según + fuente» no lleva verbo: «Según la OMS, ...».',
       { t: 'ex', list: ['Es cierto que el plan es caro, pero merece la pena.', 'Se dirá que es utópico; sin embargo, ya funciona en otros países.', '¿Hasta cuándo vamos a tolerarlo?', 'En definitiva, necesitamos actuar.'] },
@@ -2073,17 +2076,17 @@ window.LWS = window.LWS || {};
     listen: ['El columnista defiende una tesis muy polémica.', 'Es cierto que el plan es caro, pero merece la pena.', 'Se dirá que es utópico; sin embargo, ya funciona en otros países.', '¿Hasta cuándo vamos a tolerarlo?', 'En definitiva, necesitamos actuar ya.'],
     practice: [
       mc('¿Dónde se plantea normalmente la tesis?', 'En la introducción', ['En la firma', 'Solo en el titular', 'Al final de la página'], 'La tesis se plantea al inicio.', { tag: 'opinion-escrita' }),
-      mc('Es cierto que el plan ___ caro, pero útil. (ser)', 'es', ['sea', 'fuera', 'sería'], 'Es cierto que + indicativo.', { tag: 'opinion-escrita' }),
+      mc('Es cierto que el plan ___ caro, pero útil. (ser)', 'es', ['sea', 'fuera', 'sido'], 'Es cierto que + indicativo: es.', { tag: 'opinion-escrita' }),
       fill('Aunque ___ difícil, merece la pena. (ser, hipótesis)', 'sea', 'Aunque + subjuntivo: obstáculo no decisivo.', { tag: 'opinion-escrita' }),
-      order('En definitiva necesitamos actuar ya', 'Conclusión.', { tag: 'opinion-escrita', alts: ['En definitiva, necesitamos actuar ya'] }),
+      order('En definitiva necesitamos actuar ya', 'Conclusión.', { tag: 'opinion-escrita', alts: ['Necesitamos actuar ya, en definitiva'] }),
     ],
     quiz: [
-      mc('Un contraargumento sirve para...', 'reconocer y rebatir la postura contraria', ['repetir la tesis', 'citar la fuente', 'cambiar de tema'], 'Anticipa la objeción.', { tag: 'opinion-escrita' }),
-      mc('¿Qué es una pregunta retórica?', 'Una pregunta que no espera respuesta', ['Una pregunta de examen', 'Una pregunta del lector', 'Una duda del autor'], 'Es un recurso expresivo.', { tag: 'opinion-escrita' }),
-      mc('¿Cuál NO es verbo para citar fuentes?', 'dormir', ['afirmar', 'señalar', 'advertir'], 'Dormir no introduce citas.', { tag: 'opinion-escrita' }),
-      listen('Es cierto que el plan es caro, pero merece la pena.', 'Escucha: ¿qué hace el autor?', 'Reconoce un punto contrario y lo rebate', ['Pide ayuda', 'Cuenta un recuerdo', 'Agradece'], 'Concesión + refutación.', { tag: 'opinion-escrita' }),
-      dict('Se dirá que es utópico; sin embargo, ya funciona.', 'Revisa la tilde de «sin embargo» y el punto y coma.', { tag: 'dictado' }),
-      mc('Un tema «polémico» es...', 'un tema que provoca discusión', ['un tema aburrido', 'un tema antiguo', 'un tema secreto'], 'Polémico = genera debate.', { tag: 'vocabulario' }),
+      mc('Un contraargumento sirve para...', 'reconocer y rebatir la postura contraria', ['repetir la tesis en cada párrafo del texto', 'citar la fuente de un dato concreto', 'resumir todo el texto para el lector'], 'Anticipa la objeción.', { tag: 'opinion-escrita' }),
+      mc('¿Qué es una pregunta retórica?', 'Una pregunta que no espera respuesta', ['Una pregunta que el lector debe contestar', 'Una pregunta de examen oral', 'Una duda que el autor no resuelve'], 'Es un recurso expresivo.', { tag: 'opinion-escrita' }),
+      mc('¿Cuál NO es verbo para citar fuentes?', 'ocultar', ['afirmar', 'señalar', 'advertir'], 'Ocultar no introduce citas; afirmar, señalar y advertir sí.', { tag: 'opinion-escrita' }),
+      listen('Es cierto que el plan es caro, pero merece la pena.', 'Escucha: ¿qué hace el autor?', 'Reconoce un punto contrario y lo rebate', ['Pide ayuda a los lectores del periódico', 'Cuenta un recuerdo de su infancia lejana', 'Agradece el apoyo que ha recibido de todos'], 'Concesión + refutación.', { tag: 'opinion-escrita' }),
+      dict('Se dirá que es utópico; sin embargo, ya funciona.', 'Revisa la tilde de «utópico», el punto y coma y la coma tras «sin embargo».', { tag: 'dictado' }),
+      mc('Un tema «polémico» es...', 'un tema que provoca discusión', ['un tema que casi nadie conoce todavía', 'un tema que interesa solo a expertos', 'un tema que todos aceptan sin dudar'], 'Polémico = genera debate.', { tag: 'vocabulario' }),
       match([['el columnista', 'Escribe opinión en prensa'], ['la tesis', 'Idea central'], ['el encabezado', 'Título de la noticia'], ['rotundo', 'Firme y sin dudas']], 'Repasa el vocabulario del artículo.', { tag: 'vocabulario' }),
     ],
   });
@@ -2103,24 +2106,24 @@ window.LWS = window.LWS || {};
       'Resumir es <b>comprender, seleccionar y reformular</b>. Un buen resumen es mucho más corto que el original, fiel a sus ideas y escrito con tus palabras.',
       { t: 'table', head: ['Paso', 'Qué hacer'], rows: [['1. Leer', 'Lee todo el texto una vez para entender el tema general.'], ['2. Subrayar', 'Marca la idea principal de cada párrafo.'], ['3. Descartar', 'Omite ejemplos, repeticiones y detalles.'], ['4. Reformular', 'Escribe con tus palabras, usando sinónimos y otra estructura.'], ['5. Revisar', 'Comprueba que no añades opiniones propias y que conservas el orden lógico.']] },
       '<b>Verbos para referirse al autor:</b> El autor <b>sostiene</b> / <b>señala</b> / <b>plantea</b> / <b>concluye</b> que + indicativo. Usa el presente: «El texto explica que...».',
-      '<b>Recursos de reformulación:</b> nominalización («Los precios suben» → «la subida de los precios»), voz pasiva refleja («Se concluye que...»), cambio de categoría gramatical y sinónimos.',
-      '<b>Conectores de cierre:</b> en definitiva, en suma, en resumidas cuentas, en síntesis. Longitud habitual: un tercio o menos del texto original.',
+      '<b>Recursos de reformulación:</b> nominalización («Los precios suben» → «la subida de los precios»), construcciones impersonales con «se» («Se concluye que...»), cambio de categoría gramatical y sinónimos.',
+      '<b>Conectores de cierre:</b> en definitiva, en suma, en resumidas cuentas, en síntesis. Como orientación, un resumen suele ocupar un tercio o menos del original, salvo que la tarea indique otra extensión.',
       { t: 'ex', list: ['El autor sostiene que el transporte público debe mejorar.', 'Los precios suben → la subida de los precios.', 'En resumidas cuentas, no hay solución fácil.', 'Se concluye que la medida es insuficiente.'] },
     ] },
     listen: ['Subraya la idea principal de cada párrafo.', 'El autor sostiene que el transporte público debe mejorar.', 'No copies: parafrasea el fragmento.', 'En resumidas cuentas, no hay solución fácil.', 'Se concluye que la medida es insuficiente.'],
     practice: [
-      mc('Un resumen debe...', 'ser fiel y estar escrito con tus palabras', ['copiar frases enteras', 'añadir tu opinión', 'incluir todos los ejemplos'], 'Resumir es reformular.', { tag: 'resumen' }),
-      mc('Parafrasear significa...', 'decir lo mismo con otras palabras', ['copiar literalmente', 'añadir datos', 'traducir'], 'Parafrasear = reformular.', { tag: 'resumen' }),
+      mc('Un resumen debe...', 'conservar las ideas con tus palabras', ['copiar frases enteras del original', 'añadir tu opinión personal al final', 'reproducir los párrafos con pequeños cambios'], 'Resumir es reformular.', { tag: 'resumen' }),
+      mc('Parafrasear significa...', 'decir lo mismo con otras palabras', ['repetir las ideas palabra por palabra', 'explicar el texto con ejemplos nuevos', 'traducir el texto a otro idioma'], 'Parafrasear = reformular.', { tag: 'resumen' }),
       fill('El autor ___ que el plan es insuficiente. (concluir, presente)', 'concluye', 'Concluir, él: concluye.', { tag: 'resumen' }),
-      order('En resumidas cuentas no hay solución fácil', 'Conector de cierre.', { tag: 'resumen', alts: ['En resumidas cuentas, no hay solución fácil'] }),
+      order('En resumidas cuentas no hay solución fácil', 'Conector de cierre.', { tag: 'resumen', alts: ['No hay solución fácil, en resumidas cuentas'] }),
     ],
     quiz: [
-      mc('¿Qué conviene omitir en un resumen?', 'ejemplos y detalles', ['la idea principal', 'la conclusión', 'el tema'], 'Lo accesorio se descarta.', { tag: 'resumen' }),
-      mc('Nominalizar «Los precios suben» da...', 'la subida de los precios', ['los precios subiendo', 'subir precios', 'que suben'], 'Verbo → sustantivo.', { tag: 'resumen' }),
+      mc('¿Qué conviene omitir en un resumen?', 'ejemplos y detalles', ['la tesis del autor', 'las ideas principales', 'la conclusión del texto'], 'Lo accesorio se descarta.', { tag: 'resumen' }),
+      mc('Nominalizar «Los precios suben» da...', 'la subida de los precios', ['los precios que están subiendo', 'han subido los precios', 'el precio que subió'], 'Verbo → sustantivo.', { tag: 'resumen' }),
       mc('¿Qué tiempo se usa para referirse al texto?', 'El presente', ['El futuro', 'El condicional', 'El pluscuamperfecto'], 'El texto explica...', { tag: 'resumen' }),
-      listen('No copies: parafrasea el fragmento.', 'Escucha: ¿qué se pide?', 'Reformular con otras palabras', ['Copiar literalmente', 'Traducir al inglés', 'Leer en voz alta'], 'Dice «parafrasea».', { tag: 'resumen' }),
+      listen('No copies: parafrasea el fragmento.', 'Escucha: ¿qué se pide?', 'Decirlo con otras palabras', ['Copiar el texto literalmente', 'Traducir el texto al inglés', 'Leer el texto en voz alta'], 'Dice «parafrasea».', { tag: 'resumen' }),
       dict('Subraya la idea principal de cada párrafo.', 'Revisa la tilde de «párrafo».', { tag: 'dictado' }),
-      mc('«Sintetizar» significa...', 'reducir a lo esencial', ['alargar', 'copiar', 'criticar'], 'Sintetizar = condensar.', { tag: 'vocabulario' }),
+      mc('«Sintetizar» significa...', 'reducir a lo esencial', ['ampliar con más detalles', 'copiar sin cambiar nada', 'valorar con espíritu crítico'], 'Sintetizar = condensar.', { tag: 'vocabulario' }),
       match([['la idea principal', 'Mensaje más importante'], ['omitir', 'No incluir'], ['el fragmento', 'Parte de un texto'], ['en resumidas cuentas', 'Conclusión breve']], 'Repasa el vocabulario del resumen.', { tag: 'vocabulario' }),
     ],
   });
@@ -2147,31 +2150,31 @@ window.LWS = window.LWS || {};
       ['el registro', 'sustantivo', 'Nivel de formalidad del lenguaje en una situación.', 'Cambio de registro según con quién hablo.', 'I change register depending on whom I am talking to.'],
       ['informal', 'adjetivo', 'Propio de la conversación familiar y espontánea.', '«Currar» es una palabra informal.', '«Currar» is an informal word.'],
       ['de tú a tú', 'expresión', 'En igualdad de condiciones.', 'Hablamos de tú a tú, sin jerarquías.', 'We spoke as equals, without hierarchy.'],
-      ['esmerado', 'adjetivo', 'Cuidado con mucha atención.', 'Escribió con un lenguaje esmerado.', 'He wrote in careful, polished language.'],
+      ['esmerado', 'adjetivo', 'Hecho con mucho cuidado y atención.', 'Escribió con un lenguaje esmerado.', 'He wrote in careful, polished language.'],
       ['el tratamiento', 'sustantivo', 'Forma de dirigirse a una persona (tú, usted, don, doña...).', 'El tratamiento de usted muestra respeto.', 'Using «usted» shows respect.'],
     ],
     explain: { title: 'Cambiar de registro con naturalidad', body: [
       'El <b>registro</b> es el nivel de formalidad. Depende de la relación con la otra persona, del contexto, del canal (oral o escrito) y del propósito. Un hablante competente pasa de uno a otro sin esfuerzo.',
       { t: 'table', head: ['Situación', 'Informal', 'Formal'], rows: [['Saludar', 'Hola, ¿qué tal?', 'Buenos días, ¿cómo está usted?'], ['Pedir', 'Oye, ¿me pasas la sal?', '¿Sería tan amable de pasarme la sal?'], ['Rechazar', 'Paso, no me apetece.', 'Lamentablemente, no podré asistir.'], ['Despedirse', 'Nos vemos, ¡un abrazo!', 'Quedo a su disposición. Atentamente.'], ['Acordar', 'Vale, genial.', 'De acuerdo, perfecto.'], ['Quejarse', 'Esto es un rollo.', 'Esta situación resulta bastante inconveniente.']] },
-      '<b>Tú / usted / vos:</b> «usted» marca respeto o distancia; «tú» confianza. En países con voseo (Argentina, Uruguay, Centroamérica) «vos» sustituye a «tú» en el trato familiar. En algunos países, como Colombia, «usted» se usa incluso entre amigos o en familia.',
+      '<b>Tú / usted / vos:</b> «usted» marca respeto o distancia; «tú» confianza. En países con voseo (Argentina, Uruguay, Centroamérica) «vos» sustituye a «tú» en el trato de confianza, con matices según el país. En algunas zonas, como partes de Colombia, «usted» se usa incluso entre amigos o en familia.',
       '<b>Marcas del registro formal:</b> subjuntivo y condicional de cortesía, léxico preciso («solicitar», «abonar»), construcciones impersonales («se ruega»), ausencia de muletillas. <b>Marcas del informal:</b> diminutivos, interjecciones (¡madre mía!), contracciones («pa» por «para»), léxico coloquial.',
       '<b>Error frecuente:</b> mezclar registros. «Estimado señor: ¡Qué pasa, tío!» suena absurdo. Mantén coherencia en pronombres, léxico y despedida.',
       { t: 'ex', list: ['¿Sería tan amable de pasarme la sal?', 'Lamentablemente, no podré asistir.', 'Hablamos de tú a tú.', 'Oye, ¿me pasas la sal?'] },
     ] },
     listen: ['¿Sería tan amable de pasarme la sal?', 'Oye, ¿me pasas la sal?', 'Lamentablemente, no podré asistir a la reunión.', 'Mi jefe me pidió que lo tuteara.', 'Hablamos de tú a tú, sin jerarquías.'],
     practice: [
-      mc('¿Qué frase es formal?', 'Lamentablemente, no podré asistir.', ['Paso, no me apetece.', 'Vale, genial.', 'Nos vemos, un abrazo.'], 'Léxico preciso y futuro cortés.', { tag: 'registro' }),
+      mc('¿Qué frase es formal?', 'Lamentablemente, no podré asistir.', ['Oye, paso de ir, no me apetece.', 'Vale, genial, ya me pasaré por allí.', 'Nos vemos mañana, ¡un abrazo!'], 'El adverbio «lamentablemente» y la negativa cortés dan tono formal; las otras son coloquiales.', { tag: 'registro' }),
       mc('El «voseo» es el uso de...', 'vos en lugar de tú', ['vosotros en América', 'usted en familia', 'él y ella'], 'Voseo = vos.', { tag: 'registro' }),
-      fill('Mi jefe me pidió que lo ___. (tutear, imperfecto de subjuntivo)', 'tuteara', 'Pedir que + imperfecto de subjuntivo.', { tag: 'registro' }),
-      order('Sería tan amable de pasarme la sal', 'Petición formal.', { tag: 'registro', alts: ['¿Sería tan amable de pasarme la sal?'] }),
+      fill('Mi jefe me pidió que lo ___. (tutear, imperfecto de subjuntivo)', ['tuteara', 'tutease'], 'Pedir que + imperfecto de subjuntivo.', { tag: 'registro' }),
+      order('Sería tan amable de pasarme la sal', 'Petición formal.', { tag: 'registro' }),
     ],
     quiz: [
-      mc('«Coloquial» describe un lenguaje...', 'propio de la conversación informal', ['muy técnico', 'jurídico', 'literario antiguo'], 'Coloquial = informal.', { tag: 'vocabulario' }),
-      mc('¿Qué es incoherente en una carta formal?', 'Estimado señor: ¡Qué pasa, tío!', ['Estimado señor: Le escribo...', 'Atentamente,', 'Quedo a su disposición.'], 'Se mezclan registros.', { tag: 'registro' }),
-      mc('¿Qué pronombre indica más distancia?', 'usted', ['tú', 'vos', 'tío'], 'Usted = respeto o distancia.', { tag: 'registro' }),
+      mc('«Coloquial» describe un lenguaje...', 'propio de la conversación informal', ['propio de los textos científicos y técnicos', 'propio de las leyes y de los contratos', 'propio de la poesía y la literatura antigua'], 'Coloquial = informal.', { tag: 'vocabulario' }),
+      mc('¿Qué es incoherente en una carta formal?', 'Estimado señor: ¡Qué pasa, tío!', ['Estimado señor: Le escribo en relación con su oferta.', 'Atentamente,', 'Quedo a su disposición.'], 'Se mezclan registros.', { tag: 'registro' }),
+      mc('¿Qué pronombre indica más distancia?', 'usted', ['tú', 'vos', 'vosotros'], 'Usted = respeto o distancia.', { tag: 'registro' }),
       listen('Oye, ¿me pasas la sal?', 'Escucha: ¿qué registro usa?', 'Informal', ['Formal', 'Jurídico', 'Literario'], 'Oye + tú = informal.', { tag: 'registro' }),
       dict('Lamentablemente, no podré asistir a la reunión.', 'Revisa la «bl» de «lamentablemente» y la tilde de «podré».', { tag: 'dictado' }),
-      mc('«De tú a tú» significa...', 'en igualdad de condiciones', ['con mucho respeto', 'a distancia', 'en secreto'], 'De tú a tú = entre iguales.', { tag: 'vocabulario' }),
+      mc('«De tú a tú» significa...', 'en igualdad de condiciones', ['con mucho respeto y distancia', 'a través de un intermediario', 'sin que nadie más se entere'], 'De tú a tú = entre iguales.', { tag: 'vocabulario' }),
       match([['tratar de tú', 'Usar «tú» y no «usted»'], ['el registro', 'Nivel de formalidad'], ['informal', 'Propio de la conversación familiar'], ['esmerado', 'Cuidado con atención']], 'Repasa el vocabulario del registro.', { tag: 'vocabulario' }),
     ],
   });
@@ -2180,15 +2183,15 @@ window.LWS = window.LWS || {};
     id: 'b2.u3.l2', level: 'B2', unit: 3, n: 2, title: 'Variedades del español', topic: 'Dialectos',
     goal: 'Al terminar esta lección, podrás reconocer las diferencias principales entre el español de España y el de América.',
     vocab: [
-      ['el voseo', 'sustantivo', 'Uso de «vos» como pronombre de segunda persona singular.', 'En Argentina el voseo es general.', 'In Argentina «voseo» is universal.'],
+      ['el voseo', 'sustantivo', 'Uso de «vos» como pronombre de segunda persona singular.', 'En Argentina el voseo es general.', 'In Argentina, «voseo» is the general norm.'],
       ['el seseo', 'sustantivo', 'Pronunciación de «z» y «c» como «s».', 'El seseo es normal en Canarias y América.', 'Seseo is normal in the Canaries and in the Americas.'],
-      ['el vosotros', 'sustantivo', 'Forma de segunda persona del plural propia de España.', 'En España se usa vosotros; en América, ustedes.', 'In Spain «vosotros» is used; in the Americas, «ustedes».'],
+      ['el vosotros', 'sustantivo', 'Forma de segunda persona del plural que se usa sobre todo en España.', 'En España se dice «vosotros»; en América, «ustedes».', 'In Spain people say «vosotros»; in the Americas, «ustedes».'],
       ['el latinismo', 'sustantivo', 'Palabra o expresión tomada del latín.', '«Ad hoc» es un latinismo.', '«Ad hoc» is a Latinism.'],
       ['el regionalismo', 'sustantivo', 'Palabra o expresión propia de una región.', '«Chévere» es un regionalismo caribeño y andino.', '«Chévere» is a Caribbean and Andean regionalism.'],
       ['la variedad', 'sustantivo', 'Forma particular de una lengua según la zona.', 'El español tiene muchas variedades.', 'Spanish has many varieties.'],
     ],
     explain: { title: 'Un idioma, muchas voces', body: [
-      'El español lo hablan más de 500 millones de personas en más de veinte países. No existe una «forma correcta» única: la <b>norma culta</b> es policéntrica y todas las variedades son válidas. Las diferencias afectan a la pronunciación, la gramática y el léxico.',
+      'El español lo hablan más de 500 millones de personas y es lengua oficial en unos veinte países. No existe una «forma correcta» única: la <b>norma culta</b> es policéntrica y todas las variedades son válidas. Las diferencias afectan a la pronunciación, la gramática y el léxico.',
       { t: 'table', head: ['Rasgo', 'España (centro-norte)', 'América / Canarias / sur de España'], rows: [['Pronunciación de z, c', 'distinción: «cena» ≠ «sena»', 'seseo: «cena» = «sena»'], ['Pronombre plural (2.ª pers.)', 'vosotros coméis', 'ustedes comen'], ['Pasado reciente', 'pretérito perfecto: «Hoy he comido»', 'más indefinido: «Hoy comí»'], ['Trato singular', 'tú', 'tú, vos o usted según el país'], ['Leísmo', 'frecuente: «Le vi ayer»', 'menos frecuente: «Lo vi ayer»']] },
       '<b>Léxico:</b> la misma cosa recibe nombres distintos. Coche (España) / carro (Colombia, México) / auto (Cono Sur); ordenador / computadora; móvil / celular; zumo / jugo; aparcar / estacionar; autobús / guagua (Canarias, Caribe) / colectivo / camión (México).',
       '<b>Voseo:</b> conjugación propia en presente: «vos tenés», «vos querés», «vos sos»; imperativo: «vení», «decime». Es normal en Argentina y Uruguay y común en Centroamérica, Paraguay y partes de Colombia.',
@@ -2203,12 +2206,12 @@ window.LWS = window.LWS || {};
       order('El español tiene muchas variedades', 'Frase simple.', { tag: 'variedades' }),
     ],
     quiz: [
-      mc('El seseo consiste en...', 'pronunciar z y c como s', ['usar vos', 'usar vosotros', 'omitir la h'], 'Seseo = z/c como s.', { tag: 'variedades' }),
-      mc('¿Qué país usa mucho el voseo?', 'Argentina', ['España', 'Alemania', 'Portugal'], 'Voseo rioplatense.', { tag: 'variedades' }),
-      mc('Hoy ___ al cine (uso americano más frecuente).', 'fui', ['he ido', 'iré', 'iría'], 'En América el indefinido es más frecuente.', { tag: 'variedades' }),
-      listen('Vos tenés razón, che.', 'Escucha: ¿qué variedad se oye?', 'Rioplatense', ['Castellana', 'Canaria', 'Andaluza'], 'Vos tenés y che son rioplatenses.', { tag: 'variedades' }),
+      mc('El seseo consiste en...', 'pronunciar z y c como s', ['pronunciar la s final como una h', 'usar vos en vez de tú', 'decir «ustedes» en vez de «vosotros»'], 'Seseo = z/c como s.', { tag: 'variedades' }),
+      mc('¿Qué país usa mucho el voseo?', 'Argentina', ['España', 'Cuba', 'Puerto Rico'], 'Voseo rioplatense.', { tag: 'variedades' }),
+      mc('Hoy ___ al cine. (preferencia mayoritaria en América)', 'fui', ['he ido', 'iré', 'iría'], 'En buena parte de América predomina el indefinido para lo ocurrido hoy; en el centro y norte de España, el pretérito perfecto (aunque ambos existen en las dos zonas).', { tag: 'variedades' }),
+      listen('Vos tenés razón, che.', 'Escucha: ¿qué variedad se oye?', 'Rioplatense', ['Castellana norteña', 'Canaria', 'Andaluza'], 'Vos tenés y che son rioplatenses.', { tag: 'variedades' }),
       dict('El español tiene muchas variedades.', 'Revisa la tilde de «español».', { tag: 'dictado' }),
-      mc('Un regionalismo es...', 'una palabra propia de una región', ['un error', 'una palabra del latín', 'una abreviatura'], 'Regionalismo = propio de una zona.', { tag: 'vocabulario' }),
+      mc('Un regionalismo es...', 'una palabra propia de una región', ['un error que conviene evitar siempre', 'una palabra de origen latino clásico', 'una abreviatura de uso muy común'], 'Regionalismo = propio de una zona.', { tag: 'vocabulario' }),
       match([['el voseo', 'Uso de vos'], ['el seseo', 'z y c como s'], ['el latinismo', 'Palabra del latín'], ['la variedad', 'Forma según la zona']], 'Repasa el vocabulario de las variedades.', { tag: 'vocabulario' }),
     ],
   });
@@ -2225,27 +2228,27 @@ window.LWS = window.LWS || {};
       ['tener gracia', 'expresión', 'Ser divertido o ingenioso.', 'Tiene gracia que lo diga él.', 'It is funny that he of all people says it.'],
     ],
     explain: { title: 'Entender lo que no se dice', body: [
-      'El humor y la ironía dependen del contexto, del tono y de lo que los hablantes comparten. En ironía <b>el significado literal es contrario al intencional</b>.',
+      'El humor y la ironía dependen del contexto, del tono y de lo que los hablantes comparten. En la ironía, <b>el significado literal suele ser contrario al intencional</b>.',
       { t: 'table', head: ['Recurso', 'Qué es', 'Ejemplo'], rows: [['Ironía', 'Decir lo contrario de lo que se piensa', 'Con 40 grados: «¡Qué día más fresquito!»'], ['Sarcasmo', 'Ironía hiriente', '«Qué inteligente eres, de verdad.» (tras un error)'], ['Hipérbole', 'Exageración', 'Te lo he dicho mil veces.'], ['Eufemismo', 'Suavizar lo desagradable', 'Se nos ha ido (= ha muerto).'], ['Doble sentido', 'Dos lecturas posibles', 'juegos de palabras, chistes pícaros'], ['Retintín', 'Tono burlón al hablar', 'tono + frase aparentemente neutra']] },
       '<b>Pistas para detectar la ironía:</b> un tono exagerado o plano, un elogio incoherente con la situación («¡Qué puntual!» a quien llega tarde), exclamaciones, risas o pausas. En la escritura se señala con comillas o con la puntuación.',
-      '<b>Reaccionar:</b> «¡Qué bueno!» (de verdad), «Ja, ja, muy gracioso» (irónico), «No me lo puedo creer», «Eso tiene gracia», «Te estás quedando conmigo» (es coloquial en varios países), «Me tomas el pelo».',
+      '<b>Reaccionar:</b> «¡Qué bueno!» (de verdad), «Ja, ja, muy gracioso» (irónico), «No me lo puedo creer», «Eso tiene gracia», «Estás de broma» o «Te estás quedando conmigo» (esta última, coloquial y más propia de América), «¿Me estás tomando el pelo?».',
       '<b>Cuidado intercultural:</b> el humor es muy cultural. Lo que hace reír en un país puede ofender en otro. Evita el sarcasmo con personas que no conoces y en el trabajo.',
       { t: 'ex', list: ['¡Qué día más fresquito! (con 40 grados)', 'No me tomes el pelo.', 'Ese chiste tiene doble sentido.', 'Tiene gracia que lo diga él.'] },
     ] },
     listen: ['Con cuarenta grados, dijo: «¡qué día más fresquito!».', 'No me tomes el pelo, ¿de verdad ganaste?', 'Ese chiste tiene doble sentido.', 'Tiene gracia que lo diga precisamente él.', 'Su sarcasmo hirió a todos en la reunión.'],
     practice: [
       mc('Con 40 grados, «¡Qué día más fresquito!» es...', 'una ironía', ['una disculpa', 'una orden', 'un dato'], 'Significado contrario a la realidad.', { tag: 'ironia' }),
-      mc('El sarcasmo se diferencia de la ironía porque...', 'es más hiriente', ['es más amable', 'es más corto', 'es literal'], 'Sarcasmo = ironía cruel.', { tag: 'ironia' }),
+      mc('El sarcasmo se diferencia de la ironía porque...', 'es más hiriente', ['siempre se dice en broma', 'no tiene doble intención', 'se usa solo por escrito'], 'Sarcasmo = ironía cruel.', { tag: 'ironia' }),
       fill('No me ___ el pelo. (tomar, imperativo negativo, tú)', 'tomes', 'Imperativo negativo: no tomes.', { tag: 'ironia' }),
       order('Ese chiste tiene doble sentido', 'Frase sobre humor.', { tag: 'ironia' }),
     ],
     quiz: [
       mc('«Qué puntual», dicho a quien llega tarde, es...', 'irónico', ['literal', 'formal', 'una pregunta'], 'Elogio incoherente.', { tag: 'ironia' }),
-      mc('Una hipérbole es...', 'una exageración', ['un eufemismo', 'una pregunta', 'un refrán'], 'Te lo he dicho mil veces.', { tag: 'ironia' }),
-      mc('Un eufemismo sirve para...', 'suavizar algo desagradable', ['gritar', 'ordenar', 'exagerar'], 'Se nos ha ido.', { tag: 'ironia' }),
-      listen('No me tomes el pelo, ¿de verdad ganaste?', 'Escucha: ¿qué siente la persona?', 'Sorpresa e incredulidad', ['Enfado total', 'Aburrimiento', 'Miedo'], 'Dice «no me tomes el pelo».', { tag: 'ironia' }),
+      mc('Una hipérbole es...', 'una exageración', ['un modo de suavizar algo', 'un juego de palabras', 'un elogio sincero'], 'Te lo he dicho mil veces.', { tag: 'ironia' }),
+      mc('Un eufemismo sirve para...', 'suavizar algo desagradable', ['exagerar lo que se dice', 'dar una orden con firmeza', 'hacer reír con un doble sentido'], 'Se nos ha ido.', { tag: 'ironia' }),
+      listen('No me tomes el pelo, ¿de verdad ganaste?', 'Escucha: ¿qué siente la persona?', 'Sorpresa e incredulidad', ['Enfado con la otra persona', 'Aburrimiento y cansancio', 'Miedo a perder el premio'], 'Dice «no me tomes el pelo».', { tag: 'ironia' }),
       dict('Tiene gracia que lo diga precisamente él.', 'Revisa la tilde de «gracia» (no lleva) y la «c» de «precisamente».', { tag: 'dictado' }),
-      mc('«Tomar el pelo» significa...', 'burlarse con una broma', ['cortar el pelo', 'ayudar', 'elogiar'], 'Tomar el pelo = bromear.', { tag: 'vocabulario' }),
+      mc('«Tomar el pelo» significa...', 'bromear a costa de alguien', ['cortar el pelo a alguien', 'ayudar a alguien con un problema', 'elogiar mucho a alguien'], 'Tomar el pelo = gastar una broma o engañar en broma.', { tag: 'vocabulario' }),
       match([['la ironía', 'Decir lo contrario'], ['el sarcasmo', 'Ironía burlona'], ['el chiste', 'Historia que hace reír'], ['tener gracia', 'Ser divertido']], 'Repasa el vocabulario del humor.', { tag: 'vocabulario' }),
     ],
   });
@@ -2264,7 +2267,7 @@ window.LWS = window.LWS || {};
     explain: { title: 'Dirigir y seguir una reunión', body: [
       'Una reunión eficaz tiene <b>orden del día, tiempos y conclusiones</b>. En una presentación, la estructura se anuncia: el público debe saber dónde está en todo momento.',
       { t: 'table', head: ['Momento', 'Fórmulas'], rows: [['Abrir', 'Buenos días a todos. Gracias por venir. Vamos a empezar.'], ['Presentar el tema', 'El objetivo de hoy es... / Quisiera hablarles de...'], ['Estructurar', 'Primero... Después... Para terminar... / Mi exposición consta de tres partes.'], ['Pasar a otro punto', 'Pasemos al siguiente punto. / Dicho esto, quisiera pasar a...'], ['Dar la palabra', 'Doy paso a Marta. / ¿Quieres añadir algo, Luis?'], ['Pedir la palabra', '¿Puedo añadir algo? / Quisiera tomar la palabra.'], ['Cerrar', 'En resumen... Si no hay más preguntas, damos por terminada la reunión.']] },
-      '<b>Verbos en imperativo de primera persona del plural</b> (<i>vamos a</i> + infinitivo o el subjuntivo exhortativo): «Pasemos al siguiente punto», «Veamos los resultados», «Empecemos».',
+      '<b>Primera persona del plural para proponer acciones conjuntas</b> (<i>vamos a</i> + infinitivo o el subjuntivo exhortativo): «Pasemos al siguiente punto», «Veamos los resultados», «Empecemos».',
       '<b>Para opinar con cortesía:</b> «Yo propondría que + imperfecto de subjuntivo» o «Sugiero que + presente de subjuntivo»: «Sugiero que dejemos este punto para la próxima reunión».',
       '<b>Acta de la reunión:</b> se redacta en pasado o presente histórico, con impersonales: «Se acordó que...», «Quedó pendiente...», «Se aprobó por unanimidad...».',
       { t: 'ex', list: ['Pasemos al segundo punto del orden del día.', 'Quisiera tomar la palabra un momento.', 'Sugiero que dejemos este punto para la próxima reunión.', 'Habrá turno de preguntas al final.'] },
@@ -2277,12 +2280,12 @@ window.LWS = window.LWS || {};
       order('Pasemos al segundo punto', 'Reunión.', { tag: 'reuniones' }),
     ],
     quiz: [
-      mc('El «orden del día» es...', 'la lista de temas de la reunión', ['la hora de salida', 'el acta', 'un resumen'], 'Orden del día = agenda.', { tag: 'vocabulario' }),
+      mc('El «orden del día» es...', 'la lista de temas de la reunión', ['el texto que recoge lo acordado', 'la hora de inicio y de final', 'el resumen de la presentación'], 'Orden del día = agenda.', { tag: 'vocabulario' }),
       mc('¿Cuál es el estilo típico de un acta?', 'Se acordó que...', ['Te cuento que...', 'Ya veremos...', 'Ojalá...'], 'Impersonal en pasado.', { tag: 'reuniones' }),
-      mc('«Doy paso a Marta» significa...', 'Marta va a hablar ahora', ['Marta se va', 'Marta pregunta', 'Marta termina'], 'Dar paso = ceder la palabra.', { tag: 'reuniones' }),
+      mc('«Doy paso a Marta» significa...', 'Marta va a hablar ahora', ['Marta se va de la reunión', 'Marta hace una pregunta', 'Marta termina su informe'], 'Dar paso = ceder la palabra.', { tag: 'reuniones' }),
       listen('Habrá turno de preguntas al final de la ponencia.', 'Escucha: ¿cuándo podrás preguntar?', 'Al final', ['Al principio', 'En el descanso', 'Nunca'], 'Turno de preguntas = al final.', { tag: 'reuniones' }),
       dict('Pasemos al segundo punto del orden del día.', 'Revisa las «s» de «pasemos».', { tag: 'dictado' }),
-      mc('Una «ponencia» es...', 'una exposición oral ante un público', ['un contrato', 'una lista', 'un correo'], 'Ponencia = charla formal.', { tag: 'vocabulario' }),
+      mc('Una «ponencia» es...', 'una exposición oral ante un público', ['un contrato entre dos empresas socias', 'una lista de tareas pendientes de hacer', 'un correo enviado a toda la plantilla'], 'Ponencia = charla formal.', { tag: 'vocabulario' }),
       match([['el orden del día', 'Temas de la reunión'], ['tomar la palabra', 'Empezar a hablar'], ['dar paso a', 'Ceder la palabra'], ['pasar a', 'Ir al siguiente punto']], 'Repasa el vocabulario de las reuniones.', { tag: 'vocabulario' }),
     ],
   });
@@ -2302,7 +2305,7 @@ window.LWS = window.LWS || {};
       'Al exponer datos, el reto es ser <b>preciso y neutral</b>: decir qué dato, cuánto, en qué periodo y con qué comparación. Después se interpreta.',
       { t: 'table', head: ['Tendencia', 'Verbos', 'Ejemplo'], rows: [['Subida', 'aumentar, subir, crecer, incrementarse, dispararse', 'Las ventas aumentaron un 15 %.'], ['Bajada', 'descender, bajar, disminuir, reducirse, desplomarse', 'El paro descendió al 8 %.'], ['Estabilidad', 'mantenerse, estabilizarse, permanecer', 'Los precios se mantuvieron.'], ['Fluctuación', 'oscilar, fluctuar', 'La cifra osciló entre 40 y 50.'], ['Máximo / mínimo', 'alcanzar un máximo / tocar fondo', 'Alcanzó su máximo en julio.']] },
       '<b>Preposiciones con cifras:</b> aumentar <b>en</b> 200 unidades (diferencia) / aumentar <b>un</b> 10 % (proporción) / pasar <b>de</b> 50 <b>a</b> 80 / situarse <b>en</b> el 20 % / oscilar <b>entre</b> 10 <b>y</b> 15.',
-      '<b>Fracciones y porcentajes:</b> la mitad, un tercio, dos tercios, un cuarto, tres cuartos; «el 25 % de la población» (con artículo), «un 25 %» (aproximado); concordancia: «El 30 % de los encuestados <b>afirma</b> / <b>afirman</b>» (ambas aceptadas).',
+      '<b>Fracciones y porcentajes:</b> la mitad, un tercio, dos tercios, un cuarto, tres cuartos; «el 25 % de la población» (cifra referida a un conjunto conocido), «un 25 %» (cifra presentada como dato nuevo, a veces aproximado); concordancia: «El 30 % de los encuestados <b>afirma</b> / <b>afirman</b>» (ambas aceptadas).',
       '<b>Comparar:</b> el doble de, el triple de, el X % más que, casi, aproximadamente, algo más de, menos de. <b>Citar fuentes:</b> según los datos del INE..., de acuerdo con el informe..., los datos revelan que...',
       { t: 'ex', list: ['Las ventas aumentaron un 15 % respecto al año anterior.', 'El paro pasó del 12 % al 8 %.', 'La cifra osciló entre 40 y 50.', 'Según los datos, la tendencia es positiva.'] },
     ] },
@@ -2311,15 +2314,15 @@ window.LWS = window.LWS || {};
       mc('Las ventas ___ un 15 %. (subir, pretérito)', 'aumentaron', ['descendieron', 'se mantuvieron', 'desaparecieron'], 'Aumentaron = subida.', { tag: 'datos' }),
       mc('El paro pasó ___ 12 % al 8 %.', 'del', ['en el', 'por el', 'sobre el'], 'Pasar de... a...', { tag: 'datos' }),
       fill('La cifra ___ entre 40 y 50. (oscilar, pretérito, ella)', 'osciló', 'Oscilar, ella: osciló.', { tag: 'datos' }),
-      order('Según los datos la tendencia es positiva', 'Fuente + dato.', { tag: 'datos', alts: ['Según los datos, la tendencia es positiva'] }),
+      order('Según los datos la tendencia es positiva', 'Fuente + dato.', { tag: 'datos', alts: ['La tendencia es positiva según los datos'] }),
     ],
     quiz: [
-      mc('«Descender» significa...', 'bajar o disminuir', ['subir', 'mantenerse', 'ganar'], 'Descender = bajar.', { tag: 'vocabulario' }),
+      mc('«Descender» significa...', 'bajar o disminuir', ['subir o aumentar', 'mantenerse sin cambios', 'oscilar sin rumbo fijo'], 'Descender = bajar.', { tag: 'vocabulario' }),
       mc('«La mitad» equivale a...', '50 %', ['25 %', '75 %', '100 %'], 'Mitad = 50 %.', { tag: 'datos' }),
       mc('¿Qué verbo expresa estabilidad?', 'mantenerse', ['dispararse', 'desplomarse', 'crecer'], 'Mantenerse = no cambia.', { tag: 'datos' }),
       listen('El paro pasó del doce por ciento al ocho por ciento.', 'Escucha: ¿qué ocurre con el paro?', 'Baja', ['Sube', 'Se mantiene', 'Desaparece'], 'De 12 a 8: baja.', { tag: 'datos' }),
       dict('Según los datos, la tendencia es positiva.', 'Revisa las tildes de «según» y «tendencia» (esta no lleva).', { tag: 'dictado' }),
-      mc('Un «gráfico» sirve para...', 'representar datos visualmente', ['firmar contratos', 'escribir cartas', 'saludar'], 'Gráfico = representación.', { tag: 'vocabulario' }),
+      mc('Un «gráfico» sirve para...', 'representar datos visualmente', ['firmar acuerdos con clientes', 'redactar cartas formales', 'saludar al público al empezar'], 'Gráfico = representación.', { tag: 'vocabulario' }),
       match([['el porcentaje', 'Cantidad por cada cien'], ['la tendencia', 'Dirección de la evolución'], ['aumentar', 'Hacerse más grande'], ['según los datos', 'Introduce una fuente']], 'Repasa el vocabulario de los datos.', { tag: 'vocabulario' }),
     ],
   });
@@ -2338,7 +2341,7 @@ window.LWS = window.LWS || {};
     explain: { title: 'Condiciones, concesiones y persuasión', body: [
       'Negociar es <b>buscar un acuerdo útil para ambas partes</b>. Se combinan firmeza y cortesía: pedir claro, escuchar, ceder en lo secundario y mantener lo esencial.',
       { t: 'table', head: ['Función', 'Fórmulas'], rows: [['Proponer', 'Lo que proponemos es... / Estaríamos dispuestos a...'], ['Condicionar', 'Aceptaríamos siempre que + subjuntivo / a condición de que + subjuntivo / en caso de que + subjuntivo'], ['Ceder', 'Podríamos flexibilizar... / Estamos dispuestos a ceder en... / A cambio de...'], ['Rechazar', 'Me temo que eso no nos es posible. / No podemos aceptar esas condiciones.'], ['Contraofertar', 'Lo que podemos ofrecer es... / Nuestra contraoferta es...'], ['Cerrar', 'Entonces, ¿quedamos así? / Estamos de acuerdo. / Trato hecho.']] },
-      '<b>Condicionales de negociación:</b> «Si + presente, futuro» (real): «Si firman hoy, les damos un 5 % de descuento». «Si + imperfecto de subjuntivo, condicional» (hipótesis): «Si pudieran adelantar el pago, podríamos reducir el precio».',
+      '<b>Condicionales de negociación:</b> «Si + presente, presente o futuro» (condición real): «Si firman hoy, les damos un 5 % de descuento». «Si + imperfecto de subjuntivo, condicional» (hipótesis): «Si pudieran adelantar el pago, podríamos reducir el precio».',
       '<b>Persuadir:</b> apela a la razón (datos, ejemplos), a la relación (confianza, beneficio mutuo) y a la emoción con medida. Fórmulas: «Piense en lo que ganaría...», «Le propongo que lo pruebe durante un mes», «Seguro que usted también ve que...».',
       '<b>Gestionar el desacuerdo:</b> reformula lo que dice la otra parte («Si lo he entendido bien, ustedes quieren...»), identifica los puntos comunes y deja las cuestiones difíciles para el final.',
       { t: 'ex', list: ['Si firman hoy, les damos un cinco por ciento de descuento.', 'Aceptaríamos siempre que entreguen antes de mayo.', 'A cambio de un pago anticipado, ofrecemos un descuento.', 'Si lo he entendido bien, ustedes quieren un plazo más largo.'] },
@@ -2351,12 +2354,12 @@ window.LWS = window.LWS || {};
       order('Me temo que eso no nos es posible', 'Rechazo cortés.', { tag: 'negociacion' }),
     ],
     quiz: [
-      mc('«Ceder» significa...', 'renunciar a algo para llegar a un acuerdo', ['ganar', 'insistir', 'abandonar la sala'], 'Ceder = hacer concesiones.', { tag: 'vocabulario' }),
-      mc('¿Qué frase es un rechazo cortés?', 'Me temo que eso no nos es posible.', ['No.', 'Ni hablar, qué disparate.', 'Eso es ridículo.'], 'Me temo que suaviza el rechazo.', { tag: 'negociacion' }),
-      mc('Una «contraoferta» es...', 'una propuesta en respuesta a otra', ['un contrato firmado', 'un rechazo sin más', 'una despedida'], 'Contraoferta = respuesta con otra oferta.', { tag: 'vocabulario' }),
-      listen('A cambio de un pago anticipado, ofrecemos un descuento.', 'Escucha: ¿qué ofrecen?', 'Un descuento', ['Un regalo', 'Más plazo', 'Un empleo'], 'Dice «ofrecemos un descuento».', { tag: 'negociacion' }),
+      mc('«Ceder» significa...', 'renunciar a algo para llegar a un acuerdo', ['ganar todo lo que se pide en la mesa', 'insistir hasta el final sin escuchar', 'abandonar la sala muy enfadado y callado'], 'Ceder = hacer concesiones.', { tag: 'vocabulario' }),
+      mc('¿Qué frase es un rechazo cortés?', 'Me temo que eso no nos es posible.', ['No, de ninguna manera, ni hablar.', 'Eso es ridículo, no lo aceptamos.', 'Qué disparate, no pienso ceder nada.'], 'Me temo que suaviza el rechazo; las otras opciones son bruscas.', { tag: 'negociacion' }),
+      mc('Una «contraoferta» es...', 'una propuesta en respuesta a otra', ['un contrato ya firmado por todos', 'un rechazo sin ofrecer nada a cambio', 'una despedida muy cordial al final'], 'Contraoferta = respuesta con otra oferta.', { tag: 'vocabulario' }),
+      listen('A cambio de un pago anticipado, ofrecemos un descuento.', 'Escucha: ¿qué ofrecen?', 'Un descuento', ['Un pago anticipado', 'Un plazo más largo', 'Un regalo gratis'], 'Dice «ofrecemos un descuento».', { tag: 'negociacion' }),
       dict('Por fin llegamos a un acuerdo.', 'Revisa la «ll» de «llegamos».', { tag: 'dictado' }),
-      mc('«Si lo he entendido bien...» sirve para...', 'reformular lo que dijo la otra parte', ['terminar la reunión', 'rechazar la oferta', 'cambiar de tema'], 'Reformular evita malentendidos.', { tag: 'negociacion' }),
+      mc('«Si lo he entendido bien...» sirve para...', 'reformular lo que dijo la otra parte', ['dar por terminada la reunión ya mismo', 'rechazar la oferta que se ha recibido', 'proponer otro asunto muy distinto al actual'], 'Reformular evita malentendidos.', { tag: 'negociacion' }),
       match([['la concesión', 'Renuncia para acordar'], ['la contraoferta', 'Respuesta a una oferta'], ['convencer', 'Persuadir con razones'], ['a cambio de', 'Como compensación']], 'Repasa el vocabulario de la negociación.', { tag: 'vocabulario' }),
     ],
   });
@@ -2367,7 +2370,7 @@ window.LWS = window.LWS || {};
   'use strict';
   const C = L.C, { mc, fill, order, listen, dict, match } = L.Q;
   C.gloss = Object.assign(C.gloss || {}, {
-    'echarse a': 'to burst out (laughing, crying)', 'no dejar de': 'to keep on; to never stop', 'venir a': 'to amount to; to come to (mean)', 'estar por': 'to be yet to; to be inclined to', 'acabar por': 'to end up (doing)',
+    'echarse a': 'to burst out (laughing, crying)', 'no dejar de': 'to keep (doing); to not stop', 'venir a': 'to amount to; to come to (mean)', 'estar por': 'to be yet to; to be inclined to', 'acabar por': 'to end up (doing)',
     'tomar el pelo': 'to pull (someone\'s) leg', 'meter la pata': 'to put one\'s foot in it', 'costar un ojo de la cara': 'to cost an arm and a leg', 'estar en las nubes': 'to have one\'s head in the clouds', 'ponerse las pilas': 'to get one\'s act together', 'dar en el clavo': 'to hit the nail on the head',
     'tutear': 'to address as «tú»', 'coloquial': 'colloquial; informal', 'solemne': 'solemn; formal', 'campechano': 'easygoing; down-to-earth', 'el eufemismo': 'euphemism', 'cortante': 'curt; sharp',
     'el titular': 'headline', 'la crónica': 'chronicle; feature report', 'el editorial': 'editorial', 'la fuente': 'source; fountain', 'desmentir': 'to deny; to refute', 'el sesgo': 'bias; slant',
@@ -2382,12 +2385,12 @@ window.LWS = window.LWS || {};
       ['echarse a', 'perífrasis', 'Empezar de repente una acción, casi siempre llorar, reír o correr.', 'Al oír la noticia, se echó a llorar.', 'On hearing the news, she burst into tears.'],
       ['no dejar de', 'perífrasis', 'Seguir haciendo algo con insistencia.', 'No deja de preguntar por ti.', 'He keeps asking about you.'],
       ['venir a', 'perífrasis', 'Expresar una equivalencia aproximada.', 'Esto viene a costar unos cien euros.', 'This comes to about a hundred euros.'],
-      ['estar por', 'perífrasis', 'Indicar que una acción todavía no se ha realizado o que se está a punto de realizar.', 'El informe está por escribir.', 'The report is yet to be written.'],
+      ['estar por', 'perífrasis', 'Indicar que una acción está pendiente de realizarse o que se tiene inclinación a realizarla.', 'El informe está por escribir.', 'The report is yet to be written.'],
       ['acabar por', 'perífrasis', 'Expresar el resultado final de un proceso.', 'Acabó por aceptar la oferta.', 'He ended up accepting the offer.', ['terminar por']],
     ],
     explain: { title: 'Perífrasis verbales: el matiz que cambia el sentido', body: [
       'Una <b>perífrasis verbal</b> une un verbo auxiliar con un infinitivo, un gerundio o un participio. El auxiliar pierde su significado literal y aporta un <b>matiz aspectual</b>: inicio, duración, repetición, final u obligación. En el nivel C1 se espera que elijas la perífrasis que mejor refleje tu intención.',
-      { t: 'table', head: ['Matiz', 'Perífrasis', 'Ejemplo'], rows: [['Inicio', 'ponerse a / echarse a / romper a + inf.', 'Se echó a reír.'], ['Continuidad', 'seguir / continuar + gerundio; no dejar de + inf.', 'Sigue trabajando.'], ['Repetición', 'volver a + inf.', 'Volvió a llamar.'], ['Final', 'acabar de / dejar de / acabar por + inf.', 'Acabó por rendirse.'], ['Aproximación', 'venir a + inf.; andar / ir + gerundio', 'Viene a ser lo mismo.'], ['Obligación', 'tener que / haber de / deber + inf.', 'Has de saberlo.'], ['Probabilidad', 'deber de / venir a + inf.', 'Deben de ser las diez.']] },
+      { t: 'table', head: ['Matiz', 'Perífrasis', 'Ejemplo'], rows: [['Inicio', 'ponerse a / echarse a / romper a + inf.', 'Se echó a reír.'], ['Continuidad', 'seguir / continuar / ir / andar + gerundio; no dejar de + inf.', 'Sigue trabajando.'], ['Repetición', 'volver a + inf.', 'Volvió a llamar.'], ['Final', 'terminar de / dejar de / acabar por + inf.', 'Acabó por rendirse.'], ['Aproximación', 'venir a + inf.', 'Viene a ser lo mismo.'], ['Obligación', 'tener que / haber de / deber + inf.', 'Has de saberlo.'], ['Probabilidad', 'deber de + inf.','Deben de ser las diez.']] },
       '<b>Deber</b> frente a <b>deber de</b>: «Debes estudiar» expresa obligación; «Debe de estar enfermo» expresa suposición. En el uso actual muchos hablantes dicen «debe estar enfermo», pero en un texto cuidado conviene distinguirlos.',
       '<b>Llevar + gerundio</b> y <b>llevar + participio</b> no significan lo mismo: «Llevo tres horas esperando» (duración) frente a «Llevo escritas tres páginas» (resultado acumulado).',
       '<b>Estar por + infinitivo</b> expresa algo pendiente («La cena está por hacer») o una inclinación («Estoy por quedarme»). <b>Acabar por</b> y <b>terminar por</b> señalan el desenlace de un proceso largo: «Tantas dudas acabaron por agotarlo».',
@@ -2404,7 +2407,7 @@ window.LWS = window.LWS || {};
       mc('¿Qué frase expresa un resultado acumulado?', 'Llevo escritas tres páginas.', ['Llevo tres horas escribiendo.', 'Sigo escribiendo.', 'Estoy por escribir.'], 'Llevar + participio expresa resultado acumulado.', { tag: 'perífrasis' }),
       mc('«El informe está por escribir» significa que...', 'todavía no se ha escrito', ['ya está terminado', 'se escribe a diario', 'alguien lo ha corregido'], 'Estar por + infinitivo = acción pendiente.', { tag: 'perífrasis' }),
       fill('No ___ de quejarse del ruido. (dejar, presente, él)', 'deja', 'No dejar de + infinitivo: insistencia.', { tag: 'perífrasis' }),
-      listen('Tanta insistencia acabó por convencerme.', 'Escucha: ¿cuál fue el resultado?', 'Lo convencieron al final', ['Se negó a escuchar', 'Dejó de insistir', 'Se echó a reír'], 'Acabó por convencerme = resultado final.', { tag: 'perífrasis' }),
+      listen('Tanta insistencia acabó por convencerme.', 'Escucha: ¿cuál fue el resultado?', 'Al final quedó convencido', ['Se negó a escuchar', 'Dejó de insistir', 'Se echó a reír'], 'Acabó por convencerme = resultado final.', { tag: 'perífrasis' }),
       dict('Al ver el regalo, se echó a llorar.', 'Revisa la tilde de «echó».', { tag: 'dictado' }),
       mc('La perífrasis que expresa aproximación es...', 'venir a + infinitivo', ['echarse a + infinitivo', 'acabar de + infinitivo', 'volver a + infinitivo'], 'Viene a ser = es, más o menos.', { tag: 'perífrasis' }),
       match([['echarse a', 'Inicio repentino'], ['no dejar de', 'Insistencia'], ['venir a', 'Equivalencia aproximada'], ['acabar por', 'Resultado final']], 'Repasa las perífrasis de la lección.', { tag: 'vocabulario' }),
@@ -2426,8 +2429,8 @@ window.LWS = window.LWS || {};
       'Un <b>modismo</b> (o expresión idiomática) es una combinación fija de palabras cuyo significado <b>no se deduce</b> de sus componentes. No se pueden traducir literalmente ni cambiar sus elementos: no decimos «meter la mano» por «meter la pata».',
       { t: 'table', head: ['Modismo', 'Significado', 'Registro'], rows: [['tomar el pelo', 'burlarse / engañar en broma', 'coloquial'], ['meter la pata', 'cometer un error', 'coloquial'], ['costar un ojo de la cara', 'ser muy caro', 'coloquial'], ['estar en las nubes', 'estar distraído', 'neutro-coloquial'], ['ponerse las pilas', 'esforzarse más', 'coloquial'], ['dar en el clavo', 'acertar', 'neutro']] },
       '<b>Se conjugan:</b> el verbo cambia, pero el resto de la expresión se mantiene. «Metió la pata», «Estoy metiendo la pata», «No metas la pata». Con «tomar el pelo» el pronombre indirecto aparece: «Me estás tomando el pelo».',
-      '<b>Registro:</b> la mayoría de los modismos pertenecen al lenguaje oral y coloquial. En un informe o un ensayo conviene sustituirlos: «cometió un error» por «metió la pata»; «acertó» por «dio en el clavo».',
-      '<b>Variación geográfica:</b> «ponerse las pilas» es muy habitual en México y en otros países de América, mientras que en España se oye más «espabilarse». Un modismo muy local puede no entenderse en otras regiones.',
+      '<b>Registro:</b> la mayoría de los modismos pertenecen al lenguaje oral y coloquial. En un informe o un ensayo conviene sustituirlos: «metió la pata» por «cometió un error»; «dio en el clavo» por «acertó».',
+      '<b>Variación geográfica:</b> «ponerse las pilas» es muy habitual en México y en otros países de América, y también se oye en España, donde son frecuentes alternativas como «espabilarse». Un modismo muy local puede no entenderse en otras regiones.',
       { t: 'ex', list: ['No me tomes el pelo.', 'Metí la pata sin querer.', 'Ese coche cuesta un ojo de la cara.', 'Estás en las nubes desde esta mañana.', 'Con esa respuesta diste en el clavo.'] },
     ] },
     listen: ['No me tomes el pelo, por favor.', 'Metí la pata sin querer.', 'Ese coche cuesta un ojo de la cara.', 'Perdona, estaba en las nubes.', 'Si quieres aprobar, tienes que ponerte las pilas.'],
@@ -2443,7 +2446,7 @@ window.LWS = window.LWS || {};
       fill('Con ese comentario ___ la pata. (meter, pretérito indefinido, tú)', 'metiste', 'Meter, indefinido, tú: metiste.', { tag: 'modismos' }),
       listen('Si quieres aprobar, tienes que ponerte las pilas.', 'Escucha: ¿qué le recomiendan?', 'Esforzarse más', ['Cambiar las pilas', 'Descansar', 'Abandonar el curso'], 'Ponerse las pilas = esforzarse.', { tag: 'modismos' }),
       dict('Ese coche cuesta un ojo de la cara.', 'Revisa la «j» de «ojo».', { tag: 'dictado' }),
-      mc('Un modismo se caracteriza por...', 'tener un significado figurado y una forma fija', ['poder traducirse palabra por palabra', 'usarse solo por escrito', 'no admitir ningún verbo'], 'Su sentido no se deduce de las palabras.', { tag: 'modismos' }),
+      mc('Un modismo se caracteriza por...', 'tener un significado figurado y una forma fija', ['poder traducirse palabra por palabra sin cambiar el sentido', 'usarse únicamente en textos escritos formales', 'no admitir ninguna conjugación del verbo'], 'Su sentido no se deduce de las palabras.', { tag: 'modismos' }),
       match([['tomar el pelo', 'Burlarse en broma'], ['meter la pata', 'Cometer un error'], ['estar en las nubes', 'Estar distraído'], ['dar en el clavo', 'Acertar']], 'Repasa los modismos de la lección.', { tag: 'vocabulario' }),
     ],
   });
@@ -2461,7 +2464,7 @@ window.LWS = window.LWS || {};
     ],
     explain: { title: 'Registro y tono: cómo se dice lo que se dice', body: [
       'El <b>registro</b> es la variedad de lengua que elegimos según la situación (formal, neutro, coloquial). El <b>tono</b> es la actitud que transmite el mensaje (amable, irónico, cortante, solemne). Dos frases pueden informar de lo mismo y producir un efecto muy distinto.',
-      { t: 'table', head: ['Registro', 'Rasgos', 'Ejemplo'], rows: [['Formal', 'usted, léxico culto, frases largas, subjuntivo cortés', 'Le ruego que disculpe el retraso.'], ['Neutro', 'tú o usted, léxico general', 'Perdona el retraso.'], ['Coloquial', 'tú, muletillas, exclamaciones, elipsis', 'Perdona, ¡se me ha ido el santo al cielo!'], ['Vulgar', 'palabrotas, incorrecciones', 'Evítalo en contextos profesionales.']] },
+      { t: 'table', head: ['Registro', 'Rasgos', 'Ejemplo'], rows: [['Formal', 'usted, léxico culto, frases largas, subjuntivo cortés', 'Le ruego que disculpe el retraso.'], ['Neutro', 'tú o usted, léxico general', 'Perdona el retraso.'], ['Coloquial', 'tú, muletillas, exclamaciones, elipsis', 'Perdona, ¡es que se me han pegado las sábanas!'], ['Vulgar', 'palabrotas, incorrecciones', 'Evítalo en contextos profesionales.']] },
       '<b>Tuteo y ustedeo:</b> en España se tutea cada vez más en el trabajo y entre jóvenes; en Colombia o Costa Rica existe incluso el «ustedeo» entre familiares. Ante la duda, empieza con «usted» y deja que el interlocutor proponga: «¿Podemos tutearnos?».',
       '<b>Mitigar y atenuar:</b> los eufemismos y los atenuantes suavizan: «Creo que quizá habría que revisar el plan» frente al directo «El plan está mal». Con el condicional, el imperfecto o fórmulas como «me temo que» sonarás más diplomático.',
       '<b>Tono y puntuación:</b> por escrito, las exclamaciones, los puntos suspensivos y los adverbios intensificadores (francamente, sencillamente) modifican el tono. Un correo con frases muy breves puede parecer <b>cortante</b> aunque no lo pretendas.',
@@ -2469,18 +2472,18 @@ window.LWS = window.LWS || {};
     ] },
     listen: ['Le ruego que disculpe el retraso.', '¿Podemos tutearnos, si no le importa?', 'Me temo que habría que revisar el plan.', 'Pasar a mejor vida es un eufemismo de morir.', 'Su respuesta fue tan cortante que nadie preguntó más.'],
     practice: [
-      mc('¿Qué frase pertenece al registro formal?', 'Le ruego que disculpe el retraso.', ['Perdona, que llego tardísimo.', 'Siento el tardón, tío.', 'Uy, se me pasó la hora.'], 'Le ruego que + subjuntivo = formal.', { tag: 'registro' }),
+      mc('¿Qué frase pertenece al registro formal?', 'Le ruego que disculpe el retraso.', ['Perdona, que llego tardísimo.', 'Siento llegar tarde, tío.', 'Uy, se me pasó la hora.'], 'Le ruego que + subjuntivo = formal.', { tag: 'registro' }),
       mc('«Pasar a mejor vida» es...', 'un eufemismo', ['un insulto', 'un refrán', 'una pregunta'], 'Suaviza la palabra «morir».', { tag: 'registro' }),
       fill('¿Podemos ___? (tratarnos de tú)', 'tutearnos', 'Tutear + nos.', { tag: 'registro' }),
       order('Me temo que habría que revisar el plan', 'Fórmula de atenuación diplomática.', { tag: 'registro' }),
     ],
     quiz: [
       mc('Un tono «cortante» es...', 'seco y poco amable', ['muy cariñoso', 'muy solemne', 'irónico y divertido'], 'Cortante = seco.', { tag: 'registro' }),
-      mc('Para suavizar una crítica en una reunión dirías...', 'Quizá habría que revisar este punto.', ['Esto está fatal.', 'Eso no vale nada.', 'Rehazlo ya.'], 'El condicional y «quizá» atenúan.', { tag: 'registro' }),
-      mc('Un ministro «campechano» es...', 'cercano y sin formalidades', ['distante y frío', 'muy joven', 'poco inteligente'], 'Campechano = sencillo y cercano.', { tag: 'registro' }),
+      mc('Para suavizar una crítica en una reunión dirías...', 'Quizá habría que revisar este punto.', ['Esto está fatal, hay que cambiarlo todo.', 'Eso no vale nada, rehazlo cuanto antes.', 'Nadie va a entender este apartado.'], 'El condicional y «quizá» atenúan.', { tag: 'registro' }),
+      mc('Un ministro «campechano» es...', 'cercano y sin formalidades', ['distante y frío con la gente', 'muy joven para el cargo', 'poco inteligente para el puesto'], 'Campechano = sencillo y cercano.', { tag: 'registro' }),
       listen('Me temo que habría que revisar el plan.', 'Escucha: ¿cómo es el tono?', 'Diplomático', ['Agresivo', 'Alegre', 'Indiferente'], 'Me temo que + condicional atenúa.', { tag: 'registro' }),
       dict('Pasar a mejor vida es un eufemismo.', 'Revisa la tilde de «eufemismo» (no lleva).', { tag: 'dictado' }),
-      mc('Ante la duda sobre tutear o no a alguien, lo más prudente es...', 'empezar con «usted»', ['empezar con «tú»', 'no saludar', 'usar «vos»'], 'Se empieza con «usted» y se espera.', { tag: 'registro' }),
+      mc('Ante la duda sobre tutear o no a alguien, lo más prudente es...', 'empezar con «usted»', ['empezar tuteando a esa persona', 'no saludar hasta conocerla bien', 'usar «vos» con todo el mundo'], 'Se empieza con «usted» y se espera.', { tag: 'registro' }),
       match([['tutear', 'Tratar de «tú»'], ['coloquial', 'Propio de la conversación informal'], ['solemne', 'Formal y digno'], ['el eufemismo', 'Palabra suave por otra dura']], 'Repasa el vocabulario de registro.', { tag: 'vocabulario' }),
     ],
   });
@@ -2499,7 +2502,7 @@ window.LWS = window.LWS || {};
     explain: { title: 'Cómo se lee la prensa', body: [
       'Un periódico mezcla <b>géneros informativos</b> (noticia, reportaje, crónica), <b>géneros de opinión</b> (editorial, columna, artículo de opinión) y <b>géneros mixtos</b> (entrevista, crítica). Reconocerlos evita confundir un hecho con un juicio.',
       { t: 'table', head: ['Género', 'Función', 'Rasgos'], rows: [['Noticia', 'informar', 'Estructura de pirámide invertida: lo esencial va primero.'], ['Crónica', 'narrar con estilo', 'Tiempo ordenado, voz personal del autor.'], ['Editorial', 'opinar', 'Sin firma; refleja la postura del medio.'], ['Columna', 'opinar', 'Firmada; tono subjetivo.'], ['Reportaje', 'profundizar', 'Datos, testimonios, contexto.']] },
-      '<b>Lenguaje de la prensa:</b> condicional de rumor («El presidente <i>habría</i> dimitido»), construcciones impersonales («se dio a conocer»), nominalizaciones («la puesta en marcha», «el desmentido») y verbos de declaración variados: afirmar, señalar, subrayar, matizar, desmentir.',
+      '<b>Lenguaje de la prensa:</b> condicional de rumor («El presidente <i>habría</i> dimitido», un uso muy extendido en prensa, pero que la RAE desaconseja por considerarlo un galicismo), pasivas reflejas («se dio a conocer el acuerdo»), nominalizaciones («la puesta en marcha», «el desmentido») y verbos de declaración variados: afirmar, señalar, subrayar, matizar, desmentir.',
       '<b>Atribución de fuentes:</b> «según fuentes cercanas», «de acuerdo con el informe», «a decir de los expertos». Una noticia sin fuentes identificables debe leerse con cautela.',
       '<b>Detectar el sesgo:</b> fíjate en el titular, en los adjetivos valorativos, en qué voces se citan y en cuáles faltan. «Polémica reforma» orienta al lector; «reforma aprobada por 180 votos» informa.',
       { t: 'ex', list: ['El titular prometía más de lo que decía el artículo.', 'Según fuentes oficiales, el acuerdo se firmará el lunes.', 'El ministerio desmintió la noticia.', 'El presidente habría dimitido, según el diario.'] },
@@ -2507,16 +2510,16 @@ window.LWS = window.LWS || {};
     listen: ['El titular prometía más de lo que decía el artículo.', 'Según fuentes oficiales, el acuerdo se firmará el lunes.', 'El ministerio desmintió la noticia esta mañana.', 'El editorial critica duramente la reforma.', 'El presidente habría dimitido, según el diario.'],
     practice: [
       mc('Un artículo sin firma que expresa la opinión del periódico es...', 'un editorial', ['una crónica', 'un titular', 'una noticia'], 'El editorial refleja la postura del medio.', { tag: 'prensa' }),
-      mc('«El presidente habría dimitido» expresa...', 'una información no confirmada', ['una orden', 'un hecho seguro', 'un deseo'], 'El condicional de rumor señala información sin confirmar.', { tag: 'prensa' }),
+      mc('«El presidente habría dimitido» expresa...', 'una información no confirmada', ['una orden dada a sus ministros', 'un hecho completamente seguro', 'un deseo de la oposición'], 'El condicional de rumor señala información sin confirmar.', { tag: 'prensa' }),
       fill('El ministerio ___ la noticia. (desmentir, pretérito indefinido)', 'desmintió', 'Desmentir: e → i en la tercera persona.', { tag: 'prensa' }),
       order('Según fuentes oficiales el acuerdo se firmará el lunes', 'Atribución de la fuente al inicio.', { tag: 'prensa' }),
     ],
     quiz: [
       mc('En una noticia, la estructura de «pirámide invertida» coloca primero...', 'lo más importante', ['los detalles menores', 'la opinión del autor', 'la conclusión'], 'Lo esencial va al principio.', { tag: 'prensa' }),
-      mc('«Sesgo» significa...', 'inclinación que resta objetividad', ['dato verificado', 'título llamativo', 'fuente oficial'], 'Un sesgo desvía la objetividad.', { tag: 'prensa' }),
+      mc('«Sesgo» significa...', 'inclinación que resta objetividad', ['dato verificado por varias fuentes', 'título llamativo para atraer lectores', 'fuente oficial de la noticia'], 'Un sesgo desvía la objetividad.', { tag: 'prensa' }),
       mc('¿Qué titular es más neutro?', 'La reforma fue aprobada por 180 votos', ['La polémica reforma sale adelante', 'El golpe final a la clase media', 'Triunfo arrollador del Gobierno'], 'Evita adjetivos valorativos.', { tag: 'prensa' }),
       listen('El ministerio desmintió la noticia esta mañana.', 'Escucha: ¿qué hizo el ministerio?', 'Negó la noticia', ['Confirmó la noticia', 'Publicó un editorial', 'Cambió el titular'], 'Desmentir = negar públicamente.', { tag: 'prensa' }),
-      dict('El titular prometía más de lo que decía.', 'Revisa la «t» y la «r» de «titular».', { tag: 'dictado' }),
+      dict('El titular prometía más de lo que decía.', 'Cuida la estructura «más de lo que».', { tag: 'dictado' }),
       mc('Una «columna» es un género...', 'de opinión, con firma', ['informativo, sin firma', 'publicitario', 'meteorológico'], 'La columna es personal y firmada.', { tag: 'prensa' }),
       match([['el titular', 'Título destacado'], ['la crónica', 'Relato con estilo personal'], ['la fuente', 'Origen de la información'], ['desmentir', 'Negar públicamente']], 'Repasa el vocabulario de prensa.', { tag: 'vocabulario' }),
     ],
@@ -2537,7 +2540,7 @@ window.LWS = window.LWS || {};
       'Un texto literario no solo cuenta algo: <b>cuenta cómo se cuenta</b>. Para analizarlo, observa quién habla, qué recursos usa el autor y qué efecto producen.',
       { t: 'table', head: ['Aspecto', 'Pregunta', 'Ejemplo'], rows: [['Narrador', '¿Quién cuenta? ¿Con qué punto de vista?', 'Primera persona; tercera omnisciente'], ['Tiempo', '¿Cómo se organiza la cronología?', 'Analepsis (retroceso), prolepsis (anticipo)'], ['Recursos', '¿Qué figuras retóricas hay?', 'metáfora, comparación, hipérbole, personificación'], ['Tono', '¿Qué actitud transmite?', 'nostálgico, irónico, lírico'], ['Tema', '¿De qué trata en el fondo?', 'la memoria, la pérdida, la identidad']] },
       '<b>Pretérito imperfecto y pretérito indefinido en la narración:</b> el imperfecto describe el escenario y las acciones de fondo («Llovía y la calle estaba vacía»); el indefinido hace avanzar la trama («De pronto sonó el teléfono»). El <b>presente histórico</b> acerca el pasado al lector.',
-      '<b>Figuras frecuentes:</b> la <b>metáfora</b> identifica («La vida es un sueño»); la <b>comparación</b> usa «como» («rápido como el viento»); la <b>hipérbole</b> exagera («Te lo he dicho mil veces»); la <b>personificación</b> da rasgos humanos («El mar susurraba»).',
+      '<b>Figuras frecuentes:</b> la <b>metáfora</b> identifica («Su sonrisa es un amanecer»); la <b>comparación</b> usa «como» («rápido como el viento»); la <b>hipérbole</b> exagera («Te lo he dicho mil veces»); la <b>personificación</b> da rasgos humanos («El mar susurraba»).',
       '<b>Léxico para comentar:</b> «el autor evoca», «se percibe un tono», «el texto sugiere», «cabe interpretar que». Evita el simple resumen: explica el efecto de cada recurso.',
       { t: 'ex', list: ['El narrador cuenta los hechos en primera persona.', 'Llovía y la calle estaba vacía cuando sonó el teléfono.', 'El olor a pan evoca su infancia.', 'La metáfora sugiere que la vida es un viaje.'] },
     ] },
@@ -2550,8 +2553,8 @@ window.LWS = window.LWS || {};
     ],
     quiz: [
       mc('«Rápido como el viento» es...', 'una comparación', ['una metáfora', 'una personificación', 'un desenlace'], 'Usa «como».', { tag: 'literatura' }),
-      mc('El «desenlace» es...', 'la parte en que se resuelve el conflicto', ['el principio de la historia', 'el título del texto', 'una figura retórica'], 'Desenlace = final.', { tag: 'literatura' }),
-      mc('«El mar susurraba» es un ejemplo de...', 'personificación', ['hipérbole', 'comparación', 'alusión'], 'Da rasgos humanos al mar.', { tag: 'literatura' }),
+      mc('El «desenlace» es...', 'la parte en que se resuelve el conflicto', ['el principio de la historia contada', 'el título que encabeza el texto', 'una figura retórica del lenguaje'], 'Desenlace = final.', { tag: 'literatura' }),
+      mc('«El mar susurraba» es un ejemplo de...', 'personificación', ['hipérbole de la naturaleza marina', 'comparación con un animal', 'alusión a un libro conocido'], 'Da rasgos humanos al mar.', { tag: 'literatura' }),
       listen('Su prosa es sobria y precisa.', 'Escucha: ¿qué se elogia?', 'El estilo de escritura', ['El argumento', 'La portada', 'El precio'], 'Prosa = manera de escribir.', { tag: 'literatura' }),
       dict('El desenlace del cuento sorprendió a todos.', 'Revisa la tilde de «desenlace» (no lleva).', { tag: 'dictado' }),
       mc('«Te lo he dicho mil veces» es una...', 'hipérbole', ['metáfora', 'personificación', 'alusión'], 'Exagera para enfatizar.', { tag: 'literatura' }),
@@ -2567,7 +2570,7 @@ window.LWS = window.LWS || {};
       ['ahora bien', 'expresión', 'Introduce una matización o una objeción a lo anterior.', 'El plan es ambicioso; ahora bien, falta financiación.', 'The plan is ambitious; that said, funding is lacking.'],
       ['de ahí que', 'expresión', 'Introduce una consecuencia y exige subjuntivo.', 'Los precios subieron, de ahí que haya menos ventas.', 'Prices rose, hence sales are lower.'],
       ['cabe señalar', 'expresión', 'Fórmula para introducir un dato relevante.', 'Cabe señalar que los datos son provisionales.', 'It should be noted that the data are provisional.'],
-      ['a su vez', 'expresión', 'Indica una acción paralela o una consecuencia posterior.', 'El paro creció y, a su vez, cayó el consumo.', 'Unemployment grew and, in turn, consumption fell.'],
+      ['a su vez', 'expresión', 'Indica que algo ocurre por su parte, como efecto o complemento de lo anterior.', 'El paro creció y, a su vez, cayó el consumo.', 'Unemployment grew and, in turn, consumption fell.'],
       ['la coherencia', 'sustantivo', 'Relación lógica entre las ideas de un texto.', 'El texto carece de coherencia.', 'The text lacks coherence.'],
     ],
     explain: { title: 'Un texto bien tejido', body: [
@@ -2591,7 +2594,7 @@ window.LWS = window.LWS || {};
       mc('¿Cuál NO es un conector de causa?', 'sin embargo', ['puesto que', 'dado que', 'ya que'], 'Sin embargo expresa contraste.', { tag: 'cohesión' }),
       listen('El paro creció y, a su vez, cayó el consumo.', 'Escucha: ¿qué cayó?', 'El consumo', ['El paro', 'Los precios', 'Las ventas del año pasado'], 'Dice «cayó el consumo».', { tag: 'cohesión' }),
       dict('Cabe señalar que los datos son provisionales.', 'Revisa la tilde de «señalar» (no lleva) y la «ñ».', { tag: 'dictado' }),
-      mc('Sustituir «el presidente» por «el mandatario» es un recurso de...', 'sustitución léxica', ['elipsis', 'puntuación', 'contraste'], 'Se evita repetir con un sinónimo.', { tag: 'cohesión' }),
+      mc('Sustituir «el presidente» por «el mandatario» es un recurso de...', 'sustitución léxica', ['elipsis del sujeto en la oración', 'signo de puntuación enfático', 'contraste entre dos ideas'], 'Se evita repetir con un sinónimo.', { tag: 'cohesión' }),
       match([['el conector', 'Une ideas'], ['ahora bien', 'Introduce una matización'], ['de ahí que', 'Consecuencia con subjuntivo'], ['la coherencia', 'Lógica del texto']], 'Repasa el vocabulario de cohesión.', { tag: 'vocabulario' }),
     ],
   });
@@ -2625,24 +2628,24 @@ window.LWS = window.LWS || {};
       'El <b>ensayo académico</b> defiende una <b>tesis</b> con argumentos organizados y fuentes fiables. Su estructura habitual es: <b>introducción</b> (contexto y tesis), <b>desarrollo</b> (argumentos y contraargumentos) y <b>conclusión</b> (síntesis y alcance). Cada párrafo desarrolla una sola idea.',
       { t: 'table', head: ['Parte', 'Función', 'Fórmulas útiles'], rows: [['Introducción', 'Presentar el tema y la tesis', 'Este trabajo analiza... / Se sostiene aquí que...'], ['Desarrollo', 'Argumentar con datos y citas', 'En primer lugar... / Asimismo... / Cabe matizar que...'], ['Contraste', 'Considerar otras posturas', 'Si bien es cierto que... / Frente a esta postura...'], ['Conclusión', 'Cerrar y valorar', 'A modo de conclusión... / En definitiva... / Todo ello permite afirmar que...']] },
       '<b>Estilo impersonal:</b> se prefieren la pasiva refleja y las formas sin sujeto personal. En lugar de «Yo pienso que», escribimos «Se considera que», «Cabe afirmar que», «Puede sostenerse que». La primera persona del plural de modestia («Veremos que...») es aceptable en muchos ámbitos.',
-      '<b>Citar y atribuir:</b> «Según Ortega (1930), ...», «Como señala Martín (2015), ...». Los verbos de atribución matizan la postura del autor: <i>afirmar</i>, <i>sostener</i>, <i>apuntar</i>, <i>reconocer</i>, <i>negar</i>.',
+      '<b>Citar y atribuir:</b> «Según Vidal (2018), ...», «Como señala Martín (2015), ...». Los verbos de atribución matizan la postura del autor: <i>afirmar</i>, <i>sostener</i>, <i>apuntar</i>, <i>reconocer</i>, <i>negar</i>.',
       '<b>Evita</b> las generalizaciones vacías («Desde el principio de los tiempos...»), el registro coloquial y las valoraciones sin pruebas. Cada afirmación importante debe apoyarse en un dato, una cita o un razonamiento.',
       { t: 'ex', list: ['Este trabajo analiza el impacto de las redes sociales en los jóvenes.', 'Se sostiene aquí que la educación es un derecho irrenunciable.', 'Si bien es cierto que el estudio es limitado, sus resultados son relevantes.', 'A modo de conclusión, conviene replantear el modelo actual.'] },
     ] },
     listen: ['Este trabajo analiza el impacto de las redes sociales.', 'La autora sostiene que el cambio es inevitable.', 'Los resultados corroboran la hipótesis inicial.', 'Si bien es cierto que el estudio es limitado, sus resultados son relevantes.', 'A modo de conclusión, conviene replantear el modelo actual.'],
     practice: [
       mc('¿Qué fórmula es más adecuada en un ensayo académico?', 'Se considera que el problema es estructural.', ['Yo creo que el problema es gordo.', 'La verdad es que el problema es un rollo.', 'Pues mira, el problema es grave.'], 'El estilo académico es impersonal y formal.', { tag: 'ensayo' }),
-      mc('La «tesis» de un ensayo es...', 'la idea principal que se defiende', ['la lista de fuentes', 'el título del texto', 'el resumen final'], 'La tesis es lo que el autor defiende.', { tag: 'ensayo' }),
-      fill('A modo de ___, conviene replantear el modelo. (cierre del texto)', 'conclusión', 'Fórmula para introducir el cierre.', { tag: 'ensayo' }),
+      mc('La «tesis» de un ensayo es...', 'la idea principal que se defiende', ['la lista de fuentes consultadas', 'el título que lleva el texto', 'el resumen final de las ideas'], 'La tesis es lo que el autor defiende.', { tag: 'ensayo' }),
+      fill('A modo de ___, conviene replantear el modelo. (expresión de la lección)', ['conclusión', 'cierre', 'resumen'], 'A modo de conclusión: fórmula para introducir el cierre.', { tag: 'ensayo' }),
       order('Se sostiene aquí que la educación es un derecho', 'Fórmula impersonal con «se» + sostener.', { tag: 'ensayo' }),
     ],
     quiz: [
-      mc('El orden habitual de un ensayo es...', 'introducción, desarrollo y conclusión', ['conclusión, tesis y fuentes', 'desarrollo, saludo y despedida', 'título, anécdota y chiste'], 'Introducción, desarrollo y conclusión.', { tag: 'ensayo' }),
+      mc('El orden habitual de un ensayo es...', 'introducción, desarrollo y conclusión', ['conclusión, tesis y lista de fuentes', 'desarrollo, saludo y despedida formal', 'título, anécdota y chiste final'], 'Introducción, desarrollo y conclusión.', { tag: 'ensayo' }),
       mc('«Corroborar» significa...', 'confirmar con pruebas', ['negar con rotundidad', 'resumir un texto', 'citar a un autor'], 'Corroborar = confirmar con datos.', { tag: 'vocabulario' }),
       mc('¿Qué verbo introduce la postura de un autor con matiz de defensa?', 'sostener', ['olvidar', 'tropezar', 'preparar'], 'Sostener = defender una opinión.', { tag: 'ensayo' }),
       listen('La autora sostiene que el cambio es inevitable.', 'Escucha: ¿qué defiende la autora?', 'Que el cambio es inevitable', ['Que el cambio es imposible', 'Que nada cambia', 'Que el cambio es reciente'], 'Dice «sostiene que el cambio es inevitable».', { tag: 'ensayo' }),
       dict('Los resultados corroboran la hipótesis inicial.', 'Revisa la doble «rr» de «corroboran» y la tilde de «hipótesis».', { tag: 'dictado' }),
-      mc('La «premisa» es...', 'la idea de partida de un razonamiento', ['la última frase del texto', 'una cita textual', 'un error de ortografía'], 'La premisa es el punto de partida.', { tag: 'vocabulario' }),
+      mc('La «premisa» es...', 'la idea de partida de un razonamiento', ['la última frase de todo el texto', 'una cita textual de un autor', 'un error de ortografía frecuente'], 'La premisa es el punto de partida.', { tag: 'vocabulario' }),
       match([['la idea rectora', 'Da unidad al texto'], ['esgrimir', 'Usar un argumento'], ['corroborar', 'Confirmar con pruebas'], ['la premisa', 'Idea de partida']], 'Repasa el vocabulario del ensayo.', { tag: 'vocabulario' }),
     ],
   });
@@ -2674,12 +2677,12 @@ window.LWS = window.LWS || {};
       order('De los datos se desprende que las ventas han caído', 'Se desprende que + indicativo.', { tag: 'informe' }),
     ],
     quiz: [
-      mc('Los «hallazgos» de un estudio son...', 'los resultados importantes que se descubren', ['los errores de redacción', 'las fuentes citadas', 'los autores'], 'Hallazgo = descubrimiento.', { tag: 'vocabulario' }),
+      mc('Los «hallazgos» de un estudio son...', 'los resultados importantes que se descubren', ['los errores de redacción detectados', 'las fuentes que se citan al final', 'los autores que firman el trabajo'], 'Hallazgo = descubrimiento.', { tag: 'vocabulario' }),
       mc('«Recopilar datos» significa...', 'reunir datos', ['inventar datos', 'ocultar datos', 'borrar datos'], 'Recopilar = reunir.', { tag: 'informe' }),
       mc('¿Qué construcción es correcta?', 'Se recomienda revisar el presupuesto.', ['Se recomienda de revisar el presupuesto.', 'Se recomienda a revisar el presupuesto.', 'Se recomienda revisando el presupuesto.'], 'Se recomienda + infinitivo.', { tag: 'informe' }),
       listen('Hemos recopilado datos de cincuenta empresas.', 'Escucha: ¿qué han hecho?', 'Han reunido datos de empresas', ['Han cerrado cincuenta empresas', 'Han vendido datos', 'Han perdido un informe'], 'Dice «hemos recopilado datos».', { tag: 'informe' }),
       dict('El plazo de entrega termina el viernes.', 'Revisa la «z» de «plazo» y la tilde de «viernes» (no lleva).', { tag: 'dictado' }),
-      mc('La «viabilidad» de un proyecto es...', 'la posibilidad real de realizarlo', ['su coste total', 'su nombre oficial', 'su fecha de inicio'], 'Viabilidad = que se pueda llevar a cabo.', { tag: 'vocabulario' }),
+      mc('La «viabilidad» de un proyecto es...', 'la posibilidad real de realizarlo', ['su coste total en euros al año', 'su nombre oficial ante el público', 'su fecha de inicio prevista'], 'Viabilidad = que se pueda llevar a cabo.', { tag: 'vocabulario' }),
       match([['los hallazgos', 'Resultados descubiertos'], ['el apartado', 'Parte de un texto'], ['el plazo', 'Tiempo máximo'], ['recopilar', 'Reunir datos']], 'Repasa el vocabulario del informe.', { tag: 'vocabulario' }),
     ],
   });
@@ -2697,25 +2700,25 @@ window.LWS = window.LWS || {};
     ],
     explain: { title: 'Describir, valorar y matizar', body: [
       'Una <b>reseña crítica</b> combina tres funciones: <b>informar</b> (de qué trata la obra), <b>analizar</b> (cómo está hecha) y <b>valorar</b> (qué opinión merece). Una buena reseña no cuenta el final ni se queda en un «me gustó» o «no me gustó»: justifica cada juicio.',
-      { t: 'table', head: ['Función', 'Recursos', 'Ejemplo'], rows: [['Presentar', 'ficha técnica, resumen sin spoilers', 'La novela narra la vida de una familia en los años cuarenta.'], ['Analizar', 'trama, personajes, estilo, ritmo', 'La trama está bien construida, aunque el ritmo decae.'], ['Valorar positivamente', 'destacar, resultar + adjetivo, logrado', 'Destaca la puesta en escena. El final resulta muy logrado.'], ['Valorar negativamente', 'adolecer de, carecer de, flojear', 'La película adolece de un guion previsible.'], ['Concluir', 'recomendación matizada', 'En suma, una obra irregular, pero que merece la pena.']] },
+      { t: 'table', head: ['Función', 'Recursos', 'Ejemplo'], rows: [['Presentar', 'ficha técnica, resumen sin desvelar el final', 'La novela narra la vida de una familia en los años cuarenta.'], ['Analizar', 'trama, personajes, estilo, ritmo', 'La trama está bien construida, aunque el ritmo decae.'], ['Valorar positivamente', 'destacar, resultar + adjetivo, logrado', 'Destaca la puesta en escena. El final resulta muy logrado.'], ['Valorar negativamente', 'adolecer de, carecer de, flojear', 'La película adolece de un guion previsible.'], ['Concluir', 'recomendación matizada', 'En suma, una obra irregular, pero que merece la pena.']] },
       '<b>Adjetivos de valoración:</b> sobrio, ágil, logrado, previsible, tedioso, memorable, desigual, irregular. Un crítico serio gradúa su juicio: «bastante logrado», «algo previsible», «notablemente irregular».',
-      '<b>Matizar con concesión:</b> «si bien la trama es previsible, los diálogos son brillantes»; «aunque el reparto es excelente, el guion no le hace justicia». El subjuntivo aparece cuando se concede algo ya sabido sin discutirlo: «por muy previsible que sea, emociona».',
+      '<b>Matizar con concesión:</b> «si bien la trama es previsible, los diálogos son brillantes»; «aunque el reparto es excelente, el guion no le hace justicia». Con «por muy + adjetivo + que» se usa subjuntivo para presentar un obstáculo como irrelevante: «por muy previsible que sea, emociona».',
       '<b>Verbos de la reseña:</b> <i>retratar</i>, <i>abordar</i>, <i>plantear</i>, <i>lograr</i>, <i>flojear</i>, <i>desmerecer</i>. Se usa el presente para describir la obra: «El director retrata una sociedad en crisis».',
       { t: 'ex', list: ['La trama es sencilla, pero está bien construida.', 'La película adolece de un ritmo demasiado lento.', 'La puesta en escena es sobria y elegante.', 'Por muy previsible que sea, el final emociona.'] },
     ] },
     listen: ['La trama es sencilla, pero está bien construida.', 'La película adolece de un ritmo demasiado lento.', 'La puesta en escena es sobria y elegante.', 'El reparto está formado por actores jóvenes.', 'Por muy previsible que sea, el final emociona.'],
     practice: [
-      mc('Una reseña crítica debe...', 'describir y valorar con argumentos', ['contar el final completo', 'copiar la sinopsis', 'evitar toda opinión'], 'Informa, analiza y valora.', { tag: 'reseña' }),
+      mc('Una reseña crítica debe...', 'describir y valorar con argumentos', ['contar el final completo de la obra', 'copiar la sinopsis de la contraportada', 'evitar cualquier opinión personal'], 'Informa, analiza y valora.', { tag: 'reseña' }),
       mc('«La película adolece de un guion previsible» expresa...', 'una valoración negativa', ['una valoración positiva', 'una pregunta', 'una orden'], 'Adolecer de = tener un defecto.', { tag: 'reseña' }),
-      fill('Por muy previsible ___ sea, el final emociona. (relativo)', 'que', 'Por muy + adjetivo + que + subjuntivo.', { tag: 'reseña' }),
+      fill('Por muy previsible ___ sea, el final emociona. (conjunción)', 'que', 'Por muy + adjetivo + que + subjuntivo.', { tag: 'reseña' }),
       order('La puesta en escena es sobria y elegante', 'Valoración con ser + adjetivos.', { tag: 'reseña' }),
     ],
     quiz: [
-      mc('El «reparto» de una película es...', 'el conjunto de actores', ['el guion', 'la música', 'la fecha de estreno'], 'Reparto = actores.', { tag: 'vocabulario' }),
-      mc('¿Qué frase concede algo y luego valora?', 'Aunque el reparto es excelente, el guion es flojo.', ['El reparto es excelente y fin.', 'No hay reparto ni guion.', 'El guion, el reparto, la música.'], 'Aunque + concesión + contraste.', { tag: 'reseña' }),
-      mc('La «trama» de una novela es...', 'el conjunto de hechos que forman su argumento', ['su portada', 'su precio', 'su autor'], 'Trama = argumento.', { tag: 'vocabulario' }),
+      mc('El «reparto» de una película es...', 'el conjunto de actores', ['el guion que escribe el autor', 'la música que suena al final', 'la fecha de estreno en cines'], 'Reparto = actores.', { tag: 'vocabulario' }),
+      mc('¿Qué frase concede algo y luego valora?', 'Aunque el reparto es excelente, el guion es flojo.', ['El reparto es excelente y la película termina.', 'No hay reparto ni guion que comentar aquí.', 'El guion, el reparto, la música y la fotografía.'], 'Aunque + concesión + contraste.', { tag: 'reseña' }),
+      mc('La «trama» de una novela es...', 'el conjunto de hechos que forman su argumento', ['su portada y el diseño del libro', 'su precio en las librerías', 'su autor y la fecha de edición'], 'Trama = argumento.', { tag: 'vocabulario' }),
       listen('La puesta en escena es sobria y elegante.', 'Escucha: ¿cómo es la puesta en escena?', 'Sobria y elegante', ['Caótica y ruidosa', 'Cara y lenta', 'Antigua y oscura'], 'Dice «sobria y elegante».', { tag: 'reseña' }),
-      dict('La película adolece de un ritmo demasiado lento.', 'Revisa la «v» y la «c» de «adolece», y la tilde de «película».', { tag: 'dictado' }),
+      dict('La película adolece de un ritmo demasiado lento.', 'Revisa la «c» de «adolece» y la tilde de «película».', { tag: 'dictado' }),
       mc('«Logrado» describe algo...', 'bien conseguido', ['mal escrito', 'muy antiguo', 'sin terminar'], 'Logrado = bien ejecutado.', { tag: 'vocabulario' }),
       match([['la reseña', 'Texto que describe y valora'], ['la trama', 'Argumento de una obra'], ['adolecer de', 'Tener un defecto'], ['logrado', 'Bien conseguido']], 'Repasa el vocabulario de la reseña.', { tag: 'vocabulario' }),
     ],
@@ -2727,14 +2730,14 @@ window.LWS = window.LWS || {};
     vocab: [
       ['desmontar', 'verbo', 'Demostrar que un argumento no se sostiene.', 'Desmontó cada una de sus objeciones con datos.', 'She dismantled each of his objections with data.'],
       ['la falacia', 'sustantivo', 'Razonamiento que parece válido, pero es incorrecto.', 'Decir que algo es bueno porque es antiguo es una falacia.', 'Saying that something is good because it is old is a fallacy.'],
-      ['puntualizar', 'verbo', 'Precisar una afirmación para que no sea absoluta.', 'Conviene puntualizar esa afirmación.', 'That statement should be clarified.'],
+      ['puntualizar', 'verbo', 'Precisar o aclarar un detalle de lo que se ha dicho.', 'Conviene puntualizar esa afirmación.', 'That statement should be clarified.'],
       ['cuestionar', 'verbo', 'Poner en duda algo.', 'Nadie cuestionó la validez del estudio.', 'Nobody questioned the validity of the study.'],
       ['la objeción', 'sustantivo', 'Razón que se opone a una idea o propuesta.', 'Su objeción fue difícil de responder.', 'His objection was hard to answer.'],
       ['por otra parte', 'expresión', 'Introduce un elemento adicional o contrastante.', 'Por otra parte, la medida resulta muy costosa.', 'On the other hand, the measure turns out to be very costly.'],
     ],
     explain: { title: 'Argumentar con solidez', body: [
       'Argumentar bien no consiste en elevar la voz, sino en <b>encadenar razones</b>: tesis, argumento, prueba y conclusión. Un argumento complejo reconoce además <b>la postura contraria</b> y la responde.',
-      { t: 'table', head: ['Función', 'Conectores y fórmulas', 'Ejemplo'], rows: [['Añadir', 'además, asimismo, es más', 'Es más, la medida resulta costosa.'], ['Contrastar', 'por un lado... por otro; en cambio; sin embargo', 'Por un lado, ahorra tiempo; por otro, genera dependencia.'], ['Conceder', 'si bien, aunque, por mucho que + subjuntivo', 'Por mucho que se insista, los datos no cambian.'], ['Rebatir', 'no es cierto que + subjuntivo; lejos de + inf.', 'No es cierto que la medida sea eficaz.'], ['Concluir', 'por tanto, en consecuencia, de ahí que + subjuntivo', 'De ahí que se reclame una revisión.']] },
+      { t: 'table', head: ['Función', 'Conectores y fórmulas', 'Ejemplo'], rows: [['Añadir', 'además, asimismo, es más', 'Es más, la medida resulta costosa.'], ['Contrastar', 'por un lado... por otro; en cambio; sin embargo', 'Por un lado, ahorra tiempo; por otro, genera dependencia.'], ['Conceder', 'si bien + indicativo; aunque; por mucho que + subjuntivo', 'Por mucho que se insista, los datos no cambian.'], ['Rebatir', 'no es cierto que + subjuntivo; lejos de + inf.', 'No es cierto que la medida sea eficaz.'], ['Concluir', 'por tanto, en consecuencia, de ahí que + subjuntivo', 'De ahí que se reclame una revisión.']] },
       '<b>Estructura de refutación en tres pasos:</b> (1) resumir la postura contraria con honestidad; (2) señalar su punto débil; (3) ofrecer tu propia razón. «Se ha dicho que la medida reduce el paro. Sin embargo, ese dato ignora el empleo precario. Por tanto, el balance es menos favorable.»',
       '<b>Falacias frecuentes:</b> el ataque personal («Lo dice alguien que no sabe nada»), la generalización precipitada («Un caso prueba la regla»), la falsa disyuntiva («O estás conmigo o contra mí») y el argumento de autoridad («Lo dice un famoso, luego es verdad»).',
       '<b>Subjuntivo en la argumentación:</b> tras la negación de una opinión se usa subjuntivo: «No creo que sea una buena idea», «No es cierto que los datos lo demuestren». Con afirmación, indicativo: «Creo que es una buena idea».',
@@ -2748,12 +2751,12 @@ window.LWS = window.LWS || {};
       order('Por un lado ahorra tiempo y por otro genera dependencia', 'Estructura de contraste.', { tag: 'argumentación', alts: ['Por un lado ahorra tiempo; por otro genera dependencia'] }),
     ],
     quiz: [
-      mc('«Puntualizar» una afirmación es...', 'precisarla para que no sea absoluta', ['repetirla con más fuerza', 'borrarla del texto', 'traducirla'], 'Puntualizar = precisar.', { tag: 'vocabulario' }),
-      mc('¿Qué opción es una falacia de ataque personal?', 'Eso lo dice alguien que no entiende nada.', ['Los datos indican lo contrario.', 'Según el estudio, el gasto bajó.', 'Habría que revisar la cifra.'], 'Ataca a la persona, no al argumento.', { tag: 'argumentación' }),
+      mc('«Puntualizar» una afirmación es...', 'precisarla o aclararla', ['repetirla con más fuerza', 'borrarla del texto', 'traducirla'], 'Puntualizar = precisar.', { tag: 'vocabulario' }),
+      mc('¿Qué opción es una falacia de ataque personal?', 'Eso lo dice alguien que no entiende nada.', ['Los datos indican justo lo contrario.', 'Según el estudio, el gasto bajó este año.', 'Habría que revisar esta cifra con calma.'], 'Ataca a la persona, no al argumento.', { tag: 'argumentación' }),
       mc('Tras «No creo que» se usa...', 'subjuntivo', ['indicativo', 'infinitivo', 'imperativo'], 'No creo que + subjuntivo.', { tag: 'argumentación' }),
       listen('No es cierto que los datos lo demuestren.', 'Escucha: ¿qué hace el hablante?', 'Rechaza una afirmación', ['Acepta una propuesta', 'Pide más datos', 'Cuenta una anécdota'], 'Dice «no es cierto que».', { tag: 'argumentación' }),
-      dict('Conviene puntualizar esa afirmación.', 'Revisa la «v» de «conviene» y la «t» de «puntualizar».', { tag: 'dictado' }),
-      mc('Una «objeción» es...', 'una razón que se opone a una idea', ['una conclusión final', 'una cita literal', 'una pregunta retórica'], 'Objeción = razón en contra.', { tag: 'vocabulario' }),
+      dict('Conviene puntualizar esa afirmación.', 'Revisa la «v» de «conviene» y la «z» de «puntualizar»; ninguna de las dos palabras lleva tilde.', { tag: 'dictado' }),
+      mc('Una «objeción» es...', 'una razón que se opone a una idea', ['una conclusión final del debate', 'una cita literal de un experto', 'una pregunta retórica del orador'], 'Objeción = razón en contra.', { tag: 'vocabulario' }),
       match([['desmontar', 'Demostrar que no se sostiene'], ['la falacia', 'Razonamiento incorrecto'], ['cuestionar', 'Poner en duda'], ['puntualizar', 'Precisar una idea']], 'Repasa el vocabulario de la argumentación.', { tag: 'vocabulario' }),
     ],
   });
@@ -2779,18 +2782,18 @@ window.LWS = window.LWS || {};
     ] },
     listen: ['Me gustaría intervenir en este punto.', 'Perdone que le interrumpa, pero ese dato es incorrecto.', 'No comparto su punto de vista.', 'Le cedo la palabra a mi compañera.', 'Les ruego que respeten el turno de palabra.'],
     practice: [
-      mc('¿Qué fórmula sirve para interrumpir con tacto?', 'Perdone que le interrumpa, pero...', ['Cállese un momento.', 'Eso es mentira.', 'Déjeme hablar ya.'], 'La cortesía suaviza la interrupción.', { tag: 'debate' }),
-      mc('El moderador de un debate...', 'reparte los turnos de palabra', ['gana siempre el debate', 'escribe el informe final', 'vota a favor de uno'], 'Dirige y organiza el debate.', { tag: 'debate' }),
+      mc('¿Qué fórmula sirve para interrumpir con tacto?', 'Perdone que le interrumpa, pero...', ['Cállese un momento, por favor ya.', 'Eso que dice es una mentira total.', 'Déjeme hablar a mí de una vez.'], 'La cortesía suaviza la interrupción.', { tag: 'debate' }),
+      mc('El moderador de un debate...', 'reparte los turnos de palabra', ['gana siempre el debate que dirige', 'escribe el informe final del acto', 'vota a favor de uno de los participantes'], 'Dirige y organiza el debate.', { tag: 'debate' }),
       fill('Perdone que le ___, pero ese dato es incorrecto. (interrumpir)', 'interrumpa', 'Perdone que + subjuntivo.', { tag: 'debate' }),
-      order('Le cedo la palabra a mi compañero ahora', 'Fórmula para ceder el turno.', { tag: 'debate' }),
+      order('Le cedo la palabra a mi compañera', 'Fórmula para ceder el turno.', { tag: 'debate' }),
     ],
     quiz: [
-      mc('«Disentir» significa...', 'no estar de acuerdo', ['estar de acuerdo', 'interrumpir', 'moderar'], 'Disentir = discrepar.', { tag: 'vocabulario' }),
-      mc('¿Qué frase discrepa con cortesía?', 'Respeto su opinión, pero no la comparto.', ['Usted no tiene ni idea.', 'Qué tontería acaba de decir.', 'Eso es absurdo, punto.'], 'Cortesía + desacuerdo.', { tag: 'debate' }),
-      mc('Una «tertulia» es...', 'una conversación sobre temas de actualidad', ['un contrato laboral', 'un examen oral', 'una carta formal'], 'Tertulia = reunión o programa de conversación.', { tag: 'vocabulario' }),
+      mc('«Disentir» significa...', 'no estar de acuerdo', ['estar de acuerdo con todos', 'interrumpir a quien habla', 'moderar el turno de palabra'], 'Disentir = discrepar.', { tag: 'vocabulario' }),
+      mc('¿Qué frase discrepa con cortesía?', 'Respeto su opinión, pero no la comparto.', ['Usted no tiene ni idea de esto.', 'Qué tontería acaba de decir ahora.', 'Eso es absurdo y no hay más que hablar.'], 'Cortesía + desacuerdo.', { tag: 'debate' }),
+      mc('Una «tertulia» es...', 'una conversación sobre temas de actualidad', ['un contrato laboral por escrito', 'un examen oral de la universidad', 'una carta formal a la administración'], 'Tertulia = reunión o programa de conversación.', { tag: 'vocabulario' }),
       listen('Le cedo la palabra a mi compañera.', 'Escucha: ¿qué hace el hablante?', 'Deja hablar a otra persona', ['Cierra el debate', 'Pide silencio', 'Cambia de tema'], 'Dice «le cedo la palabra».', { tag: 'debate' }),
-      dict('Perdone que le interrumpa, pero quisiera puntualizar eso.', 'Revisa la «rr» de «interrumpa» y la «t» de «puntualizar».', { tag: 'dictado' }),
-      mc('Una buena forma de escuchar activamente es...', 'parafrasear lo que dice el otro', ['hablar a la vez', 'mirar el móvil', 'repetir tu opinión'], 'Parafrasear demuestra comprensión.', { tag: 'debate' }),
+      dict('Perdone que le interrumpa, pero quisiera puntualizar eso.', 'Revisa la «rr» de «interrumpa» y la «z» de «puntualizar».', { tag: 'dictado' }),
+      mc('Una buena forma de escuchar activamente es...', 'parafrasear lo que dice el otro', ['hablar a la vez que el otro', 'mirar el móvil mientras escuchas', 'repetir tu opinión una y otra vez'], 'Parafrasear demuestra comprensión.', { tag: 'debate' }),
       match([['la tertulia', 'Conversación sobre actualidad'], ['el moderador', 'Dirige el debate'], ['disentir', 'No estar de acuerdo'], ['ceder la palabra', 'Dejar hablar a otro']], 'Repasa el vocabulario del debate.', { tag: 'vocabulario' }),
     ],
   });
@@ -2819,16 +2822,16 @@ window.LWS = window.LWS || {};
     practice: [
       mc('¿Qué sirve para captar la atención al empezar un discurso?', 'Una pregunta sorprendente', ['Leer el título muy deprisa', 'Pedir disculpas por hablar', 'Mirar al suelo'], 'Una pregunta o una cifra impactan.', { tag: 'oratoria' }),
       mc('«¿Podemos permitirnos esperar?» es...', 'una pregunta retórica', ['una pregunta de examen', 'una orden', 'una despedida'], 'No espera respuesta; busca efecto.', { tag: 'oratoria' }),
-      fill('Hoy voy a ___ de tres cuestiones. (hablarles)', 'hablarles', 'Hablar + pronombre «les».', { tag: 'oratoria' }),
+      fill('Hoy voy a hablar___ de tres cuestiones. (pronombre para «a ustedes», unido al infinitivo)', 'les', 'Hablar + pronombre «les»: hablarles.', { tag: 'oratoria' }),
       order('Para terminar quisiera agradecerles su atención', 'Fórmula de cierre.', { tag: 'oratoria', alts: ['Para terminar, quisiera agradecerles su atención'] }),
     ],
     quiz: [
       mc('Hacer una pausa antes de la idea clave sirve para...', 'generar expectación', ['perder el hilo', 'alargar el discurso sin motivo', 'evitar al público'], 'La pausa subraya lo importante.', { tag: 'oratoria' }),
-      mc('El «auditorio» es...', 'el conjunto de personas que escuchan', ['el micrófono', 'el guion', 'el título'], 'Auditorio = público.', { tag: 'vocabulario' }),
-      mc('¿Qué conviene preparar para un discurso?', 'Un guion de ideas y un ensayo en voz alta', ['Un texto para leer sin mirar', 'Nada, improvisar', 'Solo la despedida'], 'Guion de ideas y ensayo.', { tag: 'oratoria' }),
-      listen('Hoy voy a hablarles de tres cuestiones.', 'Escucha: ¿qué hace el orador?', 'Anuncia el plan del discurso', ['Se despide', 'Cuenta un chiste', 'Pide una pregunta'], 'Presenta tres cuestiones.', { tag: 'oratoria' }),
+      mc('El «auditorio» es...', 'el conjunto de personas que escuchan', ['el micrófono que usa el orador', 'el guion que se lee en voz alta', 'el título que lleva el discurso'], 'Auditorio = público.', { tag: 'vocabulario' }),
+      mc('¿Qué conviene preparar para un discurso?', 'Un guion de ideas y un ensayo en voz alta', ['Un texto largo para leer sin mirar al público', 'Nada, es mejor improvisar todo el discurso', 'Solo la despedida para terminar rápido'], 'Guion de ideas y ensayo.', { tag: 'oratoria' }),
+      listen('Hoy voy a hablarles de tres cuestiones.', 'Escucha: ¿qué hace el orador?', 'Anuncia el plan del discurso', ['Se despide', 'Cuenta un chiste', 'Pide un voluntario'], 'Presenta tres cuestiones.', { tag: 'oratoria' }),
       dict('Una pausa antes de la idea clave genera expectación.', 'Revisa la tilde de «expectación» y la «x».', { tag: 'dictado' }),
-      mc('La «entonación» es...', 'la subida y bajada de la voz', ['la velocidad del texto', 'el título del discurso', 'la ropa del orador'], 'Entonación = melodía de la voz.', { tag: 'vocabulario' }),
+      mc('La «entonación» es...', 'la subida y bajada de la voz', ['la velocidad a la que se lee el texto', 'el título que lleva el discurso', 'la ropa que lleva el orador'], 'Entonación = melodía de la voz.', { tag: 'vocabulario' }),
       match([['el orador', 'Quien pronuncia un discurso'], ['el auditorio', 'Personas que escuchan'], ['la pausa', 'Breve silencio'], ['captar la atención', 'Interesar al público']], 'Repasa el vocabulario de la oratoria.', { tag: 'vocabulario' }),
     ],
   });
@@ -2859,19 +2862,19 @@ window.LWS = window.LWS || {};
     ],
     explain: { title: 'Elegir la palabra justa: denotación y connotación', body: [
       'En español casi no existen los sinónimos perfectos. Dos palabras pueden compartir la <b>denotación</b> (el significado básico) y diferir en la <b>connotación</b>: la carga afectiva, la intensidad o el registro que arrastran.',
-      { t: 'table', head: ['Idea base', 'Neutro', 'Positivo', 'Negativo'], rows: [['Decidido en sus opiniones', 'firme', 'tenaz, perseverante', 'tozudo, terco, cabezota'], ['Que gasta poco', 'ahorrador', 'prudente, frugal', 'tacaño, rácano'], ['Que habla mucho', 'hablador', 'elocuente, locuaz', 'charlatán, cotorra'], ['Delgado', 'delgado', 'esbelto, estilizado', 'flaco, escuálido']] },
-      'La <b>intensidad</b> también cambia: «molesto» < «irritante» < «insoportable» < «execrable». Elegir el grado exacto evita tanto la exageración como el tono tibio.',
+      { t: 'table', head: ['Idea base', 'Neutro', 'Positivo', 'Negativo'], rows: [['Decidido en sus opiniones', 'firme', 'tenaz, perseverante', 'tozudo, terco, cabezota'], ['Que gasta poco', 'ahorrador', 'previsor, austero', 'tacaño, rácano (coloquial)'], ['Que habla mucho', 'hablador', 'comunicativo, expresivo', 'charlatán, parlanchín'], ['Delgado', 'delgado', 'esbelto, estilizado', 'flaco, escuálido']] },
+      'La <b>intensidad</b> también cambia: «molesto» < «irritante» < «insoportable» < «intolerable». Elegir el grado exacto evita tanto la exageración como el tono tibio.',
       'El <b>registro</b> separa «morirse» (neutro), «fallecer» (formal), «espicharla» (coloquial, humorístico) y «expirar» (literario o solemne).',
       'Un <b>eufemismo</b> suaviza lo desagradable («tercera edad» por «vejez»; «reajuste de plantilla» por «despidos»). Cuando el eufemismo oculta una realidad dura de manera interesada, hablamos de lenguaje manipulador.',
       'Un mismo adjetivo puede ser elogio o reproche según el contexto: «ambicioso» (con aprobación) frente a «trepa» (con desprecio) describen a veces la misma conducta.',
-      { t: 'ex', list: ['Es firme en sus convicciones; su hermano, en cambio, es tozudo.', 'Más que ahorrador, diría que es tacaño.', 'Su discurso fue vehemente, pero no agresivo.', 'Entre «error» y «equivocación» hay un matiz sutil de gravedad.'] },
+      { t: 'ex', list: ['Es firme en sus convicciones; su hermano, en cambio, es tozudo.', 'Más que ahorrador, diría que es tacaño.', 'Su discurso fue vehemente, pero no agresivo.', 'Entre «delgado» y «escuálido» hay un matiz sutil de intensidad.'] },
     ] },
     listen: ['Es firme en sus convicciones, pero su hermano es tozudo.', 'Hizo una defensa vehemente de sus ideas.', 'Entre ambos términos hay una diferencia muy sutil.', 'Pasar a mejor vida es un eufemismo de morir.', 'Usó la palabra con un sentido claramente peyorativo.'],
     practice: [
       mc('¿Qué adjetivo tiene connotación negativa para «que gasta poco»?', 'tacaño', ['ahorrador', 'prudente', 'frugal'], 'Tacaño censura; ahorrador es neutro.', { tag: 'connotación' }),
       mc('«Fallecer» frente a «espicharla» se diferencia por...', 'el registro', ['el significado básico', 'la gramática', 'el género'], 'Misma denotación, distinto registro.', { tag: 'connotación' }),
       fill('«Tercera edad» es un ___ de «vejez». (palabra que suaviza)', 'eufemismo', 'Suaviza una realidad desagradable.', { tag: 'connotación' }),
-      order('Entre ambos términos hay una diferencia sutil', 'Orden natural: lugar + hay + sujeto + adjetivo.', { tag: 'connotación' }),
+      order('Entre ambos términos hay una diferencia sutil', 'Complemento inicial + «hay» + sujeto + adjetivo.', { tag: 'connotación', alts: ['Hay una diferencia sutil entre ambos términos', 'Entre ambos términos hay una sutil diferencia', 'Hay una sutil diferencia entre ambos términos'] }),
     ],
     quiz: [
       mc('La connotación de una palabra es...', 'su carga afectiva o valorativa', ['su definición del diccionario', 'su origen latino', 'su número de sílabas'], 'Denotación = significado básico; connotación = carga añadida.', { tag: 'connotación' }),
@@ -2891,14 +2894,14 @@ window.LWS = window.LWS || {};
       ['equívoco', 'adjetivo', 'Que puede entenderse de varias maneras y provoca confusión.', 'Su respuesta fue deliberadamente equívoca.', 'His answer was deliberately ambiguous.', ['ambiguo']],
       ['la insinuación', 'sustantivo', 'Cosa que se da a entender sin decirla abiertamente.', 'No acepto esa insinuación sobre mi honradez.', 'I do not accept that insinuation about my honesty.'],
       ['tomar el pelo', 'expresión', 'Burlarse de alguien con engaños o bromas.', 'No me tomes el pelo: eso es imposible.', 'Don\'t pull my leg: that is impossible.'],
-      ['el calambur', 'sustantivo', 'Juego de palabras que cambia el sentido al agrupar las sílabas de otro modo.', '«Plátano es, no, aitor, tilla» es un calambur famoso.', 'Spanish pun that regroups syllables to change meaning.'],
+      ['el calambur', 'sustantivo', 'Juego de palabras que cambia el sentido al agrupar las sílabas de otro modo.', 'La broma «plátano es» / «plata no es» es un calambur.', 'The joke "plátano es" / "plata no es" is a calambur (a pun that regroups syllables).'],
       ['entre líneas', 'expresión', 'De manera implícita, sin estar dicho con claridad.', 'Hay que leer entre líneas lo que dijo el ministro.', 'You have to read between the lines of what the minister said.'],
     ],
     explain: { title: 'Cuando una frase significa más de una cosa', body: [
       'La <b>ambigüedad</b> aparece cuando un enunciado admite varias interpretaciones. Puede ser <b>léxica</b> (una palabra con varios sentidos) o <b>sintáctica</b> (la estructura permite dos lecturas).',
-      { t: 'table', head: ['Tipo', 'Ejemplo', 'Lecturas posibles'], rows: [['Léxica', 'Me gusta la <b>banca</b>.', 'las instituciones financieras / el asiento'], ['Sintáctica', 'Vi al hombre con el telescopio.', 'yo tenía el telescopio / él lo tenía'], ['Referencial', 'Luis le dijo a Juan que <b>su</b> hermano llegaría tarde.', 'el hermano de Luis o el de Juan'], ['Pragmática', '¿Puedes pasarme la sal?', 'pregunta de capacidad o petición cortés']] },
-      'Para <b>desambiguar</b> se reformula: «Vi, con el telescopio, al hombre» o «Luis le dijo a Juan: “Tu hermano llegará tarde”».',
-      'El <b>doble sentido</b> es voluntario: ironía, humor, <b>insinuación</b> o <b>calambur</b>. «Entre dos males, el menos malo» y «Hay que leer entre líneas» muestran cómo lo implícito pesa tanto como lo dicho.',
+      { t: 'table', head: ['Tipo', 'Ejemplo', 'Lecturas posibles'], rows: [['Léxica', 'Esperé en el <b>banco</b>.', 'la entidad financiera / el asiento'], ['Sintáctica', 'Vi al hombre con el telescopio.', 'yo tenía el telescopio / él lo tenía'], ['Referencial', 'Luis le dijo a Juan que <b>su</b> hermano llegaría tarde.', 'el hermano de Luis o el de Juan'], ['Pragmática', '¿Puedes pasarme la sal?', 'pregunta de capacidad o petición cortés']] },
+      'Para <b>desambiguar</b> se reformula: «Con mi telescopio, vi al hombre» o «Vi al hombre que tenía el telescopio»; y «Luis le dijo a Juan: “Tu hermano llegará tarde”».',
+      'El <b>doble sentido</b> es voluntario: ironía, humor, <b>insinuación</b> o <b>calambur</b>. Leer «entre líneas» muestra cómo lo implícito pesa tanto como lo dicho.',
       'Las <b>implicaturas</b> son significados que se deducen del contexto: «Aquí hace calor» puede significar «abre la ventana». Un hablante experto elige cuándo ser explícito y cuándo dejar que el otro deduzca.',
       'Un texto formal exige <b>precisión</b> y evitar el equívoco; un texto humorístico o literario lo cultiva.',
       { t: 'ex', list: ['Su respuesta fue deliberadamente equívoca.', 'No me tomes el pelo.', 'Hay que leer entre líneas lo que dijo.', 'Rechazo esa insinuación.'] },
@@ -2911,11 +2914,11 @@ window.LWS = window.LWS || {};
       order('Hay que leer entre líneas', 'Perífrasis de obligación + locución.', { tag: 'ambigüedad' }),
     ],
     quiz: [
-      mc('¿Cómo se desambigua «Luis le dijo a Juan que su hermano llegaría tarde»?', 'Luis le dijo a Juan: «Tu hermano llegará tarde».', ['Luis le dijo a Juan su hermano llegaría tarde.', 'Luis dijo a Juan que llegaría tarde.', 'Luis y Juan llegarían tarde.'], 'Pasar a estilo directo elimina el posesivo ambiguo.', { tag: 'ambigüedad' }),
-      mc('Una «insinuación» es...', 'algo que se da a entender sin decirlo', ['una orden directa', 'un insulto explícito', 'un dato exacto'], 'Insinuar = dar a entender.', { tag: 'vocabulario' }),
-      mc('Una «implicatura» es...', 'un significado que se deduce del contexto', ['una falta de ortografía', 'una palabra rara', 'un tiempo verbal'], 'Lo implícito no está dicho, se infiere.', { tag: 'ambigüedad' }),
+      mc('¿Qué reformulación elimina la ambigüedad del posesivo en «Luis le dijo a Juan que su hermano llegaría tarde»?', 'Luis le dijo a Juan: «Tu hermano llegará tarde».', ['Luis le dijo a Juan su hermano llegaría tarde.', 'Luis dijo a Juan que llegaría tarde.', 'Luis y Juan llegarían tarde.'], 'Con estilo directo y «tu» queda claro de quién es el hermano; las demás cambian el sentido o no aclaran nada.', { tag: 'ambigüedad' }),
+      mc('Una «insinuación» es...', 'algo que se da a entender sin decirlo', ['una orden directa y clara a alguien', 'un insulto explícito y sin rodeos', 'un dato exacto que se da con precisión'], 'Insinuar = dar a entender.', { tag: 'vocabulario' }),
+      mc('Una «implicatura» es...', 'un significado que se deduce del contexto', ['una falta de ortografía muy común', 'una palabra rara y poco usada', 'un tiempo verbal del subjuntivo'], 'Lo implícito no está dicho, se infiere.', { tag: 'ambigüedad' }),
       listen('No acepto esa insinuación sobre mi honradez.', 'Escucha: ¿qué hace la persona?', 'Rechaza una insinuación', ['Acepta una oferta', 'Pide perdón', 'Cuenta un chiste'], 'Dice «no acepto esa insinuación».', { tag: 'ambigüedad' }),
-      dict('Hay que leer entre líneas lo que dijo el ministro.', 'Revisa la tilde de «ministro» y la ausencia de ella en «dijo».', { tag: 'dictado' }),
+      dict('Hay que leer entre líneas lo que dijo el ministro.', 'Revisa la tilde de «líneas» y la «h» de «Hay».', { tag: 'dictado' }),
       mc('En un contrato conviene...', 'evitar el equívoco', ['cultivar el doble sentido', 'usar muchas ironías', 'dejarlo todo implícito'], 'La precisión es esencial en textos formales.', { tag: 'ambigüedad' }),
       match([['equívoco', 'Que admite varios sentidos'], ['la insinuación', 'Se da a entender sin decir'], ['tomar el pelo', 'Burlarse con engaños'], ['entre líneas', 'De forma implícita']], 'Repasa el vocabulario del doble sentido.', { tag: 'vocabulario' }),
     ],
@@ -2934,7 +2937,7 @@ window.LWS = window.LWS || {};
     explain: { title: 'La sabiduría condensada: refranes, dichos y modismos', body: [
       'Un <b>refrán</b> es una oración completa, de forma fija y con carácter de enseñanza, a menudo rimada o en dos miembros: «Quien mal anda, mal acaba». Un <b>modismo</b> o <b>locución</b> es una expresión fija que funciona como una palabra o un sintagma: «meter la pata», «estar en las nubes». Un <b>dicho</b> es una frase popular de uso más libre.',
       { t: 'table', head: ['Expresión', 'Sentido', 'Tono / uso'], rows: [['A buen entendedor, pocas palabras bastan.', 'Se entiende sin explicar más', 'Cierra una advertencia velada'], ['Camarón que se duerme, se lo lleva la corriente.', 'Quien se descuida, pierde', 'Anima a actuar'], ['Dime con quién andas y te diré quién eres.', 'Las compañías definen a la persona', 'A veces reproche'], ['Ser pan comido', 'Muy fácil', 'Coloquial'], ['Costar un ojo de la cara', 'Ser carísimo', 'Coloquial, enfático']] },
-      '<b>Cómo integrarlos:</b> se introducen con fórmulas como «como dice el refrán», «ya se sabe que...», «dicen que...». Un refrán suelta en el momento justo da fuerza; en exceso resulta cursi o paternalista.',
+      '<b>Cómo integrarlos:</b> se introducen con fórmulas como «como dice el refrán», «ya se sabe que...», «dicen que...». Un refrán soltado en el momento justo da fuerza; en exceso resulta cursi o paternalista.',
       '<b>Riesgos:</b> muchos refranes son contradictorios («Más vale tarde que nunca» / «A buenas horas, mangas verdes»; «Al que madruga, Dios le ayuda» / «No por mucho madrugar amanece más temprano»). Se elige el que conviene a la situación.',
       'En <b>textos formales</b> los modismos coloquiales se evitan; en <b>conversación, publicidad y literatura</b> aportan color y complicidad. Muchos se pueden <b>manipular</b> con ingenio: «A caballo regalado, sí le miro el diente si es una trampa».',
       { t: 'ex', list: ['Acepta la oferta: más vale pájaro en mano que ciento volando.', 'Callé a tiempo: en boca cerrada no entran moscas.', 'Para ti, este examen es pan comido.', 'Como dice el refrán, no hay mal que por bien no venga.'] },
@@ -2949,7 +2952,7 @@ window.LWS = window.LWS || {};
     quiz: [
       mc('¿Cuál es un refrán?', 'Quien mal anda, mal acaba.', ['meter la pata', 'estar en las nubes', 'costar un ojo de la cara'], 'El refrán es una oración completa con enseñanza.', { tag: 'refranes' }),
       mc('Alguien critica un regalo. ¿Qué refrán le dirías?', 'A caballo regalado no le mires el diente.', ['En boca cerrada no entran moscas.', 'Camarón que se duerme, se lo lleva la corriente.', 'Más vale tarde que nunca.'], 'No se critica lo que se recibe gratis.', { tag: 'refranes' }),
-      mc('¿Por qué algunos refranes parecen contradictorios?', 'Porque cada uno vale para una situación distinta', ['Porque están mal escritos', 'Porque son muy modernos', 'Porque no tienen sentido'], 'Se elige el que encaja con el contexto.', { tag: 'refranes' }),
+      mc('¿Por qué algunos refranes parecen contradictorios?', 'Porque cada uno vale para una situación distinta', ['Porque están mal escritos en los libros', 'Porque son todos muy modernos y nuevos', 'Porque en realidad no tienen ningún sentido'], 'Se elige el que encaja con el contexto.', { tag: 'refranes' }),
       listen('En boca cerrada no entran moscas.', 'Escucha: ¿qué recomienda el refrán?', 'Callar a tiempo', ['Hablar más alto', 'Cerrar la ventana', 'Comer despacio'], 'Callar evita problemas.', { tag: 'refranes' }),
       dict('No hay mal que por bien no venga.', 'Cuidado con «por bien» y el subjuntivo «venga».', { tag: 'dictado' }),
       mc('En un informe formal, los modismos coloquiales...', 'se suelen evitar', ['son obligatorios', 'sustituyen a los datos', 'se escriben en mayúsculas'], 'Aportan color, pero no encajan en un registro formal.', { tag: 'refranes' }),
@@ -2969,22 +2972,22 @@ window.LWS = window.LWS || {};
     ],
     explain: { title: 'Recursos y efectos del lenguaje literario', body: [
       'El lenguaje literario no solo informa: busca <b>belleza, ambigüedad fecunda y emoción</b>. Se aparta de lo cotidiano mediante recursos que llaman la atención sobre la forma.',
-      { t: 'table', head: ['Recurso', 'Ejemplo', 'Efecto'], rows: [['Metáfora', 'Las perlas de su boca', 'Identifica dos realidades y crea imagen'], ['Símil', 'Ligero como una pluma', 'Compara con «como»'], ['Prosopopeya', 'El viento susurraba secretos', 'Da vida a lo inanimado'], ['Hipérbole', 'Te lo he dicho mil veces', 'Exagera para enfatizar'], ['Antítesis', 'Es corto el amor, y es largo el olvido', 'Contrasta ideas'], ['Elipsis', 'Pasó la noche... y ya no hubo más', 'Omite y sugiere'], ['Aliteración', 'El ruido con que rueda la ronca tempestad', 'Repite sonidos']] },
+      { t: 'table', head: ['Recurso', 'Ejemplo', 'Efecto'], rows: [['Metáfora', 'Las perlas de su boca', 'Identifica dos realidades y crea imagen'], ['Símil', 'Ligero como una pluma', 'Compara con «como»'], ['Prosopopeya', 'El viento susurraba secretos', 'Da vida a lo inanimado'], ['Hipérbole', 'Te lo he dicho mil veces', 'Exagera para enfatizar'], ['Antítesis', 'Frágil por fuera, firme por dentro', 'Contrasta ideas'], ['Elipsis', 'Pasó la noche... y ya no hubo más', 'Omite y sugiere'], ['Aliteración', 'El susurro de la seda sobre la sala', 'Repite sonidos']] },
       'El <b>narrador</b> puede ser de primera persona (protagonista o testigo), de tercera <b>omnisciente</b> (lo sabe todo) o de tercera con <b>focalización limitada</b> (solo ve lo que ve un personaje).',
-      'La <b>sintaxis</b> también es expresiva: el <b>hipérbaton</b> (alterar el orden: «del salón en el ángulo oscuro») da solemnidad; las frases largas con subordinadas crean ritmo envolvente, las cortas, tensión.',
+      'La <b>sintaxis</b> también es expresiva: el <b>hipérbaton</b> (alterar el orden habitual: «Azul y profundo se extendía el mar») da solemnidad; las frases largas con subordinadas crean ritmo envolvente, las cortas, tensión.',
       'Los tiempos verbales narran: el <b>indefinido</b> avanza la acción; el <b>imperfecto</b> describe y crea atmósfera; el <b>presente histórico</b> acerca el pasado al lector.',
       'Al comentar un texto, sigue el esquema: <b>identificar el recurso → citarlo → explicar su efecto</b>. «La prosopopeya “la ciudad dormía” transmite quietud y humaniza el espacio».',
       { t: 'ex', list: ['El olor a pan evocaba su infancia.', 'La metáfora convierte la vejez en un otoño de la vida.', 'La elipsis final deja abierto el desenlace.', 'El narrador testigo limita lo que sabemos.'] },
     ] },
-    listen: ['El olor a pan evocaba su infancia.', 'La luna sonreía sobre el mar tranquilo.', 'La elipsis deja al lector imaginar el final.', 'El narrador de la novela es un testigo anónimo.', 'Es corto el amor, y es largo el olvido.'],
+    listen: ['El olor a pan evocaba su infancia.', 'La luna sonreía sobre el mar tranquilo.', 'La elipsis deja al lector imaginar el final.', 'El narrador de la novela es un testigo anónimo.', 'Frágil por fuera, firme por dentro.'],
     practice: [
       mc('«La luna sonreía» es un ejemplo de...', 'prosopopeya', ['hipérbole', 'antítesis', 'símil'], 'Atribuye una acción humana a la luna.', { tag: 'literario' }),
       mc('«Ligero como una pluma» es...', 'un símil', ['una metáfora pura', 'una elipsis', 'un hipérbaton'], 'Compara de forma explícita con «como».', { tag: 'literario' }),
-      fill('El imperfecto sirve para describir y crear ___. (ambiente)', 'atmósfera', 'Ambiente o clima de la escena.', { tag: 'literario' }),
-      order('La elipsis deja abierto el desenlace', 'Sujeto + verbo + complemento.', { tag: 'literario' }),
+      fill('El imperfecto sirve para describir y crear ___. (clima de la escena)', ['atmósfera', 'ambiente', 'clima'], 'Atmósfera o ambiente de la escena.', { tag: 'literario' }),
+      order('La elipsis deja abierto el desenlace', 'Sujeto + verbo + complemento.', { tag: 'literario', alts: ['La elipsis deja el desenlace abierto'] }),
     ],
     quiz: [
-      mc('Un narrador omnisciente...', 'lo sabe todo sobre los personajes', ['es siempre el protagonista', 'solo cuenta lo que ve', 'no existe en la novela'], 'Omnisciente = conoce pensamientos y hechos.', { tag: 'literario' }),
+      mc('Un narrador omnisciente...', 'lo sabe todo sobre los personajes', ['es siempre el protagonista del relato', 'solo cuenta lo que ve con sus ojos', 'no puede existir en una novela'], 'Omnisciente = conoce pensamientos y hechos.', { tag: 'literario' }),
       mc('«Te lo he dicho mil veces» es...', 'una hipérbole', ['una antítesis', 'una elipsis', 'una prosopopeya'], 'Exagera para enfatizar.', { tag: 'literario' }),
       mc('¿Qué tiempo verbal hace avanzar la acción en un relato?', 'el indefinido', ['el imperfecto', 'el condicional', 'el subjuntivo'], 'El indefinido narra los hechos puntuales.', { tag: 'literario' }),
       listen('La elipsis deja al lector imaginar el final.', 'Escucha: ¿qué consigue la elipsis?', 'Que el lector imagine el final', ['Que se explique todo', 'Que haya más diálogo', 'Que cambie el narrador'], 'Omite y sugiere.', { tag: 'literario' }),
@@ -2999,34 +3002,34 @@ window.LWS = window.LWS || {};
     goal: 'Al terminar esta lección, podrás comprender y redactar fórmulas jurídicas y administrativas con precisión y el tono adecuado.',
     vocab: [
       ['el otorgante', 'sustantivo', 'Persona que concede o firma un documento ante un fedatario.', 'El otorgante firmó la escritura ante notario.', 'The grantor signed the deed before a notary.'],
-      ['por la presente', 'expresión', 'Fórmula que indica que el propio documento produce el efecto declarado.', 'Por la presente, solicito la baja del servicio.', 'I hereby request cancellation of the service.'],
+      ['por la presente', 'expresión', 'Fórmula que indica que lo declarado se hace mediante este mismo documento.', 'Por la presente, solicito la baja del servicio.', 'I hereby request cancellation of the service.'],
       ['subsanar', 'verbo', 'Corregir un defecto o error de un trámite.', 'Dispone de diez días para subsanar la documentación.', 'You have ten days to correct the documentation.'],
       ['el expediente', 'sustantivo', 'Conjunto de documentos de un asunto o trámite.', 'Su expediente está pendiente de resolución.', 'Your file is pending resolution.'],
       ['la vigencia', 'sustantivo', 'Tiempo durante el cual una norma o contrato es válido.', 'La vigencia del contrato es de dos años.', 'The contract is valid for two years.'],
     ],
     explain: { title: 'Precisión, impersonalidad y fórmulas fijas', body: [
       'El lenguaje jurídico-administrativo busca <b>exactitud, objetividad y formalidad</b>. Evita la ambigüedad, pero a veces la rodea de un estilo recargado. Hoy se promueve el <b>lenguaje claro</b> sin perder rigor.',
-      { t: 'table', head: ['Rasgo', 'Ejemplo', 'Versión clara'], rows: [['Impersonalidad con «se»', 'Se advierte que el plazo ha vencido.', 'El plazo ha vencido.'], ['Gerundio de posterioridad (incorrecto)', 'Dictó sentencia, <b>siendo</b> recurrida después.', 'Dictó sentencia, que fue recurrida después.'], ['Futuro de mandato', 'Los interesados presentarán la solicitud.', 'Los interesados deben presentar la solicitud.'], ['Futuro de subjuntivo', 'Quien incumpliere será sancionado.', 'Quien incumpla será sancionado.'], ['Fórmula de inicio', 'Por la presente, solicito...', 'Solicito...']] },
+      { t: 'table', head: ['Rasgo', 'Ejemplo', 'Versión clara'], rows: [['Impersonalidad con «se»', 'Se advierte que el plazo ha vencido.', 'Le advertimos que el plazo ha vencido.'], ['Gerundio de posterioridad (incorrecto)', 'Dictó sentencia, <b>siendo</b> recurrida después.', 'Dictó sentencia, que fue recurrida después.'], ['Futuro de mandato', 'Los interesados presentarán la solicitud.', 'Los interesados deben presentar la solicitud.'], ['Futuro de subjuntivo', 'Quien incumpliere será sancionado.', 'Quien incumpla será sancionado.'], ['Fórmula de inicio', 'Por la presente, solicito...', 'Solicito...']] },
       '<b>Fórmulas habituales:</b> «<b>EXPONE</b> / <b>SOLICITA</b>» (instancias), «en virtud de lo dispuesto en...», «a los efectos oportunos», «hacer constar», «en el plazo de diez días hábiles», «sin perjuicio de», «a tenor de lo establecido».',
       '<b>Subsanar</b> un defecto no es «solucionar» cualquier cosa: se aplica a errores o carencias de un trámite. <b>Expediente</b> es el conjunto de documentos; <b>resolución</b> es la decisión de la Administración; <b>recurso</b> es la vía para impugnarla.',
-      '<b>Cuidado con los falsos amigos del registro:</b> «caducar» (perder validez por el paso del tiempo), «prescribir» (extinguirse un derecho o delito por el tiempo), «derogar» (anular una ley entera) y «abrogar» (suprimir del todo) no son sinónimos exactos.',
+      '<b>Cuidado con los términos parecidos:</b> «caducar» (perder validez por el paso del tiempo), «prescribir» (extinguirse un derecho o una responsabilidad por el paso del tiempo), «derogar» (dejar sin vigencia una norma, en todo o en parte) y «abrogar» (término técnico poco frecuente: dejarla sin vigencia por completo) no son sinónimos exactos.',
       'En una <b>instancia</b> se identifica al solicitante, se exponen los hechos, se pide algo concreto y se firma con fecha y lugar. No se usan abreviaturas ni coloquialismos.',
       { t: 'ex', list: ['Dispone de diez días hábiles para subsanar la documentación.', 'La vigencia del contrato es de dos años.', 'Por la presente, solicito la baja del servicio.', 'Se hace constar que el expediente está completo.'] },
     ] },
     listen: ['Dispone de diez días hábiles para subsanar la documentación.', 'La vigencia del contrato es de dos años.', 'Por la presente, solicito la baja del servicio.', 'El otorgante firmó la escritura ante notario.', 'Su expediente está pendiente de resolución.'],
     practice: [
       mc('¿Qué verbo se usa para corregir un defecto en un trámite?', 'subsanar', ['derogar', 'caducar', 'otorgar'], 'Subsanar = corregir un defecto.', { tag: 'jurídico' }),
-      mc('«Derogar» significa...', 'anular una ley', ['firmar un contrato', 'presentar una queja', 'cobrar una multa'], 'Se derogan las leyes.', { tag: 'jurídico' }),
-      fill('Quien incumpla la norma será ___. (castigar con una multa)', 'sancionado', 'Participio de sancionar.', { tag: 'jurídico' }),
+      mc('«Derogar» significa...', 'dejar sin vigencia una norma', ['firmar un contrato con otra empresa', 'presentar una queja ante la autoridad', 'cobrar una multa de tráfico'], 'Se derogan las normas, es decir, dejan de estar en vigor.', { tag: 'jurídico' }),
+      fill('Quien incumpla la norma será ___. (sancionar, participio)', 'sancionado', 'Participio de sancionar: será sancionado.', { tag: 'jurídico' }),
       order('Por la presente solicito la baja del servicio', 'Fórmula + verbo + objeto.', { tag: 'jurídico', alts: ['Por la presente, solicito la baja del servicio'] }),
     ],
     quiz: [
       mc('Una versión clara de «Los interesados presentarán la solicitud» es...', 'Los interesados deben presentar la solicitud.', ['Los interesados presentaron la solicitud.', 'Los interesados presentando la solicitud.', 'Los interesados presenten la solicitud ayer.'], 'El futuro de mandato equivale a una obligación.', { tag: 'jurídico' }),
-      mc('El «expediente» es...', 'el conjunto de documentos de un asunto', ['una sentencia', 'una multa', 'una firma'], 'Reúne todos los papeles del trámite.', { tag: 'vocabulario' }),
+      mc('El «expediente» es...', 'el conjunto de documentos de un asunto', ['una sentencia dictada por un juez', 'una multa impuesta por la policía', 'una firma puesta al final de un escrito'], 'Reúne todos los papeles del trámite.', { tag: 'vocabulario' }),
       mc('Un derecho que se extingue por el paso del tiempo...', 'prescribe', ['se deroga', 'se otorga', 'se subsana'], 'Prescribir = extinguirse por tiempo.', { tag: 'jurídico' }),
       listen('La vigencia del contrato es de dos años.', 'Escucha: ¿cuánto dura el contrato?', 'Dos años', ['Un año', 'Diez días', 'Seis meses'], 'Vigencia de dos años.', { tag: 'jurídico' }),
       dict('Dispone de diez días hábiles para subsanar la documentación.', 'Revisa «hábiles» (con h) y la tilde de «días».', { tag: 'dictado' }),
-      mc('Una instancia debe incluir...', 'una petición concreta, fecha y firma', ['solo un saludo', 'chistes para suavizar', 'abreviaturas informales'], 'Hechos, petición, lugar, fecha y firma.', { tag: 'jurídico' }),
+      mc('Una instancia debe incluir...', 'una petición concreta, fecha y firma', ['solo un saludo cordial al inicio', 'chistes para suavizar la petición', 'abreviaturas informales como en un chat'], 'Hechos, petición, lugar, fecha y firma.', { tag: 'jurídico' }),
       match([['el otorgante', 'Quien concede o firma ante notario'], ['subsanar', 'Corregir un defecto'], ['el expediente', 'Documentos de un trámite'], ['la vigencia', 'Tiempo en que algo es válido']], 'Repasa el vocabulario jurídico.', { tag: 'vocabulario' }),
     ],
   });
@@ -3042,10 +3045,10 @@ window.LWS = window.LWS || {};
       ['el sensacionalismo', 'sustantivo', 'Tendencia a exagerar las noticias para impactar.', 'El sensacionalismo sacrifica el rigor.', 'Sensationalism sacrifices rigor.'],
     ],
     explain: { title: 'Informar, opinar y leer entre titulares', body: [
-      'El periodismo distingue <b>géneros informativos</b> (noticia, reportaje, crónica), <b>de opinión</b> (editorial, columna, artículo) e <b>interpretativos</b> (análisis, entrevista). Saber cuál lees determina cuánta subjetividad puedes esperar.',
+      'El periodismo distingue <b>géneros informativos</b> (noticia, crónica), <b>interpretativos</b> (reportaje, análisis, entrevista) y <b>de opinión</b> (editorial, columna, artículo de opinión). Saber cuál lees determina cuánta subjetividad puedes esperar.',
       { t: 'table', head: ['Parte de la noticia', 'Función', 'Rasgos'], rows: [['Titular', 'Atrae y resume', 'Presente histórico, verbos fuertes, sin artículos a veces'], ['Entradilla', 'Resume lo esencial', 'Qué, quién, cuándo, dónde, cómo, por qué'], ['Cuerpo', 'Desarrolla', 'Pirámide invertida: de lo más a lo menos importante'], ['Cierre', 'Contexto o cita', 'Opcional']] },
       '<b>Rasgos del estilo:</b> frases breves, voz activa, precisión de cifras y fuentes, y uso del <b>presente histórico</b> en titulares: «El Congreso aprueba la ley» (hecho pasado, actualidad inmediata).',
-      '<b>Atribución y distancia:</b> para no afirmar lo no confirmado, se usan fórmulas como «según fuentes cercanas», «presuntamente», «al parecer», «habría dimitido» (condicional de rumor) o «el Gobierno, que niega los hechos...». El condicional periodístico y el <b>gerundio</b> abusivo («siendo que...») son dos rasgos criticables si se abusa.',
+      '<b>Atribución y distancia:</b> para no afirmar lo no confirmado, se usan fórmulas como «según fuentes cercanas», «presuntamente», «al parecer», «habría dimitido» (condicional de rumor) o «el gobierno, que niega los hechos...». El condicional de rumor y el <b>gerundio de posterioridad</b> («Se aprobó la ley, entrando en vigor hoy») son dos rasgos criticables si se abusa de ellos.',
       '<b>Lectura crítica:</b> pregúntate quién habla, qué fuentes cita, qué omite y qué verbos elige: no es lo mismo «afirma», «alega», «confiesa» o «admite». El <b>sensacionalismo</b> exagera con adjetivos («escándalo», «bomba») y titulares engañosos («clickbait»).',
       '<b>Desmentir</b> es negar públicamente; <b>rectificar</b> es corregir un error propio; <b>matizar</b> es precisar sin negar.',
       { t: 'ex', list: ['El Congreso aprueba la ley de vivienda.', 'Según fuentes cercanas, el ministro habría dimitido.', 'El gobierno desmintió los rumores.', 'El sensacionalismo sacrifica el rigor.'] },
@@ -3053,8 +3056,8 @@ window.LWS = window.LWS || {};
     listen: ['El titular resume la noticia en pocas palabras.', 'Según fuentes cercanas, el ministro habría dimitido.', 'El gobierno desmintió los rumores.', 'La entradilla responde a qué, quién, cuándo y dónde.', 'El sensacionalismo sacrifica el rigor.'],
     practice: [
       mc('La estructura de «pirámide invertida» coloca primero...', 'lo más importante', ['los detalles', 'la conclusión', 'las opiniones'], 'De lo esencial a lo accesorio.', { tag: 'periodístico' }),
-      mc('«El ministro habría dimitido» indica...', 'información no confirmada', ['un hecho seguro', 'una orden', 'un deseo'], 'Condicional de rumor.', { tag: 'periodístico' }),
-      fill('El gobierno ___ los rumores. (negar públicamente, indefinido)', 'desmintió', 'Desmentir: e → i en 3.ª persona.', { tag: 'periodístico' }),
+      mc('«El ministro habría dimitido» indica...', 'información no confirmada', ['un hecho seguro y comprobado', 'una orden dirigida al ministro', 'un deseo de los ciudadanos'], 'Condicional de rumor.', { tag: 'periodístico' }),
+      fill('El gobierno ___ los rumores. (desmentir, indefinido)', 'desmintió', 'Desmentir: e → i en 3.ª persona.', { tag: 'periodístico' }),
       order('El titular resume la noticia en pocas palabras', 'Sujeto + verbo + complemento.', { tag: 'periodístico' }),
     ],
     quiz: [
@@ -3094,7 +3097,7 @@ window.LWS = window.LWS || {};
     ],
     explain: { title: 'Resumir, sintetizar y parafrasear', body: [
       'Tres operaciones parecidas pero distintas: el <b>resumen</b> reduce el texto manteniendo su orden; la <b>síntesis</b> reorganiza las ideas esenciales en un texto nuevo, a veces a partir de varias fuentes; la <b>paráfrasis</b> dice lo mismo con otras palabras, sin reducir necesariamente la extensión.',
-      { t: 'table', head: ['Operación', 'Extensión', 'Orden de ideas', 'Voz'], rows: [['Resumen', 'Mucho más corto', 'El del original', 'Del autor, en tercera persona'], ['Síntesis', 'Corto', 'Nuevo, según tu criterio', 'Propia, integra varias fuentes'], ['Paráfrasis', 'Similar', 'El del original', 'Propia, con otras palabras']] },
+      { t: 'table', head: ['Operación', 'Extensión', 'Orden de ideas', 'Voz'], rows: [['Resumen', 'Mucho más corto', 'El del original', 'Propia, fiel al autor (suele usarse la tercera persona)'], ['Síntesis', 'Corto', 'Nuevo, según tu criterio', 'Propia, integra varias fuentes'], ['Paráfrasis', 'Similar', 'El del original', 'Propia, con otras palabras']] },
       '<b>Método en cuatro pasos:</b> (1) leer y subrayar la idea central de cada párrafo; (2) detectar el <b>hilo conductor</b>; (3) eliminar ejemplos, repeticiones y adornos; (4) redactar con tus palabras y comprobar que no has añadido opiniones propias.',
       'Una paráfrasis no consiste en cambiar una palabra por su sinónimo. Hay que <b>cambiar la estructura</b>: voz activa por pasiva, verbo por sustantivo (nominalización), oración principal por subordinada.',
       { t: 'table', head: ['Original', 'Paráfrasis'], rows: [['El ministro anunció que reducirá los impuestos.', 'La reducción de impuestos fue anunciada por el ministro.'], ['Aunque llovía, salimos.', 'A pesar de la lluvia, salimos.'], ['Cuando terminó la reunión, se marcharon.', 'Al terminar la reunión, se marcharon.']] },
@@ -3104,14 +3107,14 @@ window.LWS = window.LWS || {};
     listen: ['Antes de seguir, permítanme recapitular las ideas principales.', 'Su informe destaca por la concisión y la claridad.', 'La nostalgia es el hilo conductor de la novela.', 'Debes ceñirte a los hechos y evitar las opiniones.', 'En definitiva, el autor defiende una solución gradual.'],
     practice: [
       mc('¿Qué operación reorganiza las ideas esenciales de varias fuentes con tu criterio?', 'La síntesis', ['La paráfrasis', 'La copia', 'La cita literal'], 'La síntesis integra y reordena.', { tag: 'síntesis' }),
-      mc('Una buena paráfrasis...', 'cambia la estructura además de las palabras', ['solo cambia un sinónimo', 'copia el original', 'añade opiniones propias'], 'Cambiar solo sinónimos no basta.', { tag: 'síntesis' }),
+      mc('Una buena paráfrasis...', 'cambia la estructura además de las palabras', ['solo cambia un sinónimo del original', 'copia el original palabra por palabra', 'añade opiniones propias del autor'], 'Cambiar solo sinónimos no basta.', { tag: 'síntesis' }),
       fill('«Aunque llovía, salimos» → «A ___ de la lluvia, salimos». (locución concesiva)', 'pesar', 'A pesar de + sustantivo.', { tag: 'síntesis' }),
       order('Debes ceñirte a los hechos', 'Deber + ceñirse a + sustantivo.', { tag: 'síntesis' }),
     ],
     quiz: [
       mc('«Al terminar la reunión» es una paráfrasis de...', 'Cuando terminó la reunión', ['Si termina la reunión', 'Porque terminó la reunión', 'Aunque terminó la reunión'], 'Al + infinitivo equivale a una temporal con «cuando».', { tag: 'síntesis' }),
       mc('¿Qué conector introduce una síntesis final?', 'En definitiva', ['Por ejemplo', 'Por otro lado', 'Además'], 'En definitiva = en conclusión.', { tag: 'síntesis' }),
-      mc('El «hilo conductor» de un texto es...', 'el tema que une sus partes', ['su título', 'su primera frase', 'su autor'], 'Es la idea que recorre todo el texto.', { tag: 'vocabulario' }),
+      mc('El «hilo conductor» de un texto es...', 'el tema que une sus partes', ['su título en la portada', 'su primera frase del párrafo inicial', 'su autor y la fecha de publicación'], 'Es la idea que recorre todo el texto.', { tag: 'vocabulario' }),
       listen('Su informe destaca por la concisión y la claridad.', 'Escucha: ¿qué cualidad se elogia?', 'Que es breve y claro', ['Que es muy largo', 'Que tiene muchos ejemplos', 'Que es muy técnico'], 'Concisión = decir mucho con pocas palabras.', { tag: 'síntesis' }),
       dict('Logró condensar cuarenta páginas en una sola.', 'Revisa la tilde de «páginas».', { tag: 'dictado' }),
       mc('¿Cuál NO es propio de un resumen?', 'Añadir tu opinión personal', ['Mantener el orden original', 'Eliminar los ejemplos', 'Usar tercera persona'], 'El resumen se ciñe al texto.', { tag: 'síntesis' }),
@@ -3139,18 +3142,18 @@ window.LWS = window.LWS || {};
     ] },
     listen: ['Estoy de acuerdo con el planteamiento, con una salvedad.', 'Los datos refutan la hipótesis inicial.', 'Cabe destacar que el estudio incluyó a mil personas.', 'Es cierto que la medida es cara; sin embargo, es necesaria.', 'A modo de conclusión, se impone una reforma gradual.'],
     practice: [
-      mc('«Es cierto que... ; sin embargo...» es una estructura de...', 'concesión y refutación', ['causa y efecto', 'ejemplo', 'conclusión'], 'Concedes un punto y lo rebates.', { tag: 'argumentación' }),
+      mc('«Es cierto que... ; sin embargo...» es una estructura de...', 'concesión y refutación', ['causa y efecto entre dos hechos', 'ejemplo que ilustra una idea', 'conclusión final del texto'], 'Concedes un punto y lo rebates.', { tag: 'argumentación' }),
       mc('Atacar a la persona en lugar de a su argumento es una falacia...', 'ad hominem', ['de autoridad', 'de datos', 'de ejemplo'], 'Ad hominem = contra la persona.', { tag: 'argumentación' }),
-      fill('Estoy de acuerdo, pero con una ___. (limitación)', 'salvedad', 'Una salvedad es una excepción o reserva.', { tag: 'argumentación' }),
+      fill('Estoy de acuerdo, pero con una ___. (limitación)', ['salvedad', 'reserva', 'limitación', 'excepción'], 'Una salvedad es una excepción o reserva.', { tag: 'argumentación' }),
       order('A modo de conclusión se impone una reforma', 'Fórmula de cierre + verbo + sujeto.', { tag: 'argumentación', alts: ['A modo de conclusión, se impone una reforma'] }),
     ],
     quiz: [
       mc('¿Dónde se formula normalmente la tesis?', 'En la introducción', ['Solo en la conclusión', 'En los ejemplos', 'En la bibliografía'], 'La tesis se plantea al inicio.', { tag: 'argumentación' }),
-      mc('«O estás conmigo o contra mí» es una...', 'falsa disyuntiva', ['concesión', 'paráfrasis', 'salvedad'], 'Reduce un asunto complejo a solo dos opciones.', { tag: 'argumentación' }),
+      mc('«O estás conmigo o contra mí» es una...', 'falsa disyuntiva', ['concesión que reconoce algo al otro', 'paráfrasis de otra idea anterior', 'salvedad que matiza lo dicho'], 'Reduce un asunto complejo a solo dos opciones.', { tag: 'argumentación' }),
       mc('¿Qué conector expresa consecuencia con subjuntivo?', 'de ahí que', ['puesto que', 'aunque', 'por ejemplo'], 'De ahí que + subjuntivo.', { tag: 'argumentación' }),
       listen('Cabe destacar que el estudio incluyó a mil personas.', 'Escucha: ¿qué se subraya?', 'El tamaño de la muestra del estudio', ['El precio del estudio', 'La duración de la entrevista', 'El nombre del autor'], 'Destaca que participaron mil personas.', { tag: 'argumentación' }),
       dict('Podría objetarse que la medida es cara.', 'Revisa la «j» de «objetarse».', { tag: 'dictado' }),
-      mc('«Refutar» significa...', 'demostrar que algo es erróneo', ['repetir un argumento', 'resumir un texto', 'citar a un experto'], 'Refutar = rebatir con razones.', { tag: 'vocabulario' }),
+      mc('«Refutar» significa...', 'demostrar que algo es erróneo', ['repetir un argumento ya dado', 'resumir un texto largo', 'citar a un experto en la materia'], 'Refutar = rebatir con razones.', { tag: 'vocabulario' }),
       match([['refutar', 'Demostrar que es falso'], ['la salvedad', 'Limitación que se añade'], ['el planteamiento', 'Modo de enfocar un problema'], ['a modo de conclusión', 'Fórmula de cierre']], 'Repasa el vocabulario argumentativo.', { tag: 'vocabulario' }),
     ],
   });
@@ -3160,7 +3163,7 @@ window.LWS = window.LWS || {};
     goal: 'Al terminar esta lección, podrás revisar un texto, detectar redundancias, queísmo, dequeísmo y cacofonías, y pulir el estilo.',
     vocab: [
       ['la redundancia', 'sustantivo', 'Repetición innecesaria de una idea o una palabra.', 'Esa frase contiene una redundancia evidente.', 'That sentence contains an obvious redundancy.'],
-      ['el pleonasmo', 'sustantivo', 'Uso de palabras innecesarias que repiten el sentido; a veces se admite con valor expresivo.', '«Subir arriba» es un pleonasmo.', '"To go up upward" is a pleonasm.'],
+      ['el pleonasmo', 'sustantivo', 'Uso de palabras innecesarias que repiten el sentido; a veces se admite con valor expresivo.', '«Subir arriba» es un pleonasmo.', '"Subir arriba" (literally "to go up up") is a pleonasm.'],
       ['el queísmo', 'sustantivo', 'Error de omitir la preposición «de» cuando la exige el verbo o la expresión.', '«Me alegro que vengas» es un caso de queísmo.', '"Me alegro que vengas" is a case of queísmo.'],
       ['el dequeísmo', 'sustantivo', 'Error de añadir «de» ante «que» cuando no corresponde.', '«Pienso de que tienes razón» es dequeísmo.', '"Pienso de que tienes razón" is dequeísmo.'],
       ['pulir', 'verbo', 'Mejorar un texto eliminando defectos y afinando la expresión.', 'Pasé la tarde puliendo el último párrafo.', 'I spent the afternoon polishing the last paragraph.'],
@@ -3208,7 +3211,7 @@ window.LWS = window.LWS || {};
       '<b>Ironía</b> (decir lo contrario de lo que se piensa) frente a <b>sarcasmo</b> (ironía hiriente, con voluntad de ofender) y <b>humor</b> (sin intención de herir). La línea entre ellos depende del contexto y de la relación entre los interlocutores.',
       'Pistas escritas del tono: <b>comillas irónicas</b> («su “generosa” oferta»), <b>puntos suspensivos</b>, adverbios de énfasis («francamente»), diminutivos despectivos, y la elección entre sinónimos («es prudente» frente a «es cobarde»).',
       '<b>Cortesía como estrategia:</b> los eufemismos y los atenuantes («quizá», «un poco», «tal vez») suavizan una crítica. Pero una cortesía excesiva puede resultar <b>condescendiente</b>. Al responder, identifica el tono antes de reaccionar al contenido.',
-      { t: 'ex', list: ['Lo dijo con retintín.', 'Su comentario fue mordaz, pero no hiriente.', 'Hay un matiz de reproche en esa frase.', '«Si tú lo dices...» suele expresar desacuerdo.'] },
+      { t: 'ex', list: ['Lo dijo con retintín.', 'Su comentario fue mordaz, pero no llegó a ser ofensivo.', 'Hay un matiz de reproche en esa frase.', '«Si tú lo dices...» suele expresar desacuerdo.'] },
     ] },
     listen: ['Lo dijo con un retintín que no me gustó nada.', 'Me habló en un tono condescendiente.', 'Escribió una crítica mordaz del estreno.', 'No me gusta el tono de tu mensaje.', 'Hay un matiz de reproche en su frase.'],
     practice: [
@@ -3218,12 +3221,12 @@ window.LWS = window.LWS || {};
       order('No me gusta el tono de tu mensaje', 'Negación + verbo + sujeto.', { tag: 'tono' }),
     ],
     quiz: [
-      mc('«Si tú lo dices...» suele expresar...', 'duda o desacuerdo velado', ['entusiasmo', 'agradecimiento', 'una orden'], 'Es una aceptación solo aparente.', { tag: 'tono' }),
+      mc('«Si tú lo dices...» suele expresar...', 'duda o desacuerdo velado', ['entusiasmo por lo que se oye', 'agradecimiento por la información', 'una orden dada con claridad'], 'Es una aceptación solo aparente.', { tag: 'tono' }),
       mc('Las comillas en su «generosa» oferta indican...', 'ironía', ['una cita textual', 'énfasis positivo', 'un título'], 'Comillas irónicas.', { tag: 'tono' }),
       mc('Un trato «condescendiente» es...', 'el de quien se cree superior', ['el de un amigo íntimo', 'el de un experto neutral', 'el de alguien tímido'], 'Condescendiente = con aire de superioridad.', { tag: 'vocabulario' }),
       listen('Me habló en un tono condescendiente.', 'Escucha: ¿cómo le habló?', 'Como si fuera inferior', ['Con mucha rabia', 'Con alegría', 'En voz muy baja'], 'Condescendiente = con superioridad.', { tag: 'tono' }),
       dict('Hay un matiz de reproche en su frase.', 'Revisa la tilde de «matiz» (no lleva) y la «z» final.', { tag: 'dictado' }),
-      mc('Para interpretar un tono hay que combinar...', 'palabras, contexto y entonación', ['solo las palabras', 'solo la gramática', 'solo el diccionario'], 'Tres fuentes de información.', { tag: 'tono' }),
+      mc('Para interpretar un tono hay que combinar...', 'palabras, contexto y entonación', ['solo las palabras que se dicen', 'solo la gramática de la frase', 'solo el diccionario de la lengua'], 'Tres fuentes de información.', { tag: 'tono' }),
       match([['el retintín', 'Tono malicioso'], ['mordaz', 'Crítico con ironía dura'], ['condescendiente', 'Trata como inferior'], ['el matiz', 'Pequeña diferencia de sentido']], 'Repasa el vocabulario del tono.', { tag: 'vocabulario' }),
     ],
   });
@@ -3248,15 +3251,15 @@ window.LWS = window.LWS || {};
     ] },
     listen: ['Es una buena pregunta; déjeme pensarlo un momento.', 'Mejor dicho, me refiero concretamente al segundo punto.', 'Fuimos corrigiendo los errores sobre la marcha.', 'Deja de dar rodeos y dime qué ha pasado.', 'No sabía la respuesta, pero salí del paso con una anécdota.'],
     practice: [
-      mc('¿Qué esquema sirve para improvisar con orden?', 'Posición, razón, ejemplo y cierre', ['Solo anécdotas', 'Muletillas seguidas', 'Silencio y disculpas'], 'Una estructura mínima organiza el discurso.', { tag: 'improvisación' }),
+      mc('¿Qué esquema sirve para improvisar con orden?', 'Posición, razón, ejemplo y cierre', ['Solo anécdotas sin relación entre sí', 'Muletillas seguidas hasta terminar', 'Silencio y disculpas constantes'], 'Una estructura mínima organiza el discurso.', { tag: 'improvisación' }),
       mc('Para corregirte mientras hablas dices...', 'Mejor dicho...', ['Por ejemplo...', 'Además...', 'Por cierto...'], 'Mejor dicho = rectificación.', { tag: 'improvisación' }),
       fill('Fuimos corrigiendo los errores sobre la ___. (mientras se hacía)', 'marcha', 'Sobre la marcha = sin plan previo.', { tag: 'improvisación' }),
       order('Deja de dar rodeos y ve al grano', 'Imperativo + imperativo.', { tag: 'improvisación' }),
     ],
     quiz: [
-      mc('Si no recuerdas una palabra, lo mejor es...', 'usar una perífrasis y continuar', ['callarte', 'cambiar de tema', 'pedir disculpas varias veces'], 'Compensa con recursos.', { tag: 'improvisación' }),
-      mc('«Dar rodeos» significa...', 'evitar ir al asunto principal', ['hablar muy alto', 'ser muy preciso', 'resumir'], 'Rodeo = camino indirecto.', { tag: 'vocabulario' }),
-      mc('¿Cuál es una fórmula para ganar tiempo?', 'Es una buena pregunta; déjeme pensarlo.', ['No pienso responder.', 'Eso ya lo dije.', 'Siguiente pregunta, por favor.'], 'Permite pensar con naturalidad.', { tag: 'improvisación' }),
+      mc('Si no recuerdas una palabra, lo mejor es...', 'usar una perífrasis y continuar', ['callarte hasta recordarla bien', 'cambiar de tema de golpe', 'pedir disculpas varias veces seguidas'], 'Compensa con recursos.', { tag: 'improvisación' }),
+      mc('«Dar rodeos» significa...', 'evitar ir al asunto principal', ['hablar muy alto para ser oído', 'ser muy preciso y directo', 'resumir el asunto en una frase'], 'Rodeo = camino indirecto.', { tag: 'vocabulario' }),
+      mc('¿Cuál es una fórmula para ganar tiempo?', 'Es una buena pregunta; déjeme pensarlo.', ['No pienso responder a esa pregunta.', 'Eso ya lo dije hace un buen rato.', 'Siguiente pregunta, por favor, rápido.'], 'Permite pensar con naturalidad.', { tag: 'improvisación' }),
       listen('Mejor dicho, me refiero concretamente al segundo punto.', 'Escucha: ¿qué hace la persona?', 'Se corrige y precisa', ['Cambia de tema', 'Se despide', 'Hace una pregunta'], 'Mejor dicho = rectifica; concretamente = precisa.', { tag: 'improvisación' }),
       dict('Déjeme pensarlo un momento.', 'Revisa la tilde de «Déjeme».', { tag: 'dictado' }),
       mc('Abusar de las muletillas...', 'resta autoridad al hablante', ['aumenta la claridad', 'es siempre obligatorio', 'sustituye a los argumentos'], 'Mejor usar pausas breves.', { tag: 'improvisación' }),
@@ -3276,30 +3279,156 @@ window.LWS = window.LWS || {};
     ],
     explain: { title: 'Mediar: traducir de un registro a otro', body: [
       'Un hablante maestro no solo domina varios registros: puede <b>trasladar un mismo mensaje</b> de uno a otro según el <b>interlocutor</b>, la <b>situación</b> y el <b>canal</b>. Mediar es, en parte, traducir dentro de la misma lengua.',
-      { t: 'table', head: ['Registro', 'Ejemplo del mismo mensaje'], rows: [['Coloquial', 'Oye, que no puedo ir, se me ha complicado el día.'], ['Neutro', 'No podré asistir porque he tenido un imprevisto.'], ['Formal', 'Lamento comunicarle que no podré asistir por motivos imprevistos.'], ['Administrativo', 'Se comunica la imposibilidad de comparecer por causa sobrevenida.']] },
+      { t: 'table', head: ['Registro', 'Ejemplo del mismo mensaje'], rows: [['Coloquial', 'Oye, que no puedo ir, se me ha complicado el día.'], ['Neutro', 'No podré asistir porque he tenido un imprevisto.'], ['Formal', 'Lamento comunicarle que no podré asistir por motivos imprevistos.'], ['Administrativo', 'Se comunica la imposibilidad de asistir por causa sobrevenida.']] },
       '<b>Qué cambia al subir de registro:</b> el trato (tú → usted), el léxico (coche → vehículo), las construcciones (voz pasiva, impersonales, nominalizaciones) y los marcadores de cortesía. <b>Al bajarlo:</b> frases más cortas, vocabulario común, ejemplos concretos y menos subordinación.',
       '<b>Mediar entre personas:</b> (1) escuchar a ambas partes; (2) <b>reformular</b> lo que cada una dice, sin juicios («Si lo he entendido bien, lo que te preocupa es...»); (3) separar los hechos de las emociones; (4) proponer un punto común.',
-      '<b>Fórmulas de mediación:</b> «Permítame reformular...», «Creo que ambos coincidís en...», «Quizá convenga distinguir entre...», «¿Podríamos empezar por lo que nos une?». Evita el «tú siempre...» y el «usted nunca...».',
+      '<b>Fórmulas de mediación:</b> «Permítame reformular...», «Creo que ambos coinciden en...», «Quizá convenga distinguir entre...», «¿Podríamos empezar por lo que nos une?». Evita el «tú siempre...» y el «usted nunca...».',
       'La <b>empatía lingüística</b> consiste en ponerse en el lugar del otro: explicar un término técnico a un lego sin <b>condescendencia</b> y adaptar tu léxico a su nivel, pero sin simplificar el contenido.',
-      { t: 'ex', list: ['Permítame reformular la pregunta.', 'Creo que ambos coincidís en lo esencial.', 'Terció para aclarar el malentendido.', 'Intenta ponerte en el lugar de tu cliente.'] },
+      { t: 'ex', list: ['Permítame reformular la pregunta.', 'Creo que ambos coinciden en lo esencial.', 'Terció para aclarar el malentendido.', 'Intenta ponerte en el lugar de tu cliente.'] },
     ] },
     listen: ['Permítame reformular la pregunta.', 'Adapta tu lenguaje a tu interlocutor.', 'Terció para aclarar un malentendido.', 'Intenta ponerte en el lugar de tu cliente.', 'Si lo he entendido bien, lo que te preocupa es el plazo.'],
     practice: [
-      mc('¿Cuál es la versión más formal de «No puedo ir, se me ha complicado el día»?', 'Lamento comunicarle que no podré asistir por motivos imprevistos.', ['Oye, que no voy.', 'No puedo ir, qué rollo.', 'Paso de ir, tío.'], 'Trato de usted y léxico formal.', { tag: 'registro' }),
-      mc('Al bajar de registro conviene...', 'usar frases más cortas y vocabulario común', ['usar más voz pasiva', 'añadir tecnicismos', 'alargar las frases'], 'Se simplifica la forma, no el contenido.', { tag: 'registro' }),
+      mc('¿Cuál es la versión más formal de «No puedo ir, se me ha complicado el día»?', 'Lamento comunicarle que no podré asistir por motivos imprevistos.', ['Oye, que no voy a ir, lo siento mucho.', 'No puedo ir, qué rollo de verdad.', 'Paso de ir, tío, me ha surgido otro plan.'], 'Trato de usted y léxico formal.', { tag: 'registro' }),
+      mc('Al bajar de registro conviene...', 'usar frases más cortas y vocabulario común', ['usar más voz pasiva que antes', 'añadir tecnicismos y términos cultos', 'alargar las frases con subordinadas'], 'Se simplifica la forma, no el contenido.', { tag: 'registro' }),
       fill('Permítame ___ la pregunta. (decirla de otra forma)', 'reformular', 'Reformular = decir de nuevo con otra forma.', { tag: 'registro' }),
       order('Adapta tu lenguaje a tu interlocutor', 'Imperativo + complemento + a + destinatario.', { tag: 'registro' }),
     ],
     quiz: [
-      mc('¿Qué hace un mediador?', 'Acerca las posturas de dos partes', ['Decide quién tiene razón', 'Se pone de un lado', 'Evita hablar'], 'Mediar = intervenir entre dos partes.', { tag: 'registro' }),
+      mc('¿Qué hace un mediador?', 'Acerca las posturas de dos partes', ['Decide quién tiene la razón al final', 'Se pone siempre de un lado concreto', 'Evita hablar con las dos partes'], 'Mediar = intervenir entre dos partes.', { tag: 'registro' }),
       mc('«Si lo he entendido bien, lo que te preocupa es...» es una forma de...', 'reformular sin juzgar', ['dar una orden', 'rechazar', 'interrumpir con enfado'], 'Muestra escucha activa.', { tag: 'registro' }),
-      mc('¿Qué opción es una nominalización propia de un registro administrativo?', 'la imposibilidad de comparecer', ['no poder venir', 'que no puedo ir', 'no me va bien'], 'Verbo → sustantivo abstracto.', { tag: 'registro' }),
+      mc('¿Qué opción es una nominalización propia de un registro administrativo?', 'la imposibilidad de asistir', ['no poder venir a la reunión', 'que no puedo ir a la cita', 'no me va bien ir hoy'], 'Verbo → sustantivo abstracto.', { tag: 'registro' }),
       listen('Si lo he entendido bien, lo que te preocupa es el plazo.', 'Escucha: ¿qué hace el hablante?', 'Reformula la preocupación del otro', ['Rechaza el plazo', 'Pide más dinero', 'Cambia de tema'], 'Reformula lo que ha oído.', { tag: 'registro' }),
       dict('Terció para aclarar un malentendido.', 'Revisa la tilde de «Terció».', { tag: 'dictado' }),
-      mc('«Ponerse en el lugar de alguien» es...', 'imaginar su situación para comprenderla', ['darle la razón siempre', 'ocupar su puesto', 'repetir sus palabras'], 'Empatía.', { tag: 'vocabulario' }),
+      mc('«Ponerse en el lugar de alguien» es...', 'imaginar su situación para comprenderla', ['darle la razón siempre sin pensar', 'ocupar su puesto de trabajo', 'repetir sus palabras tal cual'], 'Empatía.', { tag: 'vocabulario' }),
       match([['mediar', 'Acercar a dos partes'], ['terciar', 'Intervenir en una discusión'], ['reformular', 'Decir de otra forma'], ['el interlocutor', 'Persona con quien se habla']], 'Repasa el vocabulario de la mediación.', { tag: 'vocabulario' }),
     ],
   });
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const C = L.C; C.enHelp = C.enHelp || {};
+  const add = (id, title, lines) => { C.enHelp[id] = { title, lines }; };
+  add('a1.u1.l1', 'Greetings: in simple words', [
+    'Spanish greetings change with the time of day: <b>Buenos días</b> (morning), <b>Buenas tardes</b> (afternoon), <b>Buenas noches</b> (evening and night). <b>Hola</b> works at any time.',
+    'There are two ways to say “you”: <b>tú</b> for friends, family and children (informal) and <b>usted</b> for older people and formal situations (polite).',
+    'A question starts with <b>¿</b> and ends with <b>?</b>. Example: ¿Cómo estás? = How are you?',
+    'Answers: <b>Muy bien, gracias</b> = very well, thank you. <b>Así, así</b> = so-so.']);
+  add('a1.u1.l2', 'The verb “ser” (to be): in simple words', [
+    '<b>Ser</b> = “to be”. Use it for who you are: your name, where you are from, your job.',
+    'Forms: <b>yo soy</b> (I am), <b>tú eres</b> (you are), <b>él/ella/usted es</b> (he/she/you are), <b>nosotros somos</b> (we are), <b>vosotros sois</b> (you all are, Spain), <b>ellos/ustedes son</b> (they/you all are).',
+    'Useful questions: ¿Cómo te llamas? (What is your name?) · ¿De dónde eres? (Where are you from?) · ¿Dónde vives? (Where do you live?)',
+    'Careful: for your name say <b>Me llamo Ana</b> (literally “I call myself Ana”), not “soy llamo”.']);
+  add('a1.u1.l3', 'Numbers 0–100: in simple words', [
+    'Learn 0–20 by heart: cero, uno, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez, once, doce, trece, catorce, quince, dieciséis, diecisiete, dieciocho, diecinueve, veinte.',
+    '21–29 are one word: veintiuno, veintidós, veintitrés… From 31 use <b>y</b> (and): treinta <b>y</b> uno = 31.',
+    'The tens: treinta (30), cuarenta (40), cincuenta (50), sesenta (60), setenta (70), ochenta (80), noventa (90), cien (100).',
+    'Age: ¿Cuántos años tienes? → Tengo veinte años (literally “I have twenty years”).']);
+  add('a1.u2.l1', '“Tener” (to have) and possessives: in simple words', [
+    '<b>Tener</b> = “to have”: tengo, tienes, tiene, tenemos, tenéis, tienen. You also use it for age and family: <b>Tengo dos hermanos</b> = I have two brothers/siblings.',
+    '<b>Possessives</b> say who owns something: <b>mi / mis</b> (my), <b>tu / tus</b> (your), <b>su / sus</b> (his, her, their, your-formal).',
+    'Use the short form (mi, tu, su) with ONE thing and add <b>-s</b> with MANY: mi madre → mis padres.',
+    'They do not change for masculine/feminine: mi padre, mi madre.']);
+  add('a1.u2.l2', 'Days, months and dates: in simple words', [
+    'Days: lunes, martes, miércoles, jueves, viernes, sábado, domingo. Months: enero, febrero, marzo, abril, mayo, junio, julio, agosto, septiembre, octubre, noviembre, diciembre.',
+    'Days and months are written with a <b>small letter</b> in Spanish (not capital).',
+    'Date pattern: <b>day + de + month</b>: el cinco de mayo = 5th of May. Ask with ¿Qué día es hoy?',
+    '<b>el lunes</b> = this/next Monday (one time). <b>los lunes</b> = every Monday.']);
+  add('a1.u2.l3', 'Telling the time: in simple words', [
+    'Ask: <b>¿Qué hora es?</b> (What time is it?). Ask when something happens: <b>¿A qué hora…?</b>',
+    'For one o’clock say <b>Es la una</b>. For every other hour say <b>Son las</b> + number: Son las tres.',
+    'Quarter past: <b>y cuarto</b>. Half past: <b>y media</b>. Quarter to: <b>menos cuarto</b>. Exactly: <b>en punto</b>.',
+    'Add <b>de la mañana / de la tarde / de la noche</b> to show a.m. or p.m.']);
+  add('a1.u3.l1', '“Querer” and “gustar”: in simple words', [
+    '<b>Querer</b> = to want: quiero, quieres, quiere, queremos, queréis, quieren. Note the vowel change e → ie (except nosotros/vosotros).',
+    '<b>Me gusta</b> = I like (literally “it pleases me”). Use <b>me gusta</b> with ONE thing and <b>me gustan</b> with MANY things: me gusta el café · me gustan las manzanas.',
+    'To order politely: <b>Quiero un café, por favor</b>, or the softer <b>Quisiera…</b> (I would like…).']);
+  add('a1.u3.l2', 'Gender, number and adjectives: in simple words', [
+    'Every noun is masculine or feminine: <b>el libro</b> (masculine), <b>la casa</b> (feminine). “A” is <b>un</b> / <b>una</b>.',
+    'Plural: add <b>-s</b> after a vowel (libro → libros) and <b>-es</b> after a consonant (color → colores). The plural articles are <b>los / las</b> and <b>unos / unas</b>.',
+    'Adjectives agree with the noun: un libro rojo, una casa roja, unas casas rojas. Adjectives ending in -e or a consonant (grande, azul) do not change for gender.',
+    'The adjective usually goes AFTER the noun: una casa grande.']);
+  add('a1.u3.l3', '“Estar” and “hay”: in simple words', [
+    '<b>Estar</b> = to be (place): estoy, estás, está, estamos, estáis, están. Use it to say WHERE something known is: <b>La farmacia está en la calle Mayor</b>.',
+    '<b>Hay</b> = there is / there are. It says something EXISTS and never changes: hay un parque, hay dos parques.',
+    'Place words: en (in/on), cerca de (near), lejos de (far from), al lado de (next to), enfrente de (opposite), entre (between).',
+    '<b>a + el = al</b> and <b>de + el = del</b>: al lado del parque.']);
+  add('a1.u4.l1', 'Present tense of -ar verbs: in simple words', [
+    'Take the infinitive (hablar), remove <b>-ar</b>, add: <b>-o, -as, -a, -amos, -áis, -an</b>. Example: hablo, hablas, habla, hablamos, habláis, hablan.',
+    'You can usually leave out “I / you / he”: the ending already tells who does it. <b>Hablo español</b> = I speak Spanish.',
+    'Make it negative by putting <b>no</b> before the verb: <b>No hablo inglés</b>.']);
+  add('a1.u4.l2', 'Present tense of -er and -ir verbs: in simple words', [
+    '-er verbs (comer) and -ir verbs (vivir) use almost the same endings: <b>-o, -es, -e, -emos/-imos, -éis/-ís, -en</b>.',
+    'Only “we” and “you all” differ: comemos / vivimos, coméis / vivís.',
+    'Routine words: todos los días (every day), por la mañana (in the morning), por la tarde, por la noche.']);
+  add('a1.u4.l3', 'Question words and “ir”: in simple words', [
+    'Question words always have an accent: <b>qué</b> (what), <b>quién</b> (who), <b>dónde</b> (where), <b>cuándo</b> (when), <b>cómo</b> (how), <b>cuánto/cuántos</b> (how much/many), <b>por qué</b> (why). Answer “why” with <b>porque</b> (because), written as one word without accent.',
+    '<b>Ir</b> = to go: voy, vas, va, vamos, vais, van. After “ir” use <b>a</b>: Voy al parque (a + el = al).',
+    'A yes/no question needs no question word: ¿Vives en Madrid? — Sí, vivo en Madrid.']);
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const C = L.C; C.enHelp = C.enHelp || {};
+  const add = (id, title, lines) => { C.enHelp[id] = { title, lines }; };
+  add('a2.u1.l1', 'Reflexive verbs, time and frequency: in simple words', [
+    'A <b>reflexive verb</b> has an extra small word (<b>me, te, se, nos, os, se</b>) because the person does the action to themselves: <b>me levanto</b> = I get (myself) up.',
+    'Say the time of an activity with <b>a las</b> + hour: Me levanto <b>a las siete</b>. For one o’clock: <b>a la una</b>.',
+    'Frequency words: siempre (always), normalmente (usually), a veces (sometimes), casi nunca (almost never), nunca (never). With <b>no</b> the verb comes first: No desayuno <b>nunca</b>.',
+    'Stem change: acostarse → me <b>acue</b>sto (o becomes ue), but nosotros keeps the o: nos acostamos.']);
+  add('a2.u1.l2', 'Prices and “this / that”: in simple words', [
+    'Ask the price: <b>¿Cuánto cuesta?</b> (one thing) or <b>¿Cuánto cuestan?</b> (several things).',
+    '<b>este</b> = this (near me), <b>ese</b> = that (near you), <b>aquel</b> = that over there (far). They change with the noun: este libro, esta camisa, estos zapatos, estas chaquetas.',
+    '<b>muy caro</b> = very expensive (just emphasis). <b>demasiado caro</b> = too expensive (a problem).',
+    'Useful: ¿Puedo pagar con tarjeta? (Can I pay by card?) · ¿Puedo probarme esto? (Can I try this on?)']);
+  add('a2.u1.l3', 'Ordering politely: in simple words', [
+    'Be polite with the waiter: <b>¿Me puede traer la carta?</b> (Could you bring me the menu?) · <b>¿Qué me recomienda?</b> (What do you recommend?) · <b>La cuenta, por favor</b> (The bill, please).',
+    '<b>Quisiera…</b> = I would like… (more polite than <b>quiero</b>, “I want”).',
+    '<b>Pedir</b> (to ask for / order) changes e → i: pido, pides, pide, pedimos, pedís, piden. Same for servir and repetir.',
+    'Menu words: <b>de primero</b> (first course), <b>de segundo</b> (main course), <b>de postre</b> (dessert).']);
+  add('a2.u2.l1', 'Travel information: in simple words', [
+    'At the station ask: <b>¿A qué hora sale el tren?</b> (what time does it leave?) · <b>¿Cuánto dura el viaje?</b> (how long is the trip?) · <b>¿De qué andén sale?</b> (which platform?).',
+    'Little words: <b>a</b> = to (destination): Voy <b>a</b> Madrid. <b>de</b> = from: Salgo <b>de</b> Sevilla. <b>en</b> = by (transport): Viajo <b>en</b> tren.',
+    'Never say “voy en la estación” for going to a place: use <b>a</b> with ir and llegar.',
+    '<b>billete de ida</b> = one-way ticket · <b>de ida y vuelta</b> = return ticket.']);
+  add('a2.u2.l2', 'Hotel: in simple words', [
+    'To book say: <b>Quisiera reservar una habitación doble</b> (I would like to book a double room). Room types: individual (one person), doble (two people).',
+    'Ask about services: ¿El desayuno está incluido? (Is breakfast included?).',
+    'Say a problem with <b>funcionar</b>: <b>No funciona</b> la televisión (singular) · <b>No funcionan</b> las luces (plural).',
+    '<b>incluido</b> agrees with the noun: el desayuno está incluid<b>o</b>, las toallas están incluid<b>as</b>.']);
+  add('a2.u2.l3', 'Describing people and places: in simple words', [
+    'Use <b>ser</b> for looks and character: <b>Es alta</b>, <b>Es simpática</b>. Use <b>tener</b> for physical features: <b>Tiene el pelo largo y los ojos verdes</b>.',
+    'Adjectives must match the noun: alto, alta, altos, altas. Adjectives ending in -e or a consonant have one form for masculine and feminine: un chico amable, una chica amable.',
+    'Places: <b>La plaza es grande y está en el centro</b> (ser + description, estar + location). <b>Hay</b> says what exists: En mi barrio hay un parque.']);
+  add('a2.u3.l1', 'Pretérito perfecto (“I have done”): in simple words', [
+    'Formula: <b>he / has / ha / hemos / habéis / han</b> + <b>past participle</b>.',
+    'Participle: -ar verbs → <b>-ado</b> (hablado); -er/-ir verbs → <b>-ido</b> (comido, vivido).',
+    'Irregular participles to memorise: hacer → <b>hecho</b>, decir → <b>dicho</b>, ver → <b>visto</b>, escribir → <b>escrito</b>, poner → <b>puesto</b>, abrir → <b>abierto</b>, volver → <b>vuelto</b>.',
+    'Use it for things finished in a time that is not over (<b>hoy, esta semana, este año</b>) and for life experience (<b>¿Has estado alguna vez en México?</b>). Never put <b>no</b> or <b>ya</b> between he and the participle: No he comido.']);
+  add('a2.u3.l2', 'Pretérito indefinido, regular verbs: in simple words', [
+    'Use the <b>indefinido</b> for finished actions at a specific past time: ayer (yesterday), anoche (last night), el año pasado, hace dos días (two days ago).',
+    'Endings: -ar → <b>-é, -aste, -ó, -amos, -asteis, -aron</b> (hablé, hablaste, habló…). -er/-ir → <b>-í, -iste, -ió, -imos, -isteis, -ieron</b> (comí, comiste, comió…).',
+    'The accent matters: <b>hablé</b> (I spoke, past) vs <b>hable</b> (subjunctive); <b>habló</b> (he spoke) vs <b>hablo</b> (I speak).',
+    '<b>hace</b> + time = ago: Llegué <b>hace dos horas</b> (I arrived two hours ago).']);
+  add('a2.u3.l3', 'Irregular preterites: in simple words', [
+    'Some very common verbs change their stem in the indefinido and use special endings <b>-e, -iste, -o, -imos, -isteis, -ieron</b> (no accents): estuve, tuve, hice, pude, puse, vine, dije.',
+    '“He/she did” is <b>hizo</b> (with z).',
+    '<b>Ser</b> and <b>ir</b> have exactly the same forms: fui, fuiste, fue, fuimos, fuisteis, fueron. The context tells you: <b>Fui a Madrid</b> = I went; <b>Fue un viaje largo</b> = it was a long trip.']);
+  add('a2.u4.l1', 'Plans with “ir a”: in simple words', [
+    'Plans: <b>voy a / vas a / va a / vamos a / vais a / van a</b> + <b>infinitive</b>: Voy a estudiar esta noche = I am going to study tonight.',
+    'Future time words: mañana, esta noche, el sábado, el próximo mes, el año que viene.',
+    'Suggest: <b>¿Vamos al cine?</b> · Accept: <b>¡Claro!</b> / <b>Vale, perfecto</b> · Politely refuse: <b>Lo siento, no puedo. Tengo que estudiar</b>.']);
+  add('a2.u4.l2', 'Comparisons: in simple words', [
+    '<b>más… que</b> = more… than (Ana es más alta que Eva). <b>menos… que</b> = less… than. <b>tan… como</b> = as… as (Pablo es tan simpático como su hermano).',
+    'Irregular: bueno → <b>mejor</b>, malo → <b>peor</b>, grande → <b>mayor</b> (age), pequeño → <b>menor</b> (age). Never say “más mejor”.',
+    'With numbers use <b>de</b>: Tengo más <b>de</b> veinte libros (more than twenty).']);
+  add('a2.u4.l3', 'Health and advice: in simple words', [
+    '<b>Doler</b> (to hurt) works like gustar: <b>Me duele</b> la cabeza (one thing) · <b>Me duelen</b> las piernas (several things).',
+    'Symptoms: Tengo fiebre (I have a fever) · tos (a cough) · dolor de estómago (a stomach ache).',
+    '<b>Tener que</b> + infinitive = must / have to: Tengo que ir al médico. <b>Deber</b> + infinitive = should (advice): Debes descansar.',
+    'Emergency: say <b>Necesito ayuda</b> and <b>Es una emergencia</b>, then give your location: Estoy en la calle…']);
 })(window.LWS);
 
 ;

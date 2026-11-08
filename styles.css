@@ -13,7 +13,7 @@
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.55; font-size: 17px; min-height: 100vh; display: flex; flex-direction: column; }
+body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); line-height: calc(1.55 * var(--lh, 1)); font-size: calc(17px * var(--fs, 1)); min-height: 100vh; display: flex; flex-direction: column; }
 h1, h2, h3, h4 { line-height: 1.25; margin: 0 0 .5em; }
 h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); } h2 { font-size: 1.45rem; } h3 { font-size: 1.15rem; }
 p { margin: 0 0 1em; } a { color: var(--accent-text); } img, svg { max-width: 100%; }
@@ -281,3 +281,40 @@ button .ic, a .ic { pointer-events: none; }
 .stg.done { background: var(--ok-bg, #e4f5e6); border-color: var(--ok, #1b6e2f); } .stg.cur { background: var(--yellow); border-color: var(--yellow-d); color: #292929; } .stg.cur small { color: #5a4600; }
 .stg.skip { opacity: .75; } .stg.lock { opacity: .5; } .stg:focus-visible { outline: 3px solid var(--yellow-d); }
 .stg-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; margin: 10px 0 -4px; font-weight: 700; }
+
+/* ---- Preferencias de lectura ---- */
+:root[data-font="easy"] body { font-family: Verdana, Tahoma, "Segoe UI", system-ui, sans-serif; letter-spacing: .02em; word-spacing: .06em; }
+:root[data-contrast="high"] { --line: #111; --muted: #222; --text: #000; --bg: #fff; --card: #fff; }
+:root[data-contrast="high"][data-theme="dark"] { --line: #fff; --muted: #eee; --text: #fff; --bg: #000; --card: #000; }
+:root[data-contrast="high"] .card, :root[data-contrast="high"] .btn, :root[data-contrast="high"] .opt, :root[data-contrast="high"] .inp { border-width: 2px; border-color: var(--text); }
+:root[data-contrast="high"] a { text-decoration: underline; }
+
+/* ---- Instalar y compartir ---- */
+.inst-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.qr-box { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+.qr-box img { width: min(260px, 100%); height: auto; border-radius: 22px; box-shadow: var(--shadow); background: #f2c94c; }
+details.how { border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; margin: 10px 0; background: var(--card); }
+details.how summary { cursor: pointer; font-weight: 700; } details.how ol { margin: 10px 0 4px; padding-left: 22px; } details.how li { margin: 6px 0; }
+.sel-os { border-color: var(--yellow-d); box-shadow: 0 0 0 3px var(--yellow-l); }
+@media (max-width: 1279px) { #toasts { bottom: calc(104px + env(safe-area-inset-bottom)) !important; } }
+
+/* Entrenador */
+.coach{margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line,#e6dfc4);background:color-mix(in srgb,var(--yellow,#F2C94C) 14%,transparent);font-size:.95em;line-height:1.5}
+.coach-h{margin-bottom:6px}
+.coach-en{font-style:normal}
+.coach-gl{margin-top:8px}
+.coach-card .coach-tip{padding:10px 0;border-top:1px solid var(--line,#e6dfc4);display:grid;gap:8px}
+.coach-card .coach-tip:first-of-type{border-top:0}
+.easy{font-size:1.12em;line-height:1.85}
+.easy p{margin:.55em 0}
+.easy p.easy-first{margin-top:1.1em;font-weight:600}
+.easy-goal{padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--yellow,#F2C94C) 16%,transparent);margin-bottom:10px}
+
+/* Certificados */
+.cert{position:relative}
+.cert-seal{width:120px;height:120px;position:absolute;right:14px;bottom:14px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));transform:rotate(-8deg)}
+.cert .name{overflow-wrap:anywhere}
+@media(max-width:560px){.cert-seal{position:static;margin:14px auto 0;transform:none}}
+@media print{.cert-seal{position:absolute}}
+.en-help{border-left:5px solid var(--yellow,#F2C94C)}
+.en-help p{margin:.5em 0}
