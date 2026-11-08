@@ -1,5 +1,5 @@
 /* Service Worker: guarda solo los archivos de la aplicación. */
-const VERSION = '7938f4c01c3e';
+const VERSION = '9420e414802a';
 const CACHE = 'lw-' + VERSION;
 const ASSETS = ["./", "app.js", "apple-touch-icon.png", "content.js", "favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "logo.png", "manifest.json", "mark.png", "qr.png", "styles.css"];
 self.addEventListener('install', (e) => {

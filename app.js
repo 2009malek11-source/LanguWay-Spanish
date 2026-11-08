@@ -694,7 +694,7 @@
     const username = A.normUser(f.username);
     if (!A.validUsername(username)) errors.username = 'Username must be 3 to 20 characters: lowercase letters, numbers or underscore.';
     const pp = A.passwordProblem(f.password); if (pp) errors.password = pp;
-    if (!errors.password && f.password !== f.confirm) errors.confirm = 'Passwords do not match.';
+    
     if (!L.crypto.available()) errors.form = 'For your safety, accounts can only be created over a secure (https://) connection. Please open the site from its https:// address.';
     if (Object.keys(errors).length) return { ok: false, errors };
     if (!navigator.onLine) return { ok: false, errors: { form: 'You need an internet connection to create an account.' } };
@@ -3062,7 +3062,7 @@
 
     // Datos
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Mis datos y privacidad'),
-      h('p', null, 'Tu progreso vive en este dispositivo (en el almacenamiento del navegador). No se sincroniza automáticamente con otros dispositivos. Pide permiso al micrófono solo si pulsas «Grabar» en Pronunciación.'),
+      h('p', null, 'Tu progreso vive en este dispositivo (en el almacenamiento del navegador). Con una cuenta, también se guarda en línea para que lo recuperes en otro dispositivo. Pide permiso al micrófono solo si pulsas «Grabar» en Pronunciación.'),
       h('p', null, S.prog.lastBackup ? 'Última copia de seguridad: ' + L.fmtDateTime(S.prog.lastBackup) + '.' : 'Todavía no has hecho una copia de seguridad.'),
       h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', onclick: () => L.accountFlows.exportFlow() }, 'Export My Data'), h('button', { class: 'btn btn-ghost', onclick: () => L.accountFlows.importFlow() }, 'Import My Data'), h('a', { class: 'btn btn-ghost', href: '#/cuenta' }, 'Cuenta y copias')),
       h('p', { class: 'muted', style: 'margin-top:10px' }, 'Si borras los datos del navegador o desinstalas la aplicación sin copia de seguridad, el progreso se pierde.')));
@@ -3084,6 +3084,14 @@
       h('div', { class: 'field' }, h('h3', null, 'Restablecer los ajustes'), h('p', { class: 'muted' }, 'Vuelve al aspecto, audio y ejercicios por defecto. No borra lecciones ni palabras.'),
         h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await L.modal({ title: '¿Restablecer los ajustes?', body: 'Se recuperan los valores por defecto de apariencia, audio y ejercicios.', escValue: false, actions: [{ label: 'Cancelar', value: false }, { label: 'Restablecer', value: true, primary: true }] }); if (!ok) return; Object.assign(S.prog.settings, S.defaultProg('x').settings); S.markProg(); await U.save(true); L.applyPrefs(); document.documentElement.setAttribute('data-motion', 'auto'); L.render(); } }, 'Restablecer'))));
 
+    // Cuenta: ayuda (English)
+    const acct = [h('h2', null, 'Account help'), L.accountFlows.limits(),
+      h('h3', { style: 'margin-top:14px' }, 'Forgot your password?'),
+      h('p', null, 'Accounts use only a username and a password, with no email address, so we cannot send a reset link or recover the password. Check Caps Lock and the exact username first. If you have a backup file, restore it into a new account. Or create a new account and start again.')];
+    if (A.isGuest()) acct.push(h('h3', { style: 'margin-top:14px' }, 'Moving from another phone?'), h('p', null, 'If you have a backup file, you can restore your account on this device.'),
+      h('div', { class: 'row' }, L.accountFlows.restoreAccountButton(), h('a', { class: 'btn btn-ghost', href: '#/cuenta/entrar' }, 'Sign In'), h('a', { class: 'btn btn-ghost', href: '#/cuenta/crear' }, 'Create Account')));
+    else acct.push(h('div', { class: 'row' }, h('a', { class: 'btn btn-ghost', href: '#/cuenta' }, 'Account & Backup')));
+    root.appendChild(h('section', { class: 'card' }, ...acct));
     // Privacidad y créditos
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Privacidad y créditos'),
       h('p', null, 'Languway Spanish no usa publicidad ni rastreadores y no carga código de terceros. Sin cuenta, tu progreso se queda solo en este dispositivo. Si creas una cuenta, solo pedimos un nombre de usuario y una contraseña (nunca un correo): se guardan junto con tu progreso para que puedas continuar en otro teléfono. La contraseña se guarda cifrada y puedes borrar tu cuenta cuando quieras desde «Account & Backup».'),
@@ -3352,27 +3360,19 @@
     form.appendChild(f.password = pwToggle(field('password', 'Password', 'password', { auto: sign ? 'current-password' : 'new-password' })));
     if (!sign) {
       form.appendChild(h('p', { class: 'muted', style: 'margin-top:-8px' }, '8 to 64 characters, with at least one letter and one number.'));
-      form.appendChild(f.confirm = field('confirm', 'Confirm Password', 'password', { auto: 'new-password' }));
     }
-    let remember, keep;
-    if (sign) {
-      remember = h('input', { type: 'checkbox', id: 'remember', checked: '' });
-      form.appendChild(h('div', { class: 'row sb', style: 'margin-bottom:14px' }, h('label', { for: 'remember' }, remember, ' Remember Me'), h('a', { href: '#/cuenta/olvide' }, 'Forgot Password?')));
-    } else if (S.stats().answered || S.stats().words || S.prog.placement) {
-      keep = h('input', { type: 'checkbox', id: 'keep', checked: '' });
-      form.appendChild(h('div', { class: 'field' }, h('label', { for: 'keep' }, keep, ' Keep the progress I already made on this device')));
-    }
+    const hasLocal = !!(S.stats().answered || S.stats().words || S.prog.placement);
     const btn = h('button', { class: 'btn btn-primary', type: 'submit', style: 'width:100%' }, sign ? 'Sign In' : 'Create Account');
     form.appendChild(btn);
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      formErr.hidden = true; ['username', 'password', 'confirm'].forEach((k) => f[k] && f[k].setErr(''));
+      formErr.hidden = true; ['username', 'password'].forEach((k) => f[k] && f[k].setErr(''));
       btn.disabled = true; btn.textContent = sign ? 'Signing in…' : 'Creating account…';
       let res;
       try {
         res = sign
-          ? await A.signIn({ username: f.username.inp.value, password: f.password.inp.value, remember: remember.checked })
-          : await A.signUp({ username: f.username.inp.value, password: f.password.inp.value, confirm: f.confirm.inp.value, keepGuest: !!(keep && keep.checked) });
+          ? await A.signIn({ username: f.username.inp.value, password: f.password.inp.value, remember: true })
+          : await A.signUp({ username: f.username.inp.value, password: f.password.inp.value, keepGuest: hasLocal });
       } catch (err) { res = { ok: false, errors: { form: 'Something went wrong. Please try again.' } }; }
       btn.disabled = false; btn.textContent = sign ? 'Sign In' : 'Create Account';
       if (!res.ok) {
@@ -3388,23 +3388,13 @@
     });
     card.appendChild(form);
     card.appendChild(h('p', { class: 'center', style: 'margin-top:16px' }, sign ? 'New here? ' : 'Already have an account? ', h('a', { href: sign ? '#/cuenta/crear' : '#/cuenta/entrar' }, sign ? 'Create Account' : 'Sign In')));
-    card.appendChild(h('p', { class: 'center muted' }, 'You can also learn without an account: your progress is saved on this device as a guest.'));
-    root.append(card, h('div', { style: 'margin-top:14px' }, limits()));
-    if (sign) root.appendChild(h('div', { class: 'card', style: 'margin-top:14px' }, h('h3', null, 'Moving from another phone?'), h('p', null, 'If you have a backup file, you can restore your account on this device.'), restoreAccountButton()));
+    root.append(card);
     return root;
   }
   route('/cuenta/entrar', ({ q }) => (A.isGuest() ? authView('signin', q) : (location.hash = '#/cuenta', null)), 'Sign In');
   route('/cuenta/crear', ({ q }) => (A.isGuest() ? authView('create', q) : (location.hash = '#/cuenta', null)), 'Create Account');
 
-  route('/cuenta/olvide', () => {
-    const root = h('div', { class: 'auth-box' });
-    root.appendChild(h('div', { class: 'card' }, h('h1', { id: 'page-title', tabindex: '-1' }, 'Forgot Password?'),
-      h('p', null, 'Accounts use only a username and a password, with no email address, so we cannot send you a reset link and we cannot recover the password for you.'),
-      h('p', null, h('strong', null, 'Your options:')),
-      h('ul', null, h('li', null, 'Try again: check Caps Lock and the exact username you used.'), h('li', null, 'If you have a backup file from before, create a new account from it with “Restore from a backup file”. Your learning progress comes back.'), h('li', null, 'Or create a new account and start again. You can keep learning as a guest in the meantime.')),
-      h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/cuenta/entrar' }, 'Back to Sign In'), restoreAccountButton(), h('a', { class: 'btn btn-ghost', href: '#/cuenta/crear' }, 'Create Account'))));
-    return root;
-  }, 'Forgot Password');
+
 
   // ---------- leer y validar un archivo de copia ----------
   function pickFile() {
@@ -3563,7 +3553,6 @@
       h('p', { class: 'muted', style: 'margin-top:12px' }, 'When you are signed in, your progress is also saved online. A backup file is an extra safety copy you keep yourself.')));
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Storage on this device'), storageInfo()));
     root.appendChild(h('section', { class: 'card' }, h('h2', null, guest ? 'Delete guest progress' : 'Delete account'), h('p', null, 'Signing out never deletes anything. Use this only if you want to erase this ' + (guest ? 'guest progress from this device.' : 'account and its progress for good.')), h('button', { class: 'btn btn-danger', onclick: deleteFlow }, guest ? 'Delete guest progress' : 'Delete local account')));
-    root.appendChild(h('div', { style: 'margin-top:16px' }, limits()));
     return root;
   }, 'Account & Backup');
 
@@ -3581,7 +3570,7 @@
     })();
     return box;
   }
-  L.accountFlows = { exportFlow, importFlow };
+  L.accountFlows = { exportFlow, importFlow, limits, restoreAccountButton };
 })(window.LWS);
 
 ;
