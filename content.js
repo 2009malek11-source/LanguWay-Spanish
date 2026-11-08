@@ -2,6 +2,13 @@
 window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__bip = e; });
 window.addEventListener('appinstalled', function () { window.__bip = null; window.__installed = true; });
 if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.innerHTML = ''; } }
+// Introducción clásica: dura 3 segundos desde que empieza la carga
+(function () {
+  function hide() { var e = document.getElementById('splash'); if (!e) return; e.className = 'out'; setTimeout(function () { if (e.parentNode) e.parentNode.removeChild(e); }, 600); }
+  var wait = Math.max(0, 3000 - (window.performance && performance.now ? performance.now() : 0));
+  setTimeout(hide, wait);
+  setTimeout(hide, 6000);
+})();
 
 ;
 window.LWS = window.LWS || {};

@@ -14,8 +14,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="styles.css">
+<style>
+#splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#16140d;color:#FFF4C2;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .5s ease,visibility .5s}
+#splash.out{opacity:0;visibility:hidden}
+#splash img{width:min(60vw,240px);height:auto;animation:spl-in 1s ease both}
+#splash p{margin:0;font-weight:700;letter-spacing:.04em;font-size:1.05rem;animation:spl-in 1.2s .3s ease both}
+#splash i{display:block;width:min(50vw,200px);height:5px;border-radius:5px;background:rgba(255,255,255,.2);overflow:hidden}
+#splash i:after{content:"";display:block;height:100%;width:100%;background:#F2C94C;transform-origin:left;animation:spl-bar 2.5s .2s linear both}
+@keyframes spl-in{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes spl-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){#splash img,#splash p,#splash i:after{animation:none}}
+</style>
 </head>
 <body>
+<div id="splash" role="status" aria-label="Languway Spanish"><img src="logo.png" alt="" width="240" height="203"><p>Aprende español en español</p><i></i></div>
 <div id="app"><div class="wrap" style="padding:40px 16px;text-align:center"><img src="logo.png" alt="Languway Spanish" width="180" style="max-width:60%;height:auto"><p>Cargando Languway Spanish…</p></div></div>
 <noscript><div class="wrap" style="padding:24px 16px"><p>Languway Spanish necesita JavaScript para funcionar. Actívalo en tu navegador.</p></div></noscript>
 <script src="content.js"></script>

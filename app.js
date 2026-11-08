@@ -1342,10 +1342,10 @@
       return h('section', { class: 'hero' },
         h('img', { src: 'logo.png', alt: 'Languway Spanish', class: 'hero-logo', width: 220, height: 186 }),
         h('h1', null, 'Aprende español en español'),
-        h('p', { style: 'font-size:1.1rem' }, 'Lecciones con audio, ejercicios corregidos, repaso espaciado y progreso guardado en tu dispositivo. Empieza con una prueba de nivel o directamente por el nivel A1.'),
+        h('p', { style: 'font-size:1.1rem' }, 'Lecciones con audio, ejercicios corregidos, repaso espaciado y progreso guardado en tu dispositivo. Haz la prueba de nivel para empezar en el punto justo, o si no sabes nada de español, empieza por los primeros pasos.'),
         h('div', { class: 'row' },
           h('a', { class: 'btn btn-primary', href: '#/prueba-de-nivel' }, 'Hacer la prueba de nivel'),
-          h('a', { class: 'btn btn-ghost', href: nxt ? '#/leccion/' + nxt : '#/aprender' }, 'Empezar por A1')));
+          h('a', { class: 'btn btn-ghost', href: '#/primeros-pasos' }, 'No sé nada de español')));
     }
     const lv = S.currentLevel(); const p = S.levelProgress(lv);
     const resume = S.prog.lastLesson && C.lessons[S.prog.lastLesson];
@@ -1364,16 +1364,20 @@
   }
 
   function levelsSection() {
-    const g = h('div', { class: 'grid g3' });
+    const wrap = h('ol', { class: 'roadmap' });
+    const cur = S.prog.placement ? S.currentStage() : 0;
     C.levels.forEach((lv) => {
-      const st = S.levelStatus(lv.id); const p = S.levelProgress(lv.id);
-      g.appendChild(h('article', { class: 'card lvl' + (st === 'bloqueado' ? ' locked' : '') },
-        h('div', { class: 'row sb' }, h('span', { class: 'code' }, lv.id), U.levelStatusChip(st)),
-        h('h3', null, lv.name), h('p', { class: 'muted' }, lv.desc),
-        h('div', { class: 'muted' }, lv.units.length + ' unidades · ' + p.done + '/' + p.total + ' lecciones'), U.bar(p.pct),
-        h('a', { class: 'btn ' + (st === 'bloqueado' ? 'btn-ghost' : 'btn-primary'), href: '#/aprender/' + lv.id, 'aria-label': 'Abrir nivel ' + lv.id }, st === 'bloqueado' ? 'Ver nivel' : 'Abrir nivel')));
+      const p = S.levelProgress(lv.id); const st = S.levelStatus(lv.id);
+      const stages = L.stages().filter((x) => x.level === lv.id);
+      wrap.appendChild(h('li', { class: 'road-row' + (st === 'bloqueado' ? ' locked' : '') },
+        h('a', { class: 'road-head', href: '#/aprender/' + lv.id }, h('span', { class: 'code' }, lv.id), h('span', { class: 'road-name' }, h('strong', null, lv.name), h('small', null, lv.desc)), U.levelStatusChip(S.prog.placement ? st : 'disponible')),
+        h('div', { class: 'road-steps' }, stages.map((x) => {
+          const done = S.prog.placement && S.stageDone(x.n), isCur = x.n === cur;
+          return h('a', { class: 'stg ' + (done ? 'done' : isCur ? 'cur' : (S.prog.placement && x.n > cur ? 'lock' : 'open')), href: '#/aprender/' + lv.id, 'aria-label': 'Nivel ' + x.n + ' de 30 (' + lv.id + ')' + (done ? ', completado' : isCur ? ', actual' : '') }, h('b', null, x.n));
+        })),
+        h('div', { class: 'road-bar' }, U.bar(p.pct))));
     });
-    return g;
+    return wrap;
   }
 
   function quickPractice() {
@@ -1410,7 +1414,7 @@
     if (L.A.isGuest() && !L.memoryMode) root.appendChild(h('div', { class: 'alert', style: 'margin-top:16px' }, h('strong', null, 'Tu progreso se guarda en este dispositivo. '), 'Puedes estudiar sin cuenta. Para guardar tu progreso en línea y seguir en otro teléfono, ', h('a', { href: '#/cuenta/crear' }, 'crea una cuenta'), ' (solo nombre de usuario y contraseña).'));
     const backupWarn = backupReminder();
     if (backupWarn) root.appendChild(backupWarn);
-    root.appendChild(h('h2', { style: 'margin-top:26px' }, 'Niveles'));
+    root.appendChild(h('h2', { style: 'margin-top:26px' }, 'Tu ruta de aprendizaje: A1 → C2'));
     root.appendChild(levelsSection());
     root.appendChild(h('h2', { style: 'margin-top:26px' }, 'Práctica rápida'));
     root.appendChild(quickPractice());
@@ -2546,7 +2550,7 @@
     // actividad
     const days = last14(); const mx = Math.max(1, ...days.map((d) => d.n));
     root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Actividad de los últimos 14 días'),
-      h('div', { class: 'chart-wrap' }, h('div', { class: 'chart', role: 'img', 'aria-label': 'Actividad diaria: ' + days.map((d) => L.pad(d.d.getDate()) + '/' + L.pad(d.d.getMonth() + 1) + ': ' + d.n).join(', ') }, days.map((d) => h('div', { class: 'col', title: d.k + ': ' + d.n, style: 'height:' + Math.max(4, Math.round((d.n / mx) * 100)) + '%;' + (d.n ? '' : 'opacity:.25') }, h('span', null, DAYN[d.d.getDay()]))))),
+      h('div', { class: 'chart-wrap' }, h('div', { class: 'chart', role: 'img', 'aria-label': 'Actividad diaria: ' + days.map((d) => L.pad(d.d.getDate()) + '/' + L.pad(d.d.getMonth() + 1) + ': ' + d.n).join(', ') }, days.map((d) => h('div', { class: 'col', title: d.k + ': ' + d.n, style: 'height:' + Math.max(4, Math.round((d.n / mx) * 100)) + '%;' + (d.n ? '' : 'background:var(--line)') }, h('span', null, DAYN[d.d.getDay()]))))),
       h('p', { class: 'muted' }, 'Cada barra suma respuestas, repasos y lecciones de ese día.')));
 
     // habilidades
@@ -2871,6 +2875,28 @@
     root.appendChild(h('div', { class: 'nav-actions' }, i ? h('a', { class: 'btn btn-ghost', href: '#/primeros-pasos/' + STEPS[i - 1].id }, '← Back') : null, h('a', { class: 'btn btn-primary', href: nx ? '#/primeros-pasos/' + nx.id : '#/primeros-pasos/prueba' }, nx ? 'Next →' : 'Take the check →')));
     return root;
   }, 'Primeros pasos');
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const { h, route } = L;
+  route('/acerca', () => {
+    const steps = [
+      ['Haz la prueba de nivel', '30 preguntas para empezar en el punto justo. Si no sabes nada de español, empieza por «Primeros pasos».'],
+      ['Estudia una lección al día', 'Cada lección tiene una explicación corta, ejemplos con audio y ejercicios con corrección.'],
+      ['Repasa tus palabras', 'El repaso espaciado te enseña justo las palabras que estás a punto de olvidar.'],
+      ['Consigue tus certificados', 'Hay un certificado por cada uno de los 30 niveles, uno por cada nivel A1–C2 y un diploma final.']
+    ];
+    const root = h('div');
+    root.appendChild(L.U.pageHead('Acerca de Languway Spanish', 'Aprende español en español, paso a paso, de A1 a C2.'));
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Cómo empezar'), h('ol', { class: 'about-steps' }, steps.map((x) => h('li', null, h('strong', null, x[0]), h('span', null, x[1])))),
+      h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/prueba-de-nivel' }, 'Hacer la prueba de nivel'), h('a', { class: 'btn btn-ghost', href: '#/primeros-pasos' }, 'No sé nada de español'))));
+    root.appendChild(h('section', { class: 'card', style: 'margin-top:14px' }, h('h2', null, 'Qué incluye'),
+      h('ul', null, h('li', null, '30 niveles que van de las letras y los números hasta el español más avanzado (C2).'), h('li', null, 'Audio en cada palabra y frase, y ejercicios de pronunciación.'), h('li', null, 'Ejercicios de opción múltiple, ordenar frases, relacionar y escribir.'), h('li', null, 'Tarjetas de repaso, vocabulario por temas y un traductor español–inglés.'), h('li', null, 'Un entrenador que explica las reglas en español e inglés y corrige tus errores.'), h('li', null, 'Racha diaria, insignias y barra de progreso.'))));
+    root.appendChild(h('section', { class: 'card', style: 'margin-top:14px' }, h('h2', null, 'Tus datos'), h('p', null, 'Sin cuenta, tu progreso se queda en este dispositivo. Con una cuenta (solo nombre de usuario y contraseña) también se guarda en línea. Más detalles en ', h('a', { href: '#/configuracion' }, 'Configuración'), '.')));
+    return root;
+  }, 'Acerca de');
 })(window.LWS);
 
 ;
@@ -3843,7 +3869,7 @@
   const MORE = [
     ['/leer', 'Leer'], ['/escribir', 'Escribir'], ['/frases', 'Construcción de frases'], ['/conversacion', 'Conversación'],
     ['/historias', 'Historias'], ['/practica', 'Práctica'], ['/repaso', 'Repaso diario'], ['/errores', 'Práctica de errores'],
-    ['/favoritos', 'Favoritos'], ['/primeros-pasos', 'Primeros pasos'], ['/entrenador', 'Entrenador'], ['/certificados', 'Certificados'], ['/instalar', 'Instalar y compartir'], ['/configuracion', 'Configuración'],
+    ['/favoritos', 'Favoritos'], ['/primeros-pasos', 'Primeros pasos'], ['/entrenador', 'Entrenador'], ['/certificados', 'Certificados'], ['/acerca', 'Acerca de Languway'], ['/instalar', 'Instalar y compartir'], ['/configuracion', 'Configuración'],
   ];
   L.NAV = NAV; L.MORE = MORE;
 
@@ -3955,8 +3981,8 @@
     const { path, q } = parse();
     L.Audio.stop();
     const view = $('#view');
-    // La prueba de nivel es obligatoria antes de estudiar
-    if (L.S.prog && !L.S.prog.placement && !/^\/(prueba-de-nivel|cuenta|configuracion)/.test(path)) { location.replace('#/prueba-de-nivel'); return; }
+    // La prueba de nivel solo se pide al entrar a estudiar; el resto de la app es libre
+    if (L.S.prog && !L.S.prog.placement && /^\/(aprender|unidad|leccion|examen|examen-final|practica|repaso|errores|certificado|diploma)(\/|$)/.test(path)) { location.replace('#/prueba-de-nivel'); return; }
     if (L.coach) L.coach.touch(path);
     let match = null;
     for (const r of routes) { const m = r.re.exec(path); if (m) { match = { r, params: r.keys.reduce((o, k, i) => { try { o[k] = decodeURIComponent(m[i + 1]); } catch (e) { o[k] = ''; } return o; }, {}) }; break; } }
