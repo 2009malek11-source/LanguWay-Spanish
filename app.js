@@ -2602,6 +2602,8 @@
 
   // ---------- sello digital: dibujo único derivado del código firmado por el servidor ----------
   function sealSvg(id, code) {
+    id = /^LW-[A-Z0-9]{6}-[A-Z0-9]{6}$/.test(String(id)) ? String(id) : 'LW-XXXXXX-XXXXXX';
+    code = /^[0-9A-Fa-f]{20}$/.test(String(code)) ? String(code).toUpperCase() : '00000000000000000000';
     const hex = String(code || '').toLowerCase().padEnd(20, '0');
     const nb = (i) => parseInt(hex.substr(i * 2, 2), 16) || 0;
     const a = 5 + (nb(0) % 8), b = 3 + (nb(1) % 7), c = 7 + (nb(2) % 9);
@@ -3089,8 +3091,6 @@
     // Datos
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Mis datos y privacidad'),
       h('p', null, 'Tu progreso vive en este dispositivo (en el almacenamiento del navegador). Con una cuenta, también se guarda en línea para que lo recuperes en otro dispositivo. Pide permiso al micrófono solo si pulsas «Grabar» en Pronunciación.'),
-      h('p', null, S.prog.lastBackup ? 'Última copia de seguridad: ' + L.fmtDateTime(S.prog.lastBackup) + '.' : 'Todavía no has hecho una copia de seguridad.'),
-      h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', onclick: () => L.accountFlows.exportFlow() }, 'Export My Data'), h('button', { class: 'btn btn-ghost', onclick: () => L.accountFlows.importFlow() }, 'Import My Data'), h('a', { class: 'btn btn-ghost', href: '#/cuenta' }, 'Cuenta y copias')),
       h('p', { class: 'muted', style: 'margin-top:10px' }, 'Si borras los datos del navegador o desinstalas la aplicación sin copia de seguridad, el progreso se pierde.')));
 
     // Sesión
@@ -3118,6 +3118,7 @@
       h('div', { class: 'row' }, L.accountFlows.restoreAccountButton(), h('a', { class: 'btn btn-ghost', href: '#/cuenta/entrar' }, 'Sign In'), h('a', { class: 'btn btn-ghost', href: '#/cuenta/crear' }, 'Create Account')));
     else acct.push(h('div', { class: 'row' }, h('a', { class: 'btn btn-ghost', href: '#/cuenta' }, 'Account & Backup')));
     root.appendChild(h('section', { class: 'card' }, ...acct));
+    root.appendChild(h('div', { style: 'margin-top:14px' }, L.accountFlows.dataSections()));
     // Privacidad y créditos
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Privacidad y créditos'),
       h('p', null, 'Languway Spanish no usa publicidad ni rastreadores y no carga código de terceros. Sin cuenta, tu progreso se queda solo en este dispositivo. Si creas una cuenta, solo pedimos un nombre de usuario y una contraseña (nunca un correo): se guardan junto con tu progreso para que puedas continuar en otro teléfono. La contraseña se guarda cifrada y puedes borrar tu cuenta cuando quieras desde «Account & Backup».'),
@@ -3557,7 +3558,22 @@
     L.toast(res.ok ? 'Password changed.' : res.error, res.ok ? 'ok' : 'err', 5000);
   }
 
+  function dataSections() {
+    const guest = A.isGuest();
+    const root = h('div');
+    const last = S.prog.lastBackup;
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Backup and transfer'),
+      h('p', null, last ? 'Last backup: ' + L.fmtDateTime(last) + '.' : 'You have not made a backup yet.'),
+      h('p', null, 'To use your progress on another phone: 1) tap ', h('strong', null, 'Export My Data'), ' here; 2) send the file to the other phone (messages, email, cloud drive — your choice); 3) open the app there, sign in or create an account, and tap ', h('strong', null, 'Import My Data'), '.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', onclick: exportFlow }, 'Export My Data'), h('button', { class: 'btn btn-ghost', onclick: importFlow }, 'Import My Data')),
+      h('p', { class: 'muted', style: 'margin-top:12px' }, 'When you are signed in, your progress is also saved online. A backup file is an extra safety copy you keep yourself.')));
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Storage on this device'), storageInfo()));
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, guest ? 'Delete guest progress' : 'Delete account'), h('p', null, 'Signing out never deletes anything. Use this only if you want to erase this ' + (guest ? 'guest progress from this device.' : 'account and its progress for good.')), h('button', { class: 'btn btn-danger', onclick: deleteFlow }, guest ? 'Delete guest progress' : 'Delete local account')));
+    return root;
+  }
+
   route('/cuenta', () => {
+    if (A.isGuest()) { location.hash = '#/cuenta/entrar'; return null; }
     const root = h('div');
     root.appendChild(h('h1', { id: 'page-title', tabindex: '-1' }, 'Account & Backup'));
     const sw = secureWarn(); if (sw) root.appendChild(sw);
@@ -3571,14 +3587,7 @@
         h('div', { class: 'row' }, h('button', { class: 'btn btn-ghost', onclick: passwordFlow }, 'Change password'), h('button', { class: 'btn btn-ghost', onclick: async () => { await A.signOut(); L.refreshAcct(); L.toast('Signed out. Your progress is saved in your account.', 'ok', 3500); location.hash = '#/'; L.render(); } }, 'Sign Out')));
     }
     root.appendChild(who);
-    const last = S.prog.lastBackup;
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Backup and transfer'),
-      h('p', null, last ? 'Last backup: ' + L.fmtDateTime(last) + '.' : 'You have not made a backup yet.'),
-      h('p', null, 'To use your progress on another phone: 1) tap ', h('strong', null, 'Export My Data'), ' here; 2) send the file to the other phone (messages, email, cloud drive — your choice); 3) open the app there, sign in or create an account, and tap ', h('strong', null, 'Import My Data'), '.'),
-      h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', onclick: exportFlow }, 'Export My Data'), h('button', { class: 'btn btn-ghost', onclick: importFlow }, 'Import My Data')),
-      h('p', { class: 'muted', style: 'margin-top:12px' }, 'When you are signed in, your progress is also saved online. A backup file is an extra safety copy you keep yourself.')));
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Storage on this device'), storageInfo()));
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, guest ? 'Delete guest progress' : 'Delete account'), h('p', null, 'Signing out never deletes anything. Use this only if you want to erase this ' + (guest ? 'guest progress from this device.' : 'account and its progress for good.')), h('button', { class: 'btn btn-danger', onclick: deleteFlow }, guest ? 'Delete guest progress' : 'Delete local account')));
+    root.appendChild(h('p', { class: 'center muted' }, 'Backup, storage and delete options are in ', h('a', { href: '#/configuracion' }, 'Configuración'), '.'));
     return root;
   }, 'Account & Backup');
 
@@ -3596,7 +3605,7 @@
     })();
     return box;
   }
-  L.accountFlows = { exportFlow, importFlow, limits, restoreAccountButton };
+  L.accountFlows = { dataSections, exportFlow, importFlow, limits, restoreAccountButton };
 })(window.LWS);
 
 ;

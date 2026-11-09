@@ -1,13 +1,13 @@
 {
-  "name": "Languway Spanish — aprende español en español",
-  "short_name": "Languway Spanish",
+  "name": "Languway Spanish (ES) — aprende español en español",
+  "short_name": "Languway ES",
   "description": "Aprende español de A1 a C2 con lecciones, audio, ejercicios y repaso. Tu progreso se guarda en tu dispositivo.",
   "lang": "es",
-  "start_url": "./index.html#/",
+  "start_url": "./index.html?app=languway-spanish-es#/",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#FFFEF8",
+  "background_color": "#16140D",
   "theme_color": "#F2C94C",
   "icons": [
     {
@@ -29,7 +29,7 @@
       "purpose": "maskable"
     }
   ],
-  "id": "./index.html",
+  "id": "./index.html?app=languway-spanish-es",
   "categories": [
     "education"
   ],

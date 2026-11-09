@@ -1,6 +1,6 @@
 /* Service Worker: guarda solo los archivos de la aplicación. */
-const VERSION = '9a5ae08ad764';
-const CACHE = 'lw-' + VERSION;
+const VERSION = '3e9187f8c1a8';
+const CACHE = 'languway-spanish-es-' + VERSION;
 const ASSETS = ["./", "app.js", "apple-touch-icon.png", "content.js", "favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "logo.png", "manifest.json", "mark.png", "qr.png", "styles.css"];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((a) => new Request(a, { cache: 'reload' })))));

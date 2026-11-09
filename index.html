@@ -5,8 +5,8 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self' https://zmhxsfkogbmyhesdkumn.supabase.co; manifest-src 'self'; worker-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Languway Spanish — aprende español en español</title>
-<meta name="description" content="Languway Spanish: plataforma para aprender español de A1 a C2 con lecciones, audio, ejercicios, repaso espaciado y progreso guardado en tu dispositivo.">
+<title>Languway Spanish (ES) — aprende español en español</title>
+<meta name="description" content="Languway Spanish (ES), el sitio de español de Languway: plataforma para aprender español de A1 a C2 con lecciones, audio, ejercicios, repaso espaciado y progreso guardado en tu dispositivo.">
 <meta name="theme-color" content="#F2C94C">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.png" type="image/png">
@@ -15,19 +15,20 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="styles.css">
 <style>
-#splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#16140d;color:#FFF4C2;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .5s ease,visibility .5s}
+#splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;color:#F5E6B3;font-family:Georgia,"Times New Roman",serif;transition:opacity .6s ease,visibility .6s}
 #splash.out{opacity:0;visibility:hidden}
-#splash img{width:min(60vw,240px);height:auto;animation:spl-in 1s ease both}
-#splash p{margin:0;font-weight:700;letter-spacing:.04em;font-size:1.05rem;animation:spl-in 1.2s .3s ease both}
-#splash i{display:block;width:min(50vw,200px);height:5px;border-radius:5px;background:rgba(255,255,255,.2);overflow:hidden}
-#splash i:after{content:"";display:block;height:100%;width:100%;background:#F2C94C;transform-origin:left;animation:spl-bar 2.5s .2s linear both}
-@keyframes spl-in{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+#splash .ov{width:min(82vw,420px);aspect-ratio:1.28;border-radius:50%;background:#FFFEF8;box-shadow:0 0 0 3px #000,0 0 0 5px #C9A227,0 0 60px rgba(201,162,39,.35);display:flex;align-items:center;justify-content:center;animation:spl-in 1.1s ease both}
+#splash img{width:62%;height:auto}
+#splash p{margin:26px 0 0;font-style:italic;letter-spacing:.06em;font-size:1.05rem;animation:spl-in 1.3s .4s ease both}
+#splash i{display:block;margin-top:16px;width:min(40vw,150px);height:2px;background:rgba(245,230,179,.25);overflow:hidden}
+#splash i:after{content:"";display:block;height:100%;background:#C9A227;transform-origin:left;animation:spl-bar 2.6s .2s linear both}
+@keyframes spl-in{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
 @keyframes spl-bar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@media (prefers-reduced-motion:reduce){#splash img,#splash p,#splash i:after{animation:none}}
+@media (prefers-reduced-motion:reduce){#splash .ov,#splash p,#splash i:after{animation:none}}
 </style>
 </head>
 <body>
-<div id="splash" role="status" aria-label="Languway Spanish"><img src="logo.png" alt="" width="240" height="203"><p>Aprende español en español</p><i></i></div>
+<div id="splash" role="status" aria-label="Languway Spanish"><div class="ov"><img src="logo.png" alt="" width="240" height="225"></div><p>Aprende español en español</p><i></i></div>
 <div id="app"><div class="wrap" style="padding:40px 16px;text-align:center"><img src="logo.png" alt="Languway Spanish" width="180" style="max-width:60%;height:auto"><p>Cargando Languway Spanish…</p></div></div>
 <noscript><div class="wrap" style="padding:24px 16px"><p>Languway Spanish necesita JavaScript para funcionar. Actívalo en tu navegador.</p></div></noscript>
 <script src="content.js"></script>
