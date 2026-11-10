@@ -335,3 +335,16 @@ details.how summary { cursor: pointer; font-weight: 700; } details.how ol { marg
 
 /* zona táctil mínima de 44 px */
 .dn::before { content: ""; position: absolute; inset: -6px -4px; }
+
+/* Ayuda en tu idioma */
+.sup { display: block; font-size: .82em; font-weight: 500; line-height: 1.35; margin-top: 2px; letter-spacing: 0; text-transform: none; color: inherit; opacity: .92; }
+h1 > .sup, h2 > .sup, h3 > .sup { font-weight: 600; font-size: .62em; }
+.btn > .sup, .gnav small > .sup, .drawer a > span > .sup { font-size: .76em; }
+.sup[dir="rtl"] { text-align: start; font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", system-ui, sans-serif; }
+.welcome .choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.welcome .choice { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; background: var(--card); }
+.welcome .choice.big { grid-column: 1 / -1; }
+.welcome .choice input { width: 22px; height: 22px; flex: none; }
+.welcome .choice:has(input:checked) { border-color: var(--ink, #16140d); background: var(--yellow-l, #fff3c4); }
+.welcome .row { margin-top: 14px; }
+.ar-gloss{margin:.3em 0 .5em;padding:.4em .6em;border-inline-start:3px solid #b8860b;background:rgba(184,134,11,.1);font-size:1.05em}

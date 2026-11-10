@@ -206,6 +206,11 @@
     while (has(d)) { n++; d.setDate(d.getDate() - 1); }
     return n;
   };
+  // XP derivado de la actividad (ya se sincroniza): 10 por respuesta; meta diaria = 20 respuestas (~5 min)
+  S.GOAL = 20;
+  S.todayQ = () => { const a = S.prog.activity[L.dayKey()]; return a && a.q ? a.q : 0; };
+  S.xp = () => Object.values(S.prog.activity).reduce((t, a) => t + (a && a.q ? a.q : 0) * 10 + (a && a.reto ? 50 : 0), 0);
+  S.xpLevel = function () { const x = S.xp(); const lv = Math.floor(Math.sqrt(x / 100)) + 1; const lo = (lv - 1) * (lv - 1) * 100, hi = lv * lv * 100; return { lv, xp: x, pct: Math.round(100 * (x - lo) / (hi - lo)), next: hi - x }; };
   S.activeDays = () => Object.keys(S.prog.activity).length;
   S.lastActivity = () => { const ks = Object.keys(S.prog.activity).sort(); return ks.length ? ks[ks.length - 1] : null; };
 
@@ -493,6 +498,15 @@
     ['best', 'attempts', 'date'].forEach((k) => { if (typeof clean.finalExam[k] !== 'number' || !isFinite(clean.finalExam[k])) clean.finalExam[k] = 0; });
     clean.finalExam.best = Math.max(0, Math.min(100, clean.finalExam.best));
     if (clean.settings && typeof clean.settings.certName !== 'undefined' && !/^[\p{L}][\p{L} .'-]{1,39}$/u.test(String(clean.settings.certName))) delete clean.settings.certName;
+    if (clean.settings) {
+      const cs = clean.settings, CODE = /^[a-z]{2,5}$/;
+      if (!['en', 'ar', 'fr', 'pt', 'it', 'de', 'tr', 'none'].includes(cs.supLang)) delete cs.supLang;
+      if (!['auto', 'always', 'never'].includes(cs.supFade)) delete cs.supFade;
+      if (!['cero', 'medio', 'avanzado', ''].includes(cs.startLevel)) delete cs.startLevel;
+      if (typeof cs.native !== 'string' || !CODE.test(cs.native)) delete cs.native;
+      if (!Array.isArray(cs.known)) delete cs.known; else cs.known = cs.known.filter((c) => typeof c === 'string' && CODE.test(c)).slice(0, 14);
+      if (typeof cs.onboarded !== 'boolean') delete cs.onboarded;
+    }
     if (clean.settings && typeof clean.settings.easyRules !== 'boolean') delete clean.settings.easyRules;
     ['searchHistory', 'translatorHistory'].forEach((k) => { if (!Array.isArray(clean[k])) clean[k] = []; });
     clean.unlockedLevels = clean.unlockedLevels.filter((x) => C.level(x));
@@ -1275,6 +1289,9 @@
       h('div', { class: 'w' }, h('span', { lang: 'es' }, e.w), L.Audio.btn(e.w, { small: true, name: e.w }), L.Audio.btn(e.w, { small: true, slow: true, name: e.w })),
       S.prog ? U.favBtn('words', e.id, e.w) : null));
     card.appendChild(h('div', { class: 'row' }, h('span', { class: 'pos' }, e.pos), h('span', { class: 'chip-tag' }, e.level), h('span', { class: 'chip-tag gray' }, e.topic)));
+    if (L.sup && L.sup.lang() === 'ar' && L.sup.mode() !== 'off' && L.C.glossAr && L.C.glossAr[e.w] && /^(A1|A2|B1)/.test(e.level || '')) {
+      card.appendChild(h('div', { class: 'ar-gloss', lang: 'ar', dir: 'rtl', 'data-nosup': '1' }, h('b', null, 'المعنى بالعربية: '), L.C.glossAr[e.w]));
+    }
     e.senses.forEach((s, i) => {
       const sd = h('div', { class: 'sense' });
       if (e.senses.length > 1) sd.appendChild(h('div', { class: 'pos' }, 'Sentido ' + (i + 1) + (s.pos && s.pos !== e.pos ? ' · ' + s.pos : '')));
@@ -1378,6 +1395,11 @@
     const les = target && C.lessons[target];
     return h('section', { class: 'hero' },
       h('div', { class: 'row sb' }, h('span', { class: 'chip-tag' }, 'Nivel ' + S.currentStage() + ' de 30 · ' + lv + ' ' + C.level(lv).name), S.streak() ? h('span', { class: 'chip-tag green' }, '🔥 ' + S.streak() + (S.streak() === 1 ? ' día seguido' : ' días seguidos')) : null),
+      (function () { const xl = S.xpLevel(), q = S.todayQ(), g = S.GOAL, done = q >= g; return h('div', { class: 'card', style: 'padding:10px;margin:8px 0' },
+        h('div', { class: 'row sb' }, h('b', null, 'Meta diaria'), h('span', { class: 'chip-tag ' + (done ? 'green' : '') }, Math.min(q, g) + ' / ' + g + ' respuestas')),
+        U.bar(Math.min(100, Math.round(100 * q / g))),
+        h('div', { class: 'row sb', style: 'margin-top:6px' }, h('span', null, '⭐ ' + xl.xp + ' XP'), h('span', null, 'Nivel de jugador ' + xl.lv)),
+        h('div', { class: 'muted' }, done ? '¡Meta cumplida hoy! Sesión corta de 5 minutos lista.' : 'Una sesión corta de 5 minutos: responde ' + (g - q) + ' preguntas más. ', done ? null : h('a', { href: '#/practica' }, 'Practicar ahora'), ' · ', (S.prog.activity[L.dayKey()] || {}).reto ? '🏆 Reto del día hecho' : h('a', { href: '#/reto' }, '🏆 Reto del día'))); })(),
       h('h1', null, 'Continuar aprendiendo'),
       les ? h('p', { style: 'font-size:1.1rem' }, S.lessonDone(target) ? 'Última lección: ' : 'Siguiente lección: ', h('strong', null, les.title), ' (' + les.level + ')') : h('p', null, 'Has completado todo el contenido disponible por ahora. Repasa tus palabras o practica tus errores.'),
       h('div', { class: 'row sb' }, h('span', null, p.done + ' de ' + p.total + ' lecciones completadas'), h('b', null, p.pct + ' %')),
@@ -1968,7 +1990,7 @@
   // ---------- Práctica rápida ----------
   route('/practica', () => {
     const root = h('div'); root.appendChild(U.pageHead('Práctica', 'Elige un tipo de práctica. Todas cuentan para tu progreso.'));
-    const items = [['📝', 'Vocabulario', '#/practica/vocabulario', 'Definiciones y frases con huecos.'], ['🧩', 'Gramática', '#/practica/gramatica', 'Ejercicios de las reglas que estudias.'], ['🎧', 'Comprensión auditiva', '#/escuchar', 'Escucha y responde.'], ['🔊', 'Pronunciación', '#/pronunciacion', 'Sonidos y sílabas.'], ['🧱', 'Construcción de frases', '#/frases', 'Ordena las palabras.'], ['🔁', 'Repaso diario', '#/repaso', 'Palabras que toca repasar.'], ['🎯', 'Práctica de errores', '#/errores', 'Refuerza lo que fallas.']];
+    const items = [['🏆', 'Reto del día', '#/reto', 'Diez preguntas nuevas cada día (+50 XP).'], ['📝', 'Vocabulario', '#/practica/vocabulario', 'Definiciones y frases con huecos.'], ['🧩', 'Gramática', '#/practica/gramatica', 'Ejercicios de las reglas que estudias.'], ['🎧', 'Comprensión auditiva', '#/escuchar', 'Escucha y responde.'], ['🔊', 'Pronunciación', '#/pronunciacion', 'Sonidos y sílabas.'], ['🧱', 'Construcción de frases', '#/frases', 'Ordena las palabras.'], ['🔁', 'Repaso diario', '#/repaso', 'Palabras que toca repasar.'], ['🎯', 'Práctica de errores', '#/errores', 'Refuerza lo que fallas.']];
     root.appendChild(h('div', { class: 'grid g3' }, items.map((x) => h('a', { class: 'card', href: x[2], style: 'text-decoration:none;color:inherit' }, h('div', { style: 'font-size:1.8rem' }, x[0]), h('h3', null, x[1]), h('p', { class: 'muted', style: 'margin:0' }, x[3])))));
     return root;
   }, 'Práctica');
@@ -1990,13 +2012,42 @@
       qs = L.sample(pool, 10);
     } else return U.empty('🧭', 'Esa práctica no existe.', h('a', { class: 'btn btn-primary', href: '#/practica' }, 'Volver'));
     if (!qs.length) return U.empty('📘', 'Todavía no hay ejercicios disponibles.');
+(async () => {
     const box = h('div'); host.appendChild(box);
     const res = await E.run(box, qs, { title: 'Práctica', onAnswer: (q, r) => { S.recordAnswer(q, r.ok, r.assisted); if (q.wid) S.reviewWord(q.wid, r.ok, 'strong'); }, finishLabel: 'Ver resultado' });
     await U.save();
     host.innerHTML = ''; const sm = E.summary(res, { pass: 75, headline: 'Práctica terminada' });
     host.append(h('div', { class: 'card' }, sm.el), h('div', { class: 'nav-actions' }, h('a', { class: 'btn btn-primary', href: '#/practica/' + kind }, 'Repetir con otros ejercicios'), h('a', { class: 'btn btn-ghost', href: '#/practica' }, 'Volver')));
+    })();
     return root;
   }, 'Práctica');
+
+
+  // ---------- Reto del día: 10 preguntas fijas para hoy (misma selección todo el día) ----------
+  function seeded(seed) { let x = 0; for (let i = 0; i < seed.length; i++) x = (x * 31 + seed.charCodeAt(i)) >>> 0; return () => { x = (x * 1664525 + 1013904223) >>> 0; return x / 4294967296; }; }
+  function seededPick(arr, n, seed) { const r = seeded(seed), a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a.slice(0, n); }
+  route('/reto', async () => {
+    const root = h('div'); root.appendChild(U.pageHead('Reto del día', 'Diez preguntas para hoy. Cada reto completado da +50 XP extra.', [{ t: 'Práctica', href: '#/practica' }, { t: 'Reto del día' }]));
+    const host = h('div'); root.appendChild(host);
+    const day = L.dayKey(), a = S.prog.activity[day] || {};
+    if (a.reto) { host.appendChild(h('div', { class: 'alert ok' }, '¡Reto de hoy completado! Vuelve mañana para uno nuevo. +50 XP ya sumados.')); host.appendChild(h('div', { class: 'nav-actions' }, h('a', { class: 'btn btn-primary', href: '#/practica' }, 'Seguir practicando'))); return root; }
+    const ws = D.entries.filter((e) => S.levelUnlocked(e.level));
+    const wq = seededPick(ws, 5, day + 'w').map((e) => wordQuestion(e, 'mc'));
+    const doneIds = Object.keys(S.prog.lessons).filter((id) => S.prog.lessons[id].done);
+    let pool = [];
+    (doneIds.length ? doneIds : C.lessonList('A1').map((l) => l.id)).forEach((id) => C.lessons[id] && pool.push(...C.lessons[id].practice.concat(C.lessons[id].quiz)));
+    pool.sort((x, y) => String(x.id).localeCompare(String(y.id)));
+    const qs = seededPick(pool, 5, day + 'g').concat(wq);
+    if (!qs.length) return U.empty('📘', 'Todavía no hay ejercicios disponibles.');
+(async () => {
+    const box = h('div'); host.appendChild(box);
+    const res = await E.run(box, qs, { title: 'Reto del día', onAnswer: (q, r) => { S.recordAnswer(q, r.ok, r.assisted); if (q.wid) S.reviewWord(q.wid, r.ok, 'strong'); }, finishLabel: 'Ver resultado' });
+    S.log('reto', 1); await U.save();
+    host.innerHTML = ''; const sm = E.summary(res, { pass: 60, headline: '¡Reto del día completado! +50 XP' });
+    host.append(h('div', { class: 'card' }, sm.el), h('div', { class: 'nav-actions' }, h('a', { class: 'btn btn-primary', href: '#/' }, 'Volver al inicio')));
+    })();
+    return root;
+  }, 'Reto del día');
 
   // ---------- Favoritos ----------
   route('/favoritos', () => {
@@ -2887,7 +2938,32 @@
        ['You can often drop “I / you / he”', '“Hablo español” already means “I speak Spanish”: the verb ending shows who does the action.']]
         .forEach((x, i) => box.appendChild(h('div', { class: 'card', style: 'padding:12px;margin:8px 0' }, h('b', null, (i + 1) + '. ' + x[0]), h('div', null, x[1]))));
       return box; } },
+    { id: 'cognates', title: '6. Words that look alike · Palabras parecidas', body: () => {
+      const box = h('div'); const ar = L.sup && L.sup.lang() === 'ar';
+      box.appendChild(h('p', null, 'Hundreds of Spanish words look like English words. Start with these 28: you already know what they mean!'));
+      const g = h('div', { class: 'grid g2' });
+      (C.cognates || []).forEach((w) => g.appendChild(h('div', { class: 'card', style: 'padding:10px' }, h('div', { class: 'row sb' }, h('b', null, w[0]), L.Audio.btn(w[0], { small: true, name: w[0] })), h('span', { class: 'muted', lang: 'en' }, w[1]))));
+      box.appendChild(g);
+      if (ar) {
+        box.appendChild(h('h3', { style: 'margin-top:16px' }, 'كلمات إسبانية من أصل عربي'));
+        const a = h('div', { class: 'grid g2' });
+        (C.arabicLoans || []).forEach((w) => a.appendChild(h('div', { class: 'card', style: 'padding:10px' }, h('div', { class: 'row sb' }, h('b', null, w[0]), L.Audio.btn(w[0], { small: true, name: w[0] })), h('span', { dir: 'rtl', lang: 'ar', style: 'font-weight:700' }, w[2]), h('span', { class: 'muted', lang: 'en' }, w[1]))));
+        box.appendChild(a);
+      }
+      return box; } },
   ];
+
+  // Ayuda en árabe (solo si el usuario la eligió)
+  function arCard(id) {
+    const A = C.arStart && C.arStart.steps[id]; if (!A || !L.sup || L.sup.lang() !== 'ar' || L.sup.mode() === 'off') return null;
+    const box = h('div', { class: 'card ar-help', dir: 'rtl', lang: 'ar', 'data-nosup': '1' }, h('h3', null, 'بالعربية · ' + A.title));
+    (A.body || []).forEach((t) => box.appendChild(h('p', null, t)));
+    if (A.table) { const t = h('div', { class: 'grid g2' }); A.table.forEach((x, i) => t.appendChild(h('div', { style: 'padding:6px 0' }, h('b', { dir: 'ltr', style: 'font-size:1.2rem' }, LETTERS[i][0] + ' '), x))); box.appendChild(t); }
+    if (A.vowels) A.vowels.forEach((v) => box.appendChild(h('div', { style: 'margin:6px 0' }, h('b', { dir: 'ltr' }, v[0]), ' = «' + v[1] + '» ', 'مثل ', h('b', { dir: 'ltr' }, v[2]))));
+    if (A.words) Object.keys(A.words).forEach((k) => box.appendChild(h('div', { style: 'margin:6px 0' }, h('b', { dir: 'ltr' }, k), ' = ' + A.words[k])));
+    if (A.rules) A.rules.forEach((r, i) => box.appendChild(h('div', { class: 'card', style: 'padding:10px;margin:8px 0' }, h('b', null, (i + 1) + '. ' + r[0]), h('div', null, r[1]))));
+    return box;
+  }
 
   // Prueba de Primeros pasos: 15 preguntas sencillas
   function testQs() {
@@ -2903,7 +2979,8 @@
     const root = h('div');
     const d = S.prog.done['pre:steps'] = S.prog.done['pre:steps'] || { n: 0, best: 0, attempts: 0 };
     root.appendChild(U.pageHead('Primeros pasos · First steps', 'Empieza desde cero. Start from zero: letters, numbers and your first words, explained in English.'));
-    root.appendChild(h('div', { class: 'alert' }, h('strong', null, 'No Spanish at all? Perfect. '), 'Read the 5 steps below (about 15 minutes), tap the speaker buttons to listen, then take the short check at the end. After that, your lessons start easily.'));
+    root.appendChild(h('div', { class: 'alert' }, h('strong', null, 'No Spanish at all? Perfect. '), 'Read the 6 steps below (about 15 minutes), tap the speaker buttons to listen, then take the short check at the end. After that, your lessons start easily.'));
+    if (L.sup && L.sup.lang() === 'ar' && L.sup.mode() !== 'off') root.appendChild(h('div', { class: 'alert', dir: 'rtl', lang: 'ar', 'data-nosup': '1' }, h('strong', null, 'لا تعرف الإسبانية إطلاقاً؟ ممتاز. '), C.arStart.intro));
     STEPS.forEach((s, i) => root.appendChild(h('a', { class: 'lesson-row', href: '#/primeros-pasos/' + s.id }, h('span', { class: 'n' }, S.prog.seen && S.prog.seen['pre_' + s.id] ? '✓' : String(i + 1)), h('span', { style: 'flex:1' }, h('strong', null, s.title)), h('span', { class: 'chip-tag gray' }, 'Abrir'))));
     root.appendChild(h('a', { class: 'lesson-row' + (d.best >= 75 ? ' done' : ''), href: '#/primeros-pasos/prueba' }, h('span', { class: 'n' }, '★'), h('span', { style: 'flex:1' }, h('strong', null, 'Check · La prueba de Primeros pasos'), h('div', { class: 'muted' }, '15 easy questions. You need 75%.' + (d.attempts ? ' Best: ' + d.best + '%' : ''))), h('span', { class: 'chip-tag ' + (d.best >= 75 ? 'green' : 'gray') }, d.best >= 75 ? '✓ ' + d.best + ' %' : 'Empezar')));
     root.appendChild(h('div', { class: 'row', style: 'margin-top:14px' }, h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Ir a mis lecciones')));
@@ -2930,6 +3007,7 @@
     const s = STEPS.find((x) => x.id === params.id);
     if (!s) return U.empty('🔤', 'Ese paso no existe.', h('a', { class: 'btn btn-primary', href: '#/primeros-pasos' }, 'Volver'));
     root.appendChild(U.pageHead(s.title, null, [{ t: 'Primeros pasos', href: '#/primeros-pasos' }, { t: s.title }]));
+    const arc = arCard(s.id); if (arc) root.appendChild(arc);
     root.appendChild(h('div', { class: 'card' }, s.body()));
     S.prog.seen = S.prog.seen || {}; S.prog.seen['pre_' + s.id] = Date.now(); S.markProg();
     const i = STEPS.indexOf(s); const nx = STEPS[i + 1];
@@ -3169,6 +3247,7 @@
       h('div', { class: 'field' }, h('h3', null, 'Restablecer los ajustes'), h('p', { class: 'muted' }, 'Vuelve al aspecto, audio y ejercicios por defecto. No borra lecciones ni palabras.'),
         h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await L.modal({ title: '¿Restablecer los ajustes?', body: 'Se recuperan los valores por defecto de apariencia, audio y ejercicios.', escValue: false, actions: [{ label: 'Cancelar', value: false }, { label: 'Restablecer', value: true, primary: true }] }); if (!ok) return; Object.assign(S.prog.settings, S.defaultProg('x').settings); S.markProg(); await U.save(true); L.applyPrefs(); document.documentElement.setAttribute('data-motion', 'auto'); L.render(); } }, 'Restablecer'))));
 
+    if (L.sup) root.appendChild(L.sup.settingsCard());
     // Cuenta: ayuda (English)
     const acct = [h('h2', null, 'Account help'), L.accountFlows.limits(),
       h('h3', { style: 'margin-top:14px' }, 'Forgot your password?'),
@@ -3234,8 +3313,16 @@
   }
   // Explicación en inglés («en palabras sencillas») para las lecciones A1 y A2
   C2.enHelp = function (id) {
-    const e = C.enHelp && C.enHelp[id]; if (!e || C2.lang() === 'es') return null;
-    return h('div', { class: 'card en-help', lang: 'en' }, h('h3', null, 'In simple words · En palabras sencillas'), e.lines.map((x) => h('p', { html: x })));
+    const sl = L.sup ? L.sup.lang() : 'none', sm = L.sup ? L.sup.mode() : 'off';
+    const onb = !!(S.prog && S.prog.settings && S.prog.settings.onboarded);
+    if (sl === 'ar' && sm !== 'off' && C.arHelp && C.arHelp[id]) {
+      const a = C.arHelp[id];
+      return h('div', { class: 'card en-help', lang: 'ar', dir: 'rtl', 'data-nosup': '1' }, h('h3', null, a.title), a.lines.map((x) => h('p', { html: x })));
+    }
+    const e = C.enHelp && C.enHelp[id]; if (!e) return null;
+    const allow = onb ? (sl !== 'none' && sl !== 'ar' && sm !== 'off') : C2.lang() !== 'es';
+    if (!allow) return null;
+    return h('div', { class: 'card en-help', lang: 'en', 'data-nosup': '1' }, h('h3', null, 'In simple words · En palabras sencillas'), (sl !== 'en' && sl !== 'none' && sl !== 'ar') ? h('p', { class: 'muted' }, 'Lesson explanations are in English for now; menus and labels use your language.') : null, e.lines.map((x) => h('p', { html: x })));
   };
   C2.openRule = function (lessonId) {
     const les = C.lessons[lessonId]; if (!les) return;
@@ -3255,6 +3342,46 @@
   }
 
   // Bloque de explicación que se añade a la corrección de cada pregunta
+
+  // ---- diagnóstico por comparación (diff) de la respuesta escrita ----
+  const norm = (x) => String(x == null ? '' : x).toLowerCase().normalize('NFC').replace(/[¿?¡!.,;:]/g, '').replace(/\s+/g, ' ').trim();
+  const strip = (x) => norm(x).normalize('NFD').replace(/[̀-ͯ]/g, '');
+  function lev(a, b) { const m = a.length, n = b.length, d = []; for (let i = 0; i <= m; i++) { d[i] = [i]; } for (let j = 1; j <= n; j++) d[0][j] = j; for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[m][n]; }
+  C2.diagnose = function (given, correct) {
+    if (typeof given !== 'string' || typeof correct !== 'string' || !given.trim() || given.length > 200 || correct.length > 200) return null;
+    const g = norm(given), c = norm(correct); if (!g || g === c) return null;
+    const gw = g.split(' '), cw = c.split(' ');
+    const out = [];
+    if (gw.length > 1 || cw.length > 1) {
+      const cwo = correct.replace(/[¿?¡!.,;:]/g, '').replace(/\s+/g, ' ').trim().split(' '); const miss = cw.filter((w) => gw.indexOf(w) < 0).map((w) => cwo[cw.indexOf(w)] || w), extra = gw.filter((w) => cw.indexOf(w) < 0);
+      if (!miss.length && !extra.length && gw.length === cw.length) out.push(['Las palabras son correctas, pero el orden no: la frase correcta es «' + correct + '».', 'The words are right but the order is not: the correct sentence is «' + correct + '».']);
+      else if (miss.length && !extra.length) out.push(['Te falta: «' + miss.join(' ') + '».', 'You are missing: «' + miss.join(' ') + '».']);
+      else if (extra.length && !miss.length) out.push(['Sobra: «' + extra.join(' ') + '».', 'Extra word(s): «' + extra.join(' ') + '».']);
+      else if (miss.length === 1 && extra.length === 1) return C2.diagnose(extra[0], miss[0]) || [['Cambia «' + extra[0] + '» por «' + miss[0] + '».', 'Replace «' + extra[0] + '» with «' + miss[0] + '».']];
+      else out.push([miss.length + ' palabra(s) distintas. Compara con «' + correct + '».', miss.length + ' different word(s). Compare with «' + correct + '».']);
+      return out;
+    }
+    const a = g, b = c;
+    if (b.indexOf('ñ') >= 0 && a.indexOf('ñ') < 0 && a.replace(/n/g, '') !== a && b.normalize('NFC').replace(/ñ/g, 'n') === a.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ñ/g, 'n') && b.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[ñ]/g,'n') === a.normalize('NFD').replace(/[\u0300-\u036f]/g, '')) { out.push(['Falta la «ñ» (es una letra distinta de «n»): «' + correct + '».', 'The «ñ» is missing (it is a different letter from «n»): «' + correct + '».']); return out; }
+    if (strip(a) === strip(b)) { out.push(['Solo falta o sobra una tilde: «' + correct + '».', 'Only an accent mark is missing or wrong: «' + correct + '».']); return out; }
+    const art = { el: 'la', la: 'el', un: 'una', una: 'un', los: 'las', las: 'los' };
+    if (art[a] === b) { out.push(['Error de género: «' + b + '» y no «' + a + '». Memoriza el artículo junto con el sustantivo.', 'Gender mistake: «' + b + '», not «' + a + '». Learn the article together with the noun.']); return out; }
+    if (a.length === b.length && lev(a, b) === 2) { for (let i = 0; i < a.length - 1; i++) if (a[i] === b[i + 1] && a[i + 1] === b[i]) { out.push(['Dos letras están cambiadas de lugar («' + a[i] + a[i + 1] + '» → «' + b[i] + b[i + 1] + '»).', 'Two letters are swapped («' + a[i] + a[i + 1] + '» → «' + b[i] + b[i + 1] + '»).']); return out; } }
+    if (a.replace(/n/g, 'ñ') === b || (b.indexOf('ñ') >= 0 && a.replace(/n/g, '') !== a && strip(b).replace(/n/g, '') === a.replace(/n/g, ''))) { out.push(['Falta la «ñ» (es una letra distinta de «n»).', 'The «ñ» is missing (it is a different letter from «n»).']); return out; }
+    if (b[0] === 'h' && a === b.slice(1)) { out.push(['Falta la «h» muda al inicio: se escribe pero no se pronuncia.', 'The silent «h» is missing at the start: it is written but not pronounced.']); return out; }
+    if (a.replace(/v/g, 'b') === b.replace(/v/g, 'b')) { out.push(['«b» y «v» suenan igual en español; hay que memorizar cuál lleva la palabra: «' + b + '».', '«b» and «v» sound the same in Spanish; you must memorize which one the word uses: «' + b + '».']); return out; }
+    if (a.replace(/ll/g, 'y') === b.replace(/ll/g, 'y')) { out.push(['Confusión entre «ll» e «y»: se escribe «' + b + '».', 'Mix-up between «ll» and «y»: it is written «' + b + '».']); return out; }
+    let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    const stem = i; 
+    if (stem >= 3 && stem >= Math.min(a.length, b.length) - 3) {
+      const ea = a.slice(stem), eb = b.slice(stem);
+      out.push(['La raíz «' + a.slice(0, stem) + '-» está bien; cambia la terminación: «-' + ea + '» → «-' + eb + '». Revisa la conjugación o el género/número.', 'The stem «' + a.slice(0, stem) + '-» is right; change the ending: «-' + ea + '» → «-' + eb + '». Check the conjugation or the gender/number.']); return out;
+    }
+    const d = lev(a, b);
+    if (d <= Math.max(2, Math.floor(b.length / 4))) { out.push([d + ' letra(s) distinta(s). Escríbela despacio: «' + b + '».', d + ' letter(s) different. Write it slowly: «' + b + '».']); return out; }
+    return null;
+  };
+
   C2.feedback = function (q, r, opts) {
     const box = h('div', { class: 'coach', role: 'note' });
     box.appendChild(h('div', { class: 'coach-h' }, h('strong', null, 'Entrenador'), ' · Coach'));
@@ -3267,10 +3394,14 @@
       else if (r.kind === 'ortografia') box.appendChild(C2.pair('Tu respuesta es muy parecida; revisa letra por letra cómo se escribe la palabra.', 'Your answer is very close; check the spelling letter by letter.'));
       else if (r.kind === 'empty') box.appendChild(C2.pair('No escribiste nada. Intenta responder siempre: equivocarse también enseña.', 'You did not write anything. Always try to answer: mistakes teach too.'));
       else {
+        const dg = C2.diagnose(r.given, r.correct);
+        if (dg && dg.length) dg.forEach((x) => box.appendChild(C2.pair('Diagnóstico: ' + x[0], 'Diagnosis: ' + x[1])));
         box.appendChild(C2.pair(given ? 'Elegiste ' + given + ', pero la respuesta correcta es «' + r.correct + '».' : 'La respuesta correcta es «' + r.correct + '».', given ? 'You chose ' + given + ', but the correct answer is «' + r.correct + '».' : 'The correct answer is «' + r.correct + '».'));
         box.appendChild(C2.pair('Lee la explicación de arriba y compárala con tu respuesta. Si sigue sin quedar claro, abre la regla.', 'Read the explanation above and compare it with your answer. If it is still unclear, open the rule.'));
       }
     }
+    const st = S.qstats && S.qstats.get(q.id);
+    if (!r.ok && st && st.wrong >= 3) box.appendChild(C2.pair('Ya has fallado esta pregunta ' + st.wrong + ' veces: es un error repetido. Abre la regla y haz «Práctica de errores».', 'You have missed this question ' + st.wrong + ' times: it is a repeated mistake. Open the rule and try «Error practice».'));
     const tl = terms(q, r);
     if (tl.length) box.appendChild(h('div', { class: 'coach-gl' }, h('b', null, 'Vocabulary · Vocabulario: '), tl.map((t, i) => h('span', null, (i ? ' · ' : '') + '«' + t[0] + '» = ' + t[1]))));
     const lid = lessonOf(q, opts && opts.lessonId);
@@ -3398,6 +3529,169 @@
     root.appendChild(h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/leccion/' + les.id }, 'Practicar esta lección · Practise this lesson')));
     return root;
   }, 'Regla');
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  // Ayuda en el idioma del usuario: se elige al empezar y se va retirando según el nivel.
+  const { h, route } = L; const S = L.S; const C = L.C;
+  const Sup = (L.sup = {});
+  Sup.LANGS = [['en', 'English'], ['ar', 'العربية'], ['fr', 'Français'], ['de', 'Deutsch'], ['pt', 'Português'], ['it', 'Italiano'], ['tr', 'Türkçe'], ['ru', 'Русский'], ['zh', '中文'], ['hi', 'हिन्दी'], ['ur', 'اردو'], ['fa', 'فارسی'], ['id', 'Bahasa Indonesia'], ['other', 'Other · Otro · أخرى']];
+  Sup.HAVE = { en: 'English', ar: 'العربية', fr: 'Français', pt: 'Português', it: 'Italiano', de: 'Deutsch', tr: 'Türkçe' };
+  // Idiomas con ayuda completa (explicaciones de lecciones): inglés y árabe. Los demás: interfaz traducida + explicaciones en inglés.
+  Sup.FULLHELP = { en: 1, ar: 1 };
+  const st = () => (S.prog && S.prog.settings) || {};
+  Sup.lang = () => { const l = st().supLang; return l && Sup.HAVE[l] ? l : 'none'; };
+  // full: ayuda completa (A1–A2) · light: solo títulos y botones (B1) · off: nada
+  Sup.mode = () => {
+    if (Sup.lang() === 'none') return 'off';
+    const f = st().supFade; if (f === 'never') return 'off'; if (f === 'always') return 'full';
+    let stage = 1; try { stage = S.prog && S.prog.placement ? S.currentStage() : 1; } catch (e) {}
+    return stage <= 10 ? 'full' : stage <= 15 ? 'light' : 'off';
+  };
+  // Mejor idioma de apoyo según lo que habla la persona
+  // Mejor idioma de apoyo según lo que habla la persona: primero su lengua materna (si hay ayuda en ella);
+  // si no, entre los idiomas que domina, el que más se parece al español (fr/pt/it) y luego inglés, árabe, alemán, turco.
+  const PRIO = ['fr', 'pt', 'it', 'en', 'ar', 'de', 'tr'];
+  Sup.recommend = (native, others) => {
+    const all = [native].concat(others || []).filter(Boolean);
+    if (native && Sup.HAVE[native]) return { lang: native, why: 'native' };
+    const k = PRIO.find((c) => all.includes(c));
+    if (k) return { lang: k, why: 'known' };
+    return { lang: 'en', why: 'fallback' };
+  };
+  // Idiomas que se pueden elegir como ayuda: los que habla la persona (con ayuda disponible) + inglés
+  Sup.options = (native, others) => { const all = [native].concat(others || []).filter((c) => c && Sup.HAVE[c]); if (!all.includes('en')) all.push('en'); return all.map((c) => [c, Sup.HAVE[c]]); };
+
+  // ---------- traducción de la interfaz ----------
+  let MAP = null;
+  const norm = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+  function build() { MAP = new Map(); (C.uiTr || []).forEach(([es, en, ar]) => { const k = norm(es); if (!MAP.has(k)) MAP.set(k, [en, ar]); }); }
+  Sup.translate = (text, lang) => {
+    if (!MAP) build();
+    const i = lang === 'ar' ? 1 : 0; const t = norm(text);
+    if (!t || t.length > 90) return null;
+    const X = C.uiTrX && C.uiTrX[lang]; if (X && X.has(t)) return X.get(t);
+    const hit = MAP.get(t); if (hit) return hit[i];
+    for (const [rx, en, ar] of C.uiTrRx || []) {
+      const m = rx.exec(t); if (!m) continue;
+      let out = i ? ar : en;
+      out = out.replace(/\$L(\d)/g, (_, n) => { const nm = (C.uiLevelName || {})[m[+n]]; return nm ? nm[i] : m[+n]; }).replace(/\$(\d)/g, (_, n) => m[+n] || '');
+      return out;
+    }
+    return null;
+  };
+  const OWN = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join('');
+  const FULL = '#view h1, #view h2, #view h3, #view h4, #view th, #view label, #view summary, #view legend, #view .btn, #view .chip-tag, #view .pos, #view .pill, #view small, #view .q-head, #view .q-actions .btn, #view .muted, #view p, .drawer a span:not(.di), .drawer h4, .drawer .dtitle, .gnav small, .site-footer a';
+  const LIGHT = '#view h1, #view h2, #view h3, #view .btn, .drawer a span:not(.di), .drawer h4, .drawer .dtitle, .gnav small';
+  let busy = false, timer = null, lastKey = '';
+  function clear() { document.querySelectorAll('.sup').forEach((e) => { const p = e.parentNode; if (p && p.dataset) { delete p.dataset.sup; delete p.dataset.supKey; } e.remove(); }); document.querySelectorAll('[data-sup-title]').forEach((e) => { e.removeAttribute('title'); e.removeAttribute('data-sup-title'); }); }
+  Sup.apply = function () {
+    if (busy) return; busy = true;
+    try {
+      const mode = Sup.mode(), lang = Sup.lang(); const key = mode + lang;
+      if (key !== lastKey) { clear(); lastKey = key; document.documentElement.setAttribute('data-sup', mode === 'off' ? 'off' : lang); }
+      if (mode === 'off') return;
+      // Menú de escritorio: solo texto emergente (no hay sitio para otra línea)
+      document.querySelectorAll('.site-header nav a').forEach((a) => { if (a.dataset.supTitle) return; const tr = Sup.translate(OWN(a) || a.textContent, lang); if (tr) { a.setAttribute('title', tr); a.dataset.supTitle = '1'; } });
+      document.querySelectorAll(mode === 'full' ? FULL : LIGHT).forEach((el) => {
+        if (el.closest('.qcard') && !el.closest('.q-head, .q-actions')) return;
+        if (el.closest('.sup, .en-help, .tr-out, [data-nosup]')) return;
+        const own = norm(OWN(el)); const hasKids = Array.from(el.children).some((c) => !c.classList.contains('sup') && !/^(SVG|IMG|SPAN|B|STRONG|I|EM)$/i.test(c.tagName));
+        if (hasKids) return;
+        const text = own || (el.children.length === 0 ? norm(el.textContent) : '');
+        if (!text) return;
+        if (el.dataset.supKey === text) return;
+        const old = el.querySelector(':scope > .sup'); if (old) old.remove();
+        const tr = Sup.translate(text, lang);
+        el.dataset.supKey = text;
+        if (!tr) { delete el.dataset.sup; return; }
+        const s = document.createElement('span'); s.className = 'sup'; s.lang = lang; s.dir = lang === 'ar' ? 'rtl' : 'ltr'; s.textContent = tr;
+        el.appendChild(s); el.dataset.sup = '1';
+      });
+    } finally { if (obs) obs.takeRecords(); busy = false; }
+  };
+  let obs = null;
+  Sup.start = function () {
+    if (obs || !window.MutationObserver) return;
+    obs = new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(Sup.apply, 70); });
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+    Sup.apply();
+  };
+  Sup.refresh = () => { lastKey = ''; Sup.apply(); };
+
+  // ---------- guardar ajustes ----------
+  Sup.save = (obj) => { Object.assign(S.prog.settings, obj); S.markProg(); L.U.save(true); Sup.refresh(); };
+
+  // ---------- pantalla de bienvenida ----------
+  Sup.needsWelcome = () => !!(S.prog && !st().onboarded && !S.prog.placement && !(S.stats && S.stats().answered));
+  function welcome() {
+    let native = st().native || '', others = new Set(st().known || []), level = st().startLevel || '', supLang = st().supLang || '';
+    const root = h('div', { class: 'welcome' });
+    const box = h('div');
+    root.append(
+      h('h1', { id: 'page-title', tabindex: '-1' }, 'Welcome · مرحباً · Bienvenido'),
+      h('p', null, 'Languway Spanish teaches Spanish. Tell us your language and your level, and we will explain things in a language you understand. · أخبرنا بلغتك ومستواك، وسنشرح لك بلغة تفهمها. · Dinos tu idioma y tu nivel.'),
+      box);
+    const radio = (name, val, label, checked, onchg) => h('label', { class: 'choice' }, h('input', { type: 'radio', name, value: val, checked: checked || null, onchange: onchg }), h('span', null, label));
+    const draw = () => {
+      box.innerHTML = '';
+      // 1. idioma principal
+      box.appendChild(h('section', { class: 'card' }, h('h2', null, '1. Your main language · لغتك الأم'),
+        h('div', { class: 'choices' }, Sup.LANGS.map(([c, n]) => radio('native', c, n, native === c, () => { native = c; others.delete(c); const r = Sup.recommend(native, Array.from(others)); supLang = r.lang; draw(); })))));
+      // 2. otros idiomas
+      box.appendChild(h('section', { class: 'card' }, h('h2', null, '2. Other languages you speak well · لغات أخرى تتقنها'),
+        h('div', { class: 'choices' }, Sup.LANGS.filter(([c]) => c !== native && c !== 'other').map(([c, n]) => h('label', { class: 'choice' }, h('input', { type: 'checkbox', value: c, checked: others.has(c) || null, onchange: (e) => { e.target.checked ? others.add(c) : others.delete(c); if (native) { supLang = Sup.recommend(native, Array.from(others)).lang; draw(); } } }), h('span', null, n))))));
+      // 3. idioma de apoyo (recomendación)
+      if (native) {
+        const r = Sup.recommend(native, Array.from(others)); if (!supLang) supLang = r.lang;
+        const why = r.why === 'native' ? (Sup.FULLHELP[r.lang] ? 'We will explain in your language.' : 'Menus and labels will be in your language; lesson explanations are in English for now.') : r.why === 'known' ? 'We do not have help in your main language yet, so we picked the best one you speak.' : 'We do not have help in your language yet. English helps because many Spanish words look like English words.';
+        box.appendChild(h('section', { class: 'card' }, h('h2', null, '3. Help language · لغة الشرح'), h('p', null, why),
+          h('div', { class: 'choices' }, Sup.options(native, Array.from(others)).concat([['none', 'Solo español · Spanish only · الإسبانية فقط']]).map(([c, n]) => radio('sup', c, n + (c === r.lang ? ' ★' : ''), supLang === c, () => { supLang = c; })))));
+      }
+      // 4. nivel
+      box.appendChild(h('section', { class: 'card' }, h('h2', null, '4. Your Spanish level · مستواك في الإسبانية'),
+        h('div', { class: 'choices' }, [['cero', 'Beginner: I know no Spanish · مبتدئ تماماً', 'Start from the letters and numbers.'], ['medio', 'Intermediate: I know some Spanish · متوسط', 'Take a short test to find your place.'], ['avanzado', 'Advanced: I speak Spanish well · متقدّم', 'Take the test and start high.']].map(([c, n, d]) => h('label', { class: 'choice big' }, h('input', { type: 'radio', name: 'lvl', value: c, checked: level === c || null, onchange: () => { level = c; } }), h('span', null, h('strong', null, n), h('small', { style: 'display:block' }, d)))))));
+      const err = h('p', { class: 'field-err', role: 'alert', id: 'wel-err' });
+      box.append(err, h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn btn-primary', onclick: go }, 'Start · ابدأ · Empezar'), h('button', { type: 'button', class: 'btn btn-ghost', onclick: () => finish({ native: '', known: [], supLang: 'none', startLevel: '' }, '#/') }, 'Skip · تخطَّ · Omitir')));
+    };
+    const go = () => {
+      const err = box.querySelector('#wel-err');
+      const lv = box.querySelector('input[name=lvl]:checked'); level = lv ? lv.value : level;
+      const sp = box.querySelector('input[name=sup]:checked'); if (sp) supLang = sp.value;
+      if (!native) { err.textContent = 'Choose your main language. · اختر لغتك الأم.'; return; }
+      if (!level) { err.textContent = 'Choose your level. · اختر مستواك.'; return; }
+      finish({ native, known: Array.from(others), supLang: supLang || Sup.recommend(native, Array.from(others)).lang, startLevel: level }, level === 'cero' ? '#/primeros-pasos' : '#/prueba-de-nivel');
+    };
+    const finish = (o, dest) => {
+      Object.assign(S.prog.settings, o, { onboarded: true });
+      if (o.startLevel === 'cero') S.applyPlacement({ stage: 1, passedTop: 0, probes: [], date: Date.now() });
+      S.markProg(); L.U.save(true); Sup.refresh(); location.hash = dest;
+    };
+    draw();
+    return root;
+  }
+  route('/bienvenida', welcome, 'Bienvenida');
+
+  // ---------- sección de Configuración ----------
+  Sup.settingsCard = function () {
+    const s = st();
+    const sel = (opts, val, fn, label) => { const x = h('select', { class: 'inp', 'aria-label': label, onchange: () => fn(x.value) }, opts.map(([v, t]) => h('option', { value: v, selected: v === val || null }, t))); return x; };
+    return h('section', { class: 'card', 'data-nosup': '1' }, h('h2', null, 'Mi idioma y ayuda · Language and help'),
+      h('p', { class: 'muted' }, 'Elige en qué idioma quieres recibir ayuda. La ayuda se reduce poco a poco: completa en A1–A2, parcial en B1 y desactivada desde B2. · The help fades as you level up.'),
+      h('label', { class: 'field' }, h('span', null, 'Idioma de ayuda · Help language'), sel([['none', 'Solo español · Spanish only']].concat(Sup.options(st().native, st().known || [])), Sup.lang(), (v) => Sup.save({ supLang: v }), 'Help language')),
+      h('label', { class: 'field' }, h('span', null, 'Cuánta ayuda · How much help'), sel([['auto', 'Automática según mi nivel · Automatic'], ['always', 'Siempre · Always'], ['never', 'Nunca · Never']], s.supFade || 'auto', (v) => Sup.save({ supFade: v }), 'How much help')),
+      h('div', { class: 'row' }, h('a', { class: 'btn btn-ghost', href: '#/bienvenida' }, 'Volver a elegir idioma y nivel · Choose again')));
+  };
+
+  // ---------- arranque ----------
+  Sup.boot = () => { Sup.start(); };
+  Sup.guard = (path) => {
+    if (!Sup.needsWelcome()) return false;
+    if (/^\/(bienvenida|cuenta|verificar|instalar|acerca|configuracion|traductor)(\/|$)/.test(path)) return false;
+    location.replace('#/bienvenida'); return true;
+  };
 })(window.LWS);
 
 ;
@@ -4044,6 +4338,7 @@
     const { path, q } = parse();
     L.Audio.stop();
     const view = $('#view');
+    if (L.sup && L.sup.guard(path)) return;
     // La prueba de nivel solo se pide al entrar a estudiar; el resto de la app es libre
     if (L.S.prog && !L.S.prog.placement && /^\/(aprender|unidad|leccion|examen|examen-final|practica|repaso|errores|certificado|diploma)(\/|$)/.test(path)) { location.replace('#/prueba-de-nivel'); return; }
     if (L.coach) L.coach.touch(path);
@@ -4129,7 +4424,7 @@
         document.body.appendChild(h('div', { class: 'banner', role: 'alert' }, 'Este navegador no permite guardar datos del sitio (¿modo privado?). Puedes aprender, pero el progreso se perderá al cerrar.'));
       }
       document.documentElement.setAttribute('data-motion', L.S.prog.settings.reduceMotion ? 'reduce' : 'auto'); L.applyPrefs();
-      L.refreshAcct(); setupIndicators(); setupSW();
+      L.refreshAcct(); setupIndicators(); setupSW(); if (L.sup) L.sup.boot();
       L.Audio.ready();
       window.addEventListener('hashchange', L.render);
       window.addEventListener('pagehide', () => { L.S.flush(); });

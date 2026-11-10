@@ -3651,6 +3651,296 @@ window.LWS = window.LWS || {};
 ;
 (function (L) {
   'use strict';
+  // Traducciones de la interfaz: [español, inglés, árabe]. Se usan solo para la ayuda en tu idioma.
+  const T = [
+    ['Reto del día','Daily challenge','تحدي اليوم'],['🏆 Reto del día','🏆 Daily challenge','🏆 تحدي اليوم'],['🏆 Reto del día hecho','🏆 Daily challenge done','🏆 تم تحدي اليوم'],
+    ['Meta diaria','Daily goal','الهدف اليومي'],['Practicar ahora','Practice now','تدرّب الآن'],['¡Meta cumplida hoy! Sesión corta de 5 minutos lista.','Goal reached today! Your 5-minute session is done.','تم تحقيق هدف اليوم! جلسة الـ5 دقائق اكتملت.'],
+    ['Inicio','Home','الرئيسية'],['Aprender','Learn','تعلّم'],['Vocabulario','Vocabulary','المفردات'],['Gramática','Grammar','القواعد'],['Escuchar','Listen','استمع'],['Pronunciación','Pronunciation','النطق'],['Traductor','Translator','المترجم'],['Mi progreso','My progress','تقدّمي'],['Progreso','Progress','التقدّم'],
+    ['Leer','Read','القراءة'],['Escribir','Write','الكتابة'],['Construcción de frases','Build sentences','بناء الجمل'],['Conversación','Conversation','المحادثة'],['Historias','Stories','القصص'],['Práctica','Practice','التدريب'],['Repaso diario','Daily review','المراجعة اليومية'],['Práctica de errores','Practice your mistakes','تدرّب على أخطائك'],['Favoritos','Favorites','المفضّلة'],['Primeros pasos','First steps','الخطوات الأولى'],['Entrenador','Coach','المدرّب'],['Certificados','Certificates','الشهادات'],['Acerca de Languway','About Languway','عن Languway'],['Instalar y compartir','Install and share','التثبيت والمشاركة'],
+    ['Menú','Menu','القائمة'],['Más secciones','More sections','أقسام أخرى'],['Cuenta','Account','الحساب'],['Buscar','Search','بحث'],['Configuración','Settings','الإعدادات'],['Saltar al contenido','Skip to content','تخطَّ إلى المحتوى'],['Sin conexión','Offline','لا يوجد اتصال'],
+    ['Empezar','Start','ابدأ'],['Comenzar','Begin','ابدأ'],['Continuar','Continue','تابع'],['Siguiente','Next','التالي'],['Siguiente →','Next →','التالي ←'],['← Anterior','← Previous','→ السابق'],['Comprobar','Check','تحقّق'],['Cancelar','Cancel','إلغاء'],['Cerrar','Close','إغلاق'],['Abrir','Open','فتح'],['Copiar','Copy','نسخ'],['Compartir','Share','مشاركة'],['Ver','View','عرض'],['Restablecer','Reset','إعادة ضبط'],['Guardado','Saved','تم الحفظ'],['Opciones','Options','خيارات'],['Normal','Normal','عادي'],['Auto','Auto','تلقائي'],
+    ['Ir a Aprender','Go to Learn','اذهب إلى التعلّم'],['Ir a mis lecciones','Go to my lessons','اذهب إلى دروسي'],['Seguir aprendiendo','Keep learning','تابع التعلّم'],['Hacer la prueba de nivel','Take the level test','أجرِ اختبار المستوى'],['Haz la prueba de nivel','Take the level test','أجرِ اختبار المستوى'],['Repetir la prueba de nivel','Retake the level test','أعد اختبار المستوى'],['Empezar la prueba (30 preguntas)','Start the test (30 questions)','ابدأ الاختبار (30 سؤالاً)'],['Prueba de nivel','Level test','اختبار المستوى'],['No sé nada de español','I know no Spanish','لا أعرف الإسبانية إطلاقاً'],['¿No sabes nada de español?','Do you know no Spanish at all?','ألا تعرف الإسبانية إطلاقاً؟'],
+    ['Escuchar despacio','Listen slowly','استمع ببطء'],['Escuchar todo','Listen to all','استمع إلى الكل'],['Comprobar lo aprendido →','Check what you learned →','تحقّق مما تعلّمت ←'],['Comprobar lo que oí →','Check what I heard →','تحقّق مما سمعت ←'],['Explicación','Explanation','الشرح'],['Explicación con ejemplos','Explanation with examples','شرح مع أمثلة'],['Vocabulario nuevo','New vocabulary','مفردات جديدة'],['Objetivo de la lección','Lesson goal','هدف الدرس'],['Pasos de la lección','Lesson steps','خطوات الدرس'],['Escucha','Listening','الاستماع'],['Lectura','Reading','القراءة'],['Escritura','Writing','الكتابة'],['Examen','Exam','الاختبار'],['Repaso y examen de la unidad','Unit review and exam','مراجعة الوحدة واختبارها'],
+    ['Tu respuesta','Your answer','إجابتك'],['(respuesta correcta)','(correct answer)','(الإجابة الصحيحة)'],['(tu respuesta, incorrecta)','(your answer, incorrect)','(إجابتك الخاطئة)'],['Respuesta incorrecta.','Incorrect answer.','إجابة خاطئة.'],['¡Correcto!','Correct!','صحيح!'],['¡Muy bien!','Very good!','أحسنت!'],['¡Así se hace!','Well done!','هكذا يكون العمل!'],['No escribiste ninguna respuesta.','You did not write an answer.','لم تكتب أي إجابة.'],['Resultado','Result','النتيجة'],['Resultados recientes','Recent results','نتائج حديثة'],
+    ['Escucha y elige la frase que oyes.','Listen and choose the sentence you hear.','استمع واختر الجملة التي سمعتها.'],['Escucha y escribe lo que oyes.','Listen and write what you hear.','استمع واكتب ما سمعته.'],['Escribe lo que oyes','Write what you hear','اكتب ما تسمعه'],['Escucha y responde.','Listen and answer.','استمع وأجب.'],['Ordena las palabras.','Put the words in order.','رتّب الكلمات.'],['Ordena las palabras tocando.','Tap the words to put them in order.','اضغط على الكلمات لترتيبها.'],['Elige o escribe la palabra correcta.','Choose or type the correct word.','اختر الكلمة الصحيحة أو اكتبها.'],['No puedo escuchar: mostrar el texto','I can\'t listen: show the text','لا أستطيع الاستماع: أظهر النص'],['Mostrar el texto','Show the text','أظهر النص'],
+    ['Palabra','Word','كلمة'],['Palabras estudiadas','Words studied','الكلمات التي درستها'],['Palabras dominadas','Words mastered','الكلمات المتقَنة'],['Palabras buscadas','Searched words','كلمات بحثت عنها'],['Palabra en español o en inglés','Word in Spanish or English','كلمة بالإسبانية أو الإنجليزية'],['Todas las palabras','All words','كل الكلمات'],['Mis palabras','My words','كلماتي'],['Tarjetas de estudio','Flashcards','بطاقات المراجعة'],['Para repasar','To review','للمراجعة'],['Para repasar hoy','To review today','للمراجعة اليوم'],['Dominada','Mastered','متقَنة'],['Dominadas','Mastered','متقَنة'],['Nueva','New','جديدة'],['Aprendiendo','Learning','قيد التعلّم'],['Repasando','Reviewing','قيد المراجعة'],['Maestría','Mastery','إتقان'],
+    ['Significado: ','Meaning: ','المعنى: '],['Sinónimos: ','Synonyms: ','مرادفات: '],['Lecciones: ','Lessons: ','الدروس: '],['sustantivo','noun','اسم'],['verbo','verb','فعل'],['adjetivo','adjective','صفة'],['adverbio','adverb','ظرف'],['preposición','preposition','حرف جر'],['numeral','numeral','عدد'],['interjección','interjection','تعجّب'],['expresión','expression','تعبير'],['conector','connector','أداة ربط'],['pronombre','pronoun','ضمير'],['conjunción','conjunction','حرف عطف'],['modismo','idiom','تعبير اصطلاحي'],['refrán','proverb','مثل'],
+    ['Principiante','Beginner','مبتدئ'],['Elemental','Elementary','أساسي'],['Intermedio','Intermediate','متوسط'],['Intermedio alto','Upper intermediate','فوق المتوسط'],['Avanzado','Advanced','متقدّم'],['Bloqueada','Locked','مقفلة'],['Bloqueado','Locked','مقفل'],['Disponible','Available','متاح'],['Nivel','Level','المستوى'],['Ver nivel','View level','عرض المستوى'],['Abrir nivel','Open level','فتح المستوى'],['Los 30 niveles','The 30 levels','المستويات الثلاثون'],['Ruta de 30 niveles','30-level path','مسار من 30 مستوى'],['Tu ruta de 30 niveles','Your 30-level path','مسارك من 30 مستوى'],['Tu ruta de aprendizaje: A1 → C2','Your learning path: A1 → C2','مسار تعلّمك: A1 ← C2'],['Niveles A1 a C2','Levels A1 to C2','المستويات من A1 إلى C2'],['Volver al nivel A1','Back to level A1','العودة إلى المستوى A1'],['Examen final','Final exam','الاختبار النهائي'],['Diploma final','Final diploma','الدبلوم النهائي'],['Mis certificados','My certificates','شهاداتي'],['Verificar un certificado','Verify a certificate','التحقّق من شهادة'],['Consigue tus certificados','Get your certificates','احصل على شهاداتك'],
+    ['Racha actual','Current streak','سلسلتك الحالية'],['Logros','Achievements','الإنجازات'],['Tu actividad','Your activity','نشاطك'],['Actividad de los últimos 14 días','Activity over the last 14 days','النشاط في آخر 14 يوماً'],['Rendimiento por habilidad','Performance by skill','الأداء حسب المهارة'],['Días de estudio','Days studied','أيام الدراسة'],['Lecciones completadas','Lessons completed','الدروس المكتملة'],['Ejercicios respondidos','Exercises answered','التمارين المُجابة'],['Objetivo semanal','Weekly goal','الهدف الأسبوعي'],['Mi objetivo','My goal','هدفي'],['Mi plan de aprendizaje','My learning plan','خطة تعلّمي'],['Tiempo diario','Daily time','الوقت اليومي'],['Última actividad','Last activity','آخر نشاط'],['Sin datos todavía','No data yet','لا توجد بيانات بعد'],
+    ['Cómo empezar','How to start','كيف تبدأ'],['Qué incluye','What\'s included','ماذا يتضمّن'],['Tus datos','Your data','بياناتك'],['Haz la prueba de nivel','Take the level test','أجرِ اختبار المستوى'],['Repasa tus palabras','Review your words','راجع كلماتك'],['Estudia una lección al día','Study one lesson a day','ادرس درساً واحداً كل يوم'],['Acerca de Languway Spanish','About Languway Spanish','عن Languway Spanish'],['Aprende español en español','Learn Spanish in Spanish','تعلّم الإسبانية بالإسبانية'],
+    ['Apariencia','Appearance','المظهر'],['Modo claro','Light mode','الوضع الفاتح'],['Modo oscuro','Dark mode','الوضع الداكن'],['Tamaño del texto','Text size','حجم النص'],['Espacio entre líneas','Line spacing','المسافة بين الأسطر'],['Volumen','Volume','مستوى الصوت'],['Probar la voz','Test the voice','جرّب الصوت'],['Audio','Audio','الصوت'],['Privacidad y créditos','Privacy and credits','الخصوصية والاعتمادات'],['Mis datos y privacidad','My data and privacy','بياناتي وخصوصيتي'],['Restablecer los ajustes','Reset settings','إعادة ضبط الإعدادات'],['Instalar la aplicación','Install the app','تثبيت التطبيق'],['Actualizar la aplicación','Update the app','تحديث التطبيق'],['Buscar actualizaciones','Check for updates','البحث عن تحديثات'],
+    ['Tu entrenador · Your coach','Your coach','مدرّبك'],['Reglas y explicaciones','Rules and explanations','القواعد والشروح'],['Ver la regla · See the rule','See the rule','اعرض القاعدة'],['En palabras sencillas','In simple words','بكلمات بسيطة'],['In simple words · En palabras sencillas','In simple words','بكلمات بسيطة'],['Modo fácil · Easy mode','Easy mode','الوضع السهل'],
+    ['El abecedario','The alphabet','الأبجدية'],['Las vocales','The vowels','أحرف العلّة'],['Los números','The numbers','الأعداد'],['Las primeras palabras','The first words','الكلمات الأولى'],['Cómo funciona el español','How Spanish works','كيف تعمل الإسبانية'],['La prueba de Primeros pasos','The First steps test','اختبار الخطوات الأولى'],['Cinco vocales, cinco sonidos siempre iguales.','Five vowels, five sounds that never change.','خمسة أحرف علّة، خمسة أصوات ثابتة لا تتغيّر.'],['8 palabras nuevas con audio','8 new words with audio','8 كلمات جديدة مع الصوت'],['Contar de 0 a 100','Counting from 0 to 100','العدّ من 0 إلى 100'],['Sonidos y sílabas.','Sounds and syllables.','الأصوات والمقاطع.'],
+    ['Saludos y despedidas','Greetings and goodbyes','التحيّات والوداع'],['Presentarse','Introducing yourself','التعريف بالنفس'],['Los números','Numbers','الأعداد'],['Familia','Family','العائلة'],['Comida','Food','الطعام'],['Ciudad','City','المدينة'],['Colores y objetos','Colors and objects','الألوان والأشياء'],['Salud','Health','الصحة'],['Trabajo','Work','العمل'],['Viajes','Travel','السفر'],['Compras','Shopping','التسوّق'],['Emociones','Emotions','المشاعر'],['Naturaleza','Nature','الطبيعة'],['Tecnología','Technology','التقنية'],['Educación','Education','التعليم'],['Vida cotidiana','Daily life','الحياة اليومية'],['Tiempo','Time','الوقت'],
+    ['Cuenta','Account','الحساب'],['Sign In','Sign In','تسجيل الدخول'],['Create Account','Create Account','إنشاء حساب'],
+    ['Todos · All','All','الكل'],['Estado: todos','Status: all','الحالة: الكل'],['Nivel: todos','Level: all','المستوى: الكل'],['Tema: todos','Topic: all','الموضوع: الكل'],['Sustantivos','Nouns','الأسماء'],['Verbos','Verbs','الأفعال'],['Pronombres','Pronouns','الضمائر'],['Artículos','Articles','أدوات التعريف'],['Preposiciones','Prepositions','حروف الجر'],['Presente','Present tense','المضارع'],['Pretérito indefinido','Preterite (simple past)','الماضي البسيط'],['Pretérito imperfecto','Imperfect','الماضي المستمر'],['Futuro','Future','المستقبل'],['Condicional','Conditional','الشرطي'],['Subjuntivo','Subjunctive','صيغة الشرط الاحتمالي (Subjuntivo)'],['Ser y estar','Ser and estar','Ser و Estar'],['Género y número','Gender and number','الجنس والعدد'],['Orden de las palabras','Word order','ترتيب الكلمات'],['Conectores','Connectors','أدوات الربط'],
+    ['Ejercicios de las reglas que estudias.','Exercises on the rules you study.','تمارين على القواعد التي تدرسها.'],['Práctica rápida','Quick practice','تدريب سريع'],['Práctica de vocabulario','Vocabulary practice','تدريب المفردات'],['Práctica de gramática','Grammar practice','تدريب القواعد'],['Práctica de escucha y ejercicios','Listening and exercises practice','تدريب الاستماع والتمارين'],['Refuerza lo que fallas.','Strengthen what you get wrong.','قوِّ ما تخطئ فيه.'],['Comprensión auditiva','Listening comprehension','فهم المسموع'],['Ejercicios escritos','Written exercises','تمارين كتابية'],
+    ['Caracteres españoles','Spanish characters','الحروف الإسبانية'],['Check · La prueba de Primeros pasos','Check · The First steps test','اختبار الخطوات الأولى'],['Antes de empezar','Before you start','قبل أن تبدأ'],['Aún no has hecho ningún examen.','You have not taken any exam yet.','لم تُجرِ أي اختبار بعد.'],['Ver el Wordbook','See the Wordbook','عرض دفتر الكلمات'],['＋ Añadir al Wordbook','＋ Add to Wordbook','＋ أضِف إلى دفتر الكلمات'],['＋ Añadir al repaso','＋ Add to review','＋ أضِف إلى المراجعة'],['✓ En tu Wordbook','✓ In your Wordbook','✓ في دفتر كلماتك']
+  ];
+  L.C.uiTr = T;
+  // Plantillas con números: [expresión regular, inglés, árabe] (usa $1, $2)
+  L.C.uiTrRx = [
+    [/^(\d+) \/ (\d+) respuestas$/, '$1 / $2 answers', '$1 / $2 إجابة'],
+    [/^Nivel de jugador (\d+)$/, 'Player level $1', 'مستوى اللاعب $1'],
+    [/^Una sesión corta de 5 minutos: responde (\d+) preguntas más\.?\s*$/, 'A short 5-minute session: answer $1 more questions.', 'جلسة قصيرة من 5 دقائق: أجب عن $1 أسئلة أخرى.'],
+    [/^Nivel (\d+) de 30( \(([A-C][12])\))?(, (actual|completado))?$/, 'Level $1 of 30', 'المستوى $1 من 30'],
+    [/^Nivel (\d+) \(([A-C][12])\)(, (actual|completado))?$/, 'Level $1 ($2)', 'المستوى $1 ($2)'],
+    [/^Nivel ([A-C][12])$/, 'Level $1', 'المستوى $1'],
+    [/^Nivel ([A-C][12]) [·—] (Principiante|Elemental|Intermedio alto|Intermedio|Avanzado|Maestría)$/, 'Level $1 · $L2', 'المستوى $1 · $L2'],
+    [/^(\d+) palabras$/, '$1 words', '$1 كلمة'],
+    [/^(\d+) lecciones por semana$/, '$1 lessons per week', '$1 دروس في الأسبوع'],
+    [/^(\d+) lección por semana$/, '$1 lesson per week', 'درس واحد في الأسبوع'],
+    [/^(\d+) minutos al día$/, '$1 minutes a day', '$1 دقيقة في اليوم'],
+    [/^(\d+) de (\d+) lecciones$/, '$1 of $2 lessons', '$1 من $2 دروس'],
+    [/^(\d+) \/ (\d+) lecciones$/, '$1 / $2 lessons', '$1 / $2 دروس'],
+    [/^Progreso (\d+) ?%$/, 'Progress $1%', 'التقدّم $1٪'],
+    [/^Unidades superadas: (\d+) de (\d+)$/, 'Units passed: $1 of $2', 'الوحدات المُجتازة: $1 من $2'],
+    [/^(Comprueba el vocabulario|Comprueba la explicación|Comprueba lo que oyes) · Pregunta (\d+) de (\d+)$/, 'Check · Question $2 of $3', 'تحقّق · السؤال $2 من $3'],
+    [/^Examen final del nivel ([A-C][12])$/, 'Final exam of level $1', 'الاختبار النهائي للمستوى $1'],
+    [/^Examen final: mínimo (\d+) % para aprobar$/, 'Final exam: minimum $1% to pass', 'الاختبار النهائي: الحدّ الأدنى للنجاح $1٪'],
+    [/^Unidad (\d+): (.+)$/, 'Unit $1', 'الوحدة $1'],
+    [/^Frase (\d+)$/, 'Sentence $1', 'الجملة $1']
+  ];
+  L.C.uiLevelName = { 'Principiante': ['Beginner', 'مبتدئ'], 'Elemental': ['Elementary', 'أساسي'], 'Intermedio': ['Intermediate', 'متوسط'], 'Intermedio alto': ['Upper intermediate', 'فوق المتوسط'], 'Avanzado': ['Advanced', 'متقدّم'], 'Maestría': ['Mastery', 'إتقان'] };
+
+  L.C.uiTr.push(
+    ['Continuar aprendiendo','Keep learning','تابع التعلّم'],['Empezar desde cero','Start from zero','ابدأ من الصفر'],['Palabras por repasar','Words to review','كلمات للمراجعة'],['Tu entrenador','Your coach','مدرّبك'],['Primeros pasos · First steps','First steps','الخطوات الأولى'],
+    ['Palabras que toca repasar hoy.','Words that are due for review today.','كلمات حان وقت مراجعتها اليوم.'],['Preguntas de las reglas que has estudiado.','Questions on the rules you have studied.','أسئلة عن القواعد التي درستها.'],['Sonidos, sílabas y entonación.','Sounds, syllables and intonation.','الأصوات والمقاطع والنغمة.'],['Sonidos y sílabas.','Sounds and syllables.','الأصوات والمقاطع.'],
+    ['Todavía no has hecho ninguna copia.','You have not made a backup yet.','لم تُنشئ نسخة احتياطية بعد.'],['Sílabas y acento','Syllables and stress','المقاطع والنبرة'],['Consonantes clave','Key consonants','الحروف الساكنة المهمة'],['Un idioma, muchas voces','One language, many voices','لغة واحدة وأصوات كثيرة'],
+    ['Escuchar despacio','Listen slowly','استمع ببطء'],['Escuchar','Listen','استمع'],['Grabar','Record','سجّل'],['Detener','Stop','إيقاف'],['Probar la voz','Test the voice','جرّب الصوت'],['Tu entrenador · Coach','Your coach','مدرّبك'],
+    ['Unidad','Unit','الوحدة'],['Lección','Lesson','الدرس'],['Lecciones','Lessons','الدروس'],['Unidades','Units','الوحدات'],['Hecho','Done','تم'],['Completada','Completed','مكتملة'],['Pendiente','Pending','قيد الانتظار'],['Actual','Current','الحالي'],
+    ['Mi ciudad','My city','مدينتي'],['Mi familia','My family','عائلتي'],['Mi rutina diaria','My daily routine','روتيني اليومي'],['Saludos y presentaciones','Greetings and introductions','التحيّات والتعارف'],['Números y precios','Numbers and prices','الأعداد والأسعار'],['Comida y bebida','Food and drink','الطعام والشراب'],['Compras, viajes y restaurantes','Shopping, travel and restaurants','التسوّق والسفر والمطاعم'],
+    ['Si borras los datos del navegador o desinstalas la app, perderás tu progreso.','If you clear the browser data or uninstall the app, you will lose your progress.','إذا مسحتَ بيانات المتصفح أو حذفتَ التطبيق فستفقد تقدّمك.']
+  );
+  L.C.uiTrRx.push(
+    [/^Siguiente lección: (.+)$/, 'Next lesson: $1', 'الدرس التالي: $1'],
+    [/^Ver el nivel ([A-C][12])$/, 'See level $1', 'عرض المستوى $1'],
+    [/^Ver nivel ([A-C][12])$/, 'View level $1', 'عرض المستوى $1'],
+    [/^Abrir nivel ([A-C][12])$/, 'Open level $1', 'فتح المستوى $1'],
+    [/^(\d+) de (\d+) lecciones completadas$/, '$1 of $2 lessons completed', '$1 من $2 دروس مكتملة'],
+    [/^(\d+) palabra para repasar$/, '$1 word to review', 'كلمة واحدة للمراجعة'],
+    [/^(\d+) palabras para repasar$/, '$1 words to review', '$1 كلمات للمراجعة'],
+    [/^(\d+) días? seguidos?$/, '$1 days in a row', '$1 أيام متتالية'],
+    [/^Lección (\d+)$/, 'Lesson $1', 'الدرس $1'],
+    [/^Pregunta (\d+) de (\d+)$/, 'Question $1 of $2', 'السؤال $1 من $2']
+  );
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const C = L.C;
+  // Ayuda en árabe para «Primeros pasos» (pronunciación comparada con sonidos árabes)
+  const LET = ['صوت «آ» مفتوح وقصير', 'مثل «ب»', 'مثل «ك» قبل a و o و u، ومثل «س» قبل e و i (في أمريكا اللاتينية)', 'مثل «د» لكن أخف', 'مثل «إِه» بكسرة مفتوحة', 'مثل «ف»', 'مثل «گ» (الجيم المصرية) قبل a و o و u، ومثل «خ» قوية قبل e و i', 'حرف صامت: لا يُنطق أبداً', 'مثل «إي» ممدودة', 'مثل «خ» قوية', 'مثل «ك» (نادر، في الكلمات الأجنبية)', 'مثل «ل»', 'مثل «م»', 'مثل «ن»', 'مثل «ني» في «بنيان»', 'مثل «أُو» قصيرة', 'مثل «پ» (باء خفيفة بلا نفخة)', 'مثل «ك»، وتُكتب دائماً qu (que, qui)', 'ضربة سريعة باللسان مثل «ر»، وrr رنّانة طويلة', 'مثل «س»', 'مثل «ت» بلا نفخة', 'مثل «أو» ممدودة', 'يُنطق مثل b تقريباً («ب»)!', 'مثل «و» (نادر)', 'مثل «كس»', 'مثل «ي» في «يد»، وهي أيضاً كلمة «و»', 'مثل «س» (أمريكا) أو «ث» (إسبانيا)'];
+  const VOW = [['a', 'آ', 'casa'], ['e', 'إِه', 'mesa'], ['i', 'إي', 'libro'], ['o', 'أُو', 'ojo'], ['u', 'أو', 'luna']];
+  const WORDS = { 'hola': 'مرحباً', 'adiós': 'وداعاً', 'buenos días': 'صباح الخير', 'buenas noches': 'مساء الخير / تصبح على خير', 'por favor': 'من فضلك', 'gracias': 'شكراً', 'de nada': 'عفواً', 'sí': 'نعم', 'no': 'لا', 'perdón': 'آسف / عفواً', 'me llamo…': 'اسمي…', '¿cómo te llamas?': 'ما اسمك؟', 'yo': 'أنا', 'tú': 'أنت', 'agua': 'ماء', 'casa': 'بيت', 'pan': 'خبز', 'amigo': 'صديق' };
+  const HOW = [
+    ['الأسئلة والتعجّب تبدأ بعلامة مقلوبة', '¿Cómo estás? ¡Qué bien! — علامة ¿ أو ¡ في أول الجملة تخبرك أنها سؤال أو تعجّب قبل أن تقرأها.'],
+    ['كل اسم إمّا مذكّر وإمّا مؤنّث', 'el libro (الكتاب، مذكّر) · la casa (البيت، مؤنّث). معظم الكلمات المنتهية بـ -o مذكّرة وبـ -a مؤنّثة.'],
+    ['الجمع: أضف -s (أو -es)', 'un libro ← dos libros · una flor ← dos flores.'],
+    ['الصفة تأتي عادةً بعد الاسم وتطابقه', 'una casa blanca (بيت أبيض) · unos libros blancos. (عكس الإنجليزية، وتشبه العربية.)'],
+    ['أيام الأسبوع والشهور لا تبدأ بحرف كبير', 'lunes, martes, enero, febrero.'],
+    ['يمكن غالباً حذف «أنا / أنت / هو»', '«Hablo español» تعني وحدها «أتكلّم الإسبانية»: نهاية الفعل تُبيّن الفاعل (مثل العربية تماماً).']];
+  C.arStart = {
+    intro: 'اقرأ الخطوات الست (نحو 15 دقيقة)، واضغط زر السمّاعة للاستماع، ثم أجرِ الاختبار القصير في النهاية.',
+    steps: {
+      abc: { title: 'الأبجدية', body: ['للإسبانية 27 حرفاً: الحروف الإنجليزية الـ26 مع «ñ». الإسبانية تُكتب تقريباً كما تُنطق، فإذا عرفتَ الحروف قرأتَ أي كلمة.', 'اضغط على السمّاعة لتسمع اسم كل حرف. إليك ما يقابل كل حرف في العربية:'], table: LET },
+      vowels: { title: 'أحرف العلّة الخمسة', body: ['في الإسبانية خمسة أصوات علّة فقط وهي ثابتة لا تتغيّر أبداً — مثل الفتحة والكسرة والضمة في العربية. انطقها قصيرة وواضحة.', 'الحركة المكتوبة (á é í ó ú) لا تغيّر الصوت؛ إنما تُبيّن أيّ مقطع تنبر عليه.'], vowels: VOW },
+      nums: { title: 'الأعداد 0–100', body: ['تعلّم من 0 إلى 20 أولاً. بعد 20 يتبع العدّ نمطاً واضحاً: treinta y uno = 31 («ثلاثون وواحد» كما في العربية)، cuarenta y cinco = 45.'] },
+      words: { title: 'الكلمات الأولى', body: ['هذه الكلمات الثماني عشرة تكفي لأول محادثة. اضغط للاستماع ثم كرّرها بصوت مرتفع.'], words: WORDS },
+      how: { title: 'كيف تعمل الإسبانية', rules: HOW },
+      cognates: { title: 'كلمات متشابهة', body: ['هناك مئات الكلمات الإسبانية التي تشبه الإنجليزية، وكلمات كثيرة أصلها عربي! ابدأ بها لأنك تعرف معناها مسبقاً.'] }
+    }
+  };
+  // Palabras parecidas: [español, inglés]
+  C.cognates = [['la familia', 'family'], ['el hospital', 'hospital'], ['el banco', 'bank'], ['el chocolate', 'chocolate'], ['la música', 'music'], ['el animal', 'animal'], ['el hotel', 'hotel'], ['el restaurante', 'restaurant'], ['el teléfono', 'telephone'], ['la televisión', 'television'], ['importante', 'important'], ['diferente', 'different'], ['el doctor', 'doctor'], ['el problema', 'problem'], ['el color', 'color'], ['la idea', 'idea'], ['el plan', 'plan'], ['el pasaporte', 'passport'], ['el aeropuerto', 'airport'], ['la universidad', 'university'], ['la información', 'information'], ['el mapa', 'map'], ['la foto', 'photo'], ['el momento', 'moment'], ['la persona', 'person'], ['interesante', 'interesting'], ['posible', 'possible'], ['delicioso', 'delicious']];
+  // Palabras españolas de origen árabe: [español, significado en inglés, árabe]
+  C.arabicLoans = [['ojalá', 'I hope (from «inshallah»)', 'إن شاء الله'], ['el azúcar', 'sugar', 'سُكّر'], ['el aceite', 'oil', 'زيت'], ['el arroz', 'rice', 'رُزّ'], ['la naranja', 'orange', 'نارنج'], ['el limón', 'lemon', 'ليمون'], ['la almohada', 'pillow', 'المِخَدّة'], ['el algodón', 'cotton', 'القُطن'], ['la jirafa', 'giraffe', 'زرافة'], ['el almacén', 'warehouse, store', 'المخزن'], ['la aldea', 'village', 'الضيعة'], ['el alcohol', 'alcohol', 'الكحول']];
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  const C = L.C; C.arHelp = C.arHelp || {};
+  const add = (id, title, lines) => { C.arHelp[id] = { title, lines }; };
+  add('a1.u1.l1', 'التحيّات: بكلمات بسيطة', [
+    'تتغيّر التحيّات حسب وقت اليوم: <b>Buenos días</b> (صباح الخير)، <b>Buenas tardes</b> (مساء الخير بعد الظهر)، <b>Buenas noches</b> (مساء الخير وتصبح على خير). أمّا <b>Hola</b> (مرحباً) فتصلح في أي وقت.',
+    'للمخاطَب طريقتان: <b>tú</b> للأصدقاء والعائلة والأطفال (غير رسمي)، و<b>usted</b> لكبار السن والمواقف الرسمية (احتراماً).',
+    'السؤال يبدأ بعلامة <b>¿</b> وينتهي بـ <b>?</b>. مثال: ¿Cómo estás? = كيف حالك؟',
+    'الإجابات: <b>Muy bien, gracias</b> = بخير جداً، شكراً. <b>Así, así</b> = لا بأس / عادي.']);
+  add('a1.u1.l2', 'الفعل «ser» (يكون): بكلمات بسيطة', [
+    '<b>Ser</b> = «يكون». نستعمله لنقول مَن نحن: الاسم والأصل والمهنة.',
+    'تصريفه: <b>yo soy</b> (أنا)، <b>tú eres</b> (أنت)، <b>él/ella/usted es</b> (هو/هي/حضرتك)، <b>nosotros somos</b> (نحن)، <b>vosotros sois</b> (أنتم، في إسبانيا)، <b>ellos/ustedes son</b> (هم/أنتم).',
+    'أسئلة مفيدة: ¿Cómo te llamas? (ما اسمك؟) · ¿De dónde eres? (من أين أنت؟) · ¿Dónde vives? (أين تسكن؟)',
+    'انتبه: للاسم قل <b>Me llamo Ana</b> (حرفياً «أسمّي نفسي آنا»)، وليس «soy llamo».']);
+  add('a1.u1.l3', 'الأعداد 0–100: بكلمات بسيطة', [
+    'احفظ من 0 إلى 20: cero, uno, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez, once, doce, trece, catorce, quince, dieciséis, diecisiete, dieciocho, diecinueve, veinte.',
+    'من 21 إلى 29 كلمة واحدة: veintiuno, veintidós… ومن 31 نستعمل <b>y</b> (و): treinta <b>y</b> uno = 31 (مثل «واحد وثلاثون»).',
+    'العقود: treinta (30)، cuarenta (40)، cincuenta (50)، sesenta (60)، setenta (70)، ochenta (80)، noventa (90)، cien (100).',
+    'العمر: ¿Cuántos años tienes? ← Tengo veinte años (حرفياً «عندي عشرون سنة»).']);
+  add('a1.u2.l1', '«Tener» (يملك) وأدوات الملكية: بكلمات بسيطة', [
+    '<b>Tener</b> = «يملك / عنده»: tengo, tienes, tiene, tenemos, tenéis, tienen. ونستعمله للعمر والعائلة: <b>Tengo dos hermanos</b> = عندي أخوان.',
+    '<b>أدوات الملكية</b> تبيّن لمن الشيء: <b>mi / mis</b> (ـي)، <b>tu / tus</b> (ـك)، <b>su / sus</b> (ـه، ـها، ـهم، ـكم للمحترَم).',
+    'نستعمل الشكل القصير (mi, tu, su) مع شيء واحد، ونضيف <b>-s</b> مع أكثر من واحد: mi madre ← mis padres.',
+    'لا تتغيّر حسب المذكّر والمؤنّث: mi padre, mi madre.']);
+  add('a1.u2.l2', 'الأيام والشهور والتاريخ: بكلمات بسيطة', [
+    'الأيام: lunes (الاثنين), martes (الثلاثاء), miércoles (الأربعاء), jueves (الخميس), viernes (الجمعة), sábado (السبت), domingo (الأحد). الشهور: enero, febrero, marzo, abril, mayo, junio, julio, agosto, septiembre, octubre, noviembre, diciembre.',
+    'تُكتب الأيام والشهور بـ<b>حرف صغير</b> في الإسبانية (لا حرف كبير).',
+    'صيغة التاريخ: <b>اليوم + de + الشهر</b>: el cinco de mayo = الخامس من مايو. اسأل: ¿Qué día es hoy?',
+    '<b>el lunes</b> = يوم الاثنين هذا/القادم (مرة واحدة). <b>los lunes</b> = كل يوم اثنين.']);
+  add('a1.u2.l3', 'قول الساعة: بكلمات بسيطة', [
+    'اسأل: <b>¿Qué hora es?</b> (كم الساعة؟). واسأل عن موعد حدث: <b>¿A qué hora…?</b> (في أي ساعة…?)',
+    'للساعة الواحدة قل <b>Es la una</b>. ولبقية الساعات قل <b>Son las</b> + العدد: Son las tres.',
+    'والربع: <b>y cuarto</b>. والنصف: <b>y media</b>. إلا ربعاً: <b>menos cuarto</b>. تماماً: <b>en punto</b>.',
+    'أضف <b>de la mañana / de la tarde / de la noche</b> (صباحاً / بعد الظهر / ليلاً) لتحديد الفترة.']);
+  add('a1.u3.l1', '«Querer» و«gustar»: بكلمات بسيطة', [
+    '<b>Querer</b> = يريد: quiero, quieres, quiere, queremos, queréis, quieren. لاحظ تغيّر e ← ie (إلا مع nosotros/vosotros).',
+    '<b>Me gusta</b> = يعجبني (حرفياً «هو يسرّني»). نستعمل <b>me gusta</b> مع شيء واحد و<b>me gustan</b> مع عدة أشياء: me gusta el café · me gustan las manzanas.',
+    'للطلب بأدب: <b>Quiero un café, por favor</b>، أو الألطف <b>Quisiera…</b> (أودّ…).']);
+  add('a1.u3.l2', 'الجنس والعدد والصفات: بكلمات بسيطة', [
+    'كل اسم إمّا مذكّر وإمّا مؤنّث: <b>el libro</b> (مذكّر)، <b>la casa</b> (مؤنّث). و«واحد» تكون <b>un</b> / <b>una</b>.',
+    'الجمع: نضيف <b>-s</b> بعد حرف العلّة (libro ← libros) و<b>-es</b> بعد الحرف الساكن (color ← colores). وأدوات الجمع <b>los / las</b> و<b>unos / unas</b>.',
+    'الصفة تطابق الاسم: un libro rojo, una casa roja, unas casas rojas. والصفات المنتهية بـ -e أو بحرف ساكن (grande, azul) لا تتغيّر بين المذكّر والمؤنّث.',
+    'الصفة تأتي عادةً <b>بعد</b> الاسم: una casa grande (عكس الإنجليزية، مثل العربية).']);
+  add('a1.u3.l3', '«Estar» و«hay»: بكلمات بسيطة', [
+    '<b>Estar</b> = يكون (مكان): estoy, estás, está, estamos, estáis, están. نستعمله لنقول أين شيء معروف: <b>La farmacia está en la calle Mayor</b>.',
+    '<b>Hay</b> = يوجد. تقول إن الشيء موجود ولا تتغيّر أبداً: hay un parque, hay dos parques.',
+    'كلمات المكان: en (في/على)، cerca de (قرب)، lejos de (بعيداً عن)، al lado de (بجانب)، enfrente de (مقابل)، entre (بين).',
+    '<b>a + el = al</b> و<b>de + el = del</b>: al lado del parque.']);
+  add('a1.u4.l1', 'المضارع للأفعال المنتهية بـ -ar: بكلمات بسيطة', [
+    'خذ المصدر (hablar)، احذف <b>-ar</b>، وأضف: <b>-o, -as, -a, -amos, -áis, -an</b>. مثال: hablo, hablas, habla, hablamos, habláis, hablan.',
+    'يمكن غالباً حذف «أنا / أنت / هو»: نهاية الفعل تبيّن الفاعل. <b>Hablo español</b> = أتكلّم الإسبانية.',
+    'للنفي ضع <b>no</b> قبل الفعل: <b>No hablo inglés</b>.']);
+  add('a1.u4.l2', 'المضارع للأفعال -er و -ir: بكلمات بسيطة', [
+    'أفعال -er (comer) وأفعال -ir (vivir) لها نهايات متشابهة تقريباً: <b>-o, -es, -e, -emos/-imos, -éis/-ís, -en</b>.',
+    'الفرق فقط في «نحن» و«أنتم»: comemos / vivimos، coméis / vivís.',
+    'كلمات الروتين: todos los días (كل يوم)، por la mañana (في الصباح)، por la tarde (بعد الظهر)، por la noche (في الليل).']);
+  add('a1.u4.l3', 'أدوات الاستفهام و«ir»: بكلمات بسيطة', [
+    'أدوات الاستفهام لها دائماً حركة (تيلدي): <b>qué</b> (ماذا)، <b>quién</b> (مَن)، <b>dónde</b> (أين)، <b>cuándo</b> (متى)، <b>cómo</b> (كيف)، <b>cuánto/cuántos</b> (كم)، <b>por qué</b> (لماذا). والجواب عن «لماذا» بـ <b>porque</b> (لأنّ) كلمة واحدة بلا حركة.',
+    '<b>Ir</b> = يذهب: voy, vas, va, vamos, vais, van. بعد «ir» نستعمل <b>a</b>: Voy al parque (a + el = al).',
+    'سؤال نعم/لا لا يحتاج أداة استفهام: ¿Vives en Madrid? — Sí, vivo en Madrid.']);
+  add('a2.u1.l1', 'الأفعال الانعكاسية والوقت والتكرار: بكلمات بسيطة', [
+    '<b>الفعل الانعكاسي</b> فيه كلمة صغيرة إضافية (<b>me, te, se, nos, os, se</b>) لأن الشخص يفعل الفعل بنفسه: <b>me levanto</b> = أستيقظ / أنهض.',
+    'قل وقت النشاط بـ <b>a las</b> + الساعة: Me levanto <b>a las siete</b>. وللواحدة: <b>a la una</b>.',
+    'كلمات التكرار: siempre (دائماً)، normalmente (عادةً)، a veces (أحياناً)، casi nunca (نادراً جداً)، nunca (أبداً). مع <b>no</b> يأتي الفعل أولاً: No desayuno <b>nunca</b>.',
+    'تغيّر الجذر: acostarse ← me <b>acue</b>sto (o تصبح ue)، لكن nosotros تبقى o: nos acostamos.']);
+  add('a2.u1.l2', 'الأسعار و«هذا / ذاك»: بكلمات بسيطة', [
+    'اسأل عن السعر: <b>¿Cuánto cuesta?</b> (شيء واحد) أو <b>¿Cuánto cuestan?</b> (عدة أشياء).',
+    '<b>este</b> = هذا (قريب مني)، <b>ese</b> = ذاك (قريب منك)، <b>aquel</b> = ذاك هناك (بعيد). تتغيّر مع الاسم: este libro, esta camisa, estos zapatos, estas chaquetas.',
+    '<b>muy caro</b> = غالٍ جداً (للتأكيد فقط). <b>demasiado caro</b> = غالٍ أكثر من اللازم (مشكلة).',
+    'مفيد: ¿Puedo pagar con tarjeta? (هل أستطيع الدفع بالبطاقة؟) · ¿Puedo probarme esto? (هل أستطيع تجربة هذا؟)']);
+  add('a2.u1.l3', 'الطلب بأدب: بكلمات بسيطة', [
+    'كن مهذّباً مع النادل: <b>¿Me puede traer la carta?</b> (هل تُحضر لي القائمة؟) · <b>¿Qué me recomienda?</b> (ماذا تنصحني؟) · <b>La cuenta, por favor</b> (الحساب من فضلك).',
+    '<b>Quisiera…</b> = أودّ… (أكثر أدباً من <b>quiero</b> «أريد»).',
+    '<b>Pedir</b> (يطلب) تتغيّر فيه e ← i: pido, pides, pide, pedimos, pedís, piden. وكذلك servir وrepetir.',
+    'كلمات القائمة: <b>de primero</b> (الطبق الأول)، <b>de segundo</b> (الطبق الرئيسي)، <b>de postre</b> (حلوى).']);
+  add('a2.u2.l1', 'معلومات السفر: بكلمات بسيطة', [
+    'في المحطة اسأل: <b>¿A qué hora sale el tren?</b> (متى يغادر القطار؟) · <b>¿Cuánto dura el viaje?</b> (كم تستغرق الرحلة؟) · <b>¿De qué andén sale?</b> (من أي رصيف؟).',
+    'كلمات صغيرة: <b>a</b> = إلى (الوجهة): Voy <b>a</b> Madrid. <b>de</b> = من: Salgo <b>de</b> Sevilla. <b>en</b> = بـ (وسيلة النقل): Viajo <b>en</b> tren.',
+    'لا تقل «voy en la estación» للذهاب إلى مكان: استعمل <b>a</b> مع ir وllegar.',
+    '<b>billete de ida</b> = تذكرة ذهاب فقط · <b>de ida y vuelta</b> = ذهاب وإياب.']);
+  add('a2.u2.l2', 'الفندق: بكلمات بسيطة', [
+    'للحجز قل: <b>Quisiera reservar una habitación doble</b> (أودّ حجز غرفة مزدوجة). أنواع الغرف: individual (لشخص)، doble (لشخصين).',
+    'اسأل عن الخدمات: ¿El desayuno está incluido? (هل الفطور مشمول؟).',
+    'قل المشكلة بالفعل <b>funcionar</b>: <b>No funciona</b> la televisión (مفرد) · <b>No funcionan</b> las luces (جمع).',
+    '<b>incluido</b> يطابق الاسم: el desayuno está incluid<b>o</b>, las toallas están incluid<b>as</b>.']);
+  add('a2.u2.l3', 'وصف الأشخاص والأماكن: بكلمات بسيطة', [
+    'استعمل <b>ser</b> للمظهر والطباع: <b>Es alta</b> (طويلة)، <b>Es simpática</b> (لطيفة). واستعمل <b>tener</b> للملامح الجسدية: <b>Tiene el pelo largo y los ojos verdes</b>.',
+    'الصفات تطابق الاسم: alto, alta, altos, altas. والصفات المنتهية بـ -e أو بحرف ساكن لها شكل واحد للمذكّر والمؤنّث: un chico amable, una chica amable.',
+    'الأماكن: <b>La plaza es grande y está en el centro</b> (ser + وصف، estar + مكان). و<b>Hay</b> تقول ما هو موجود: En mi barrio hay un parque.']);
+  add('a2.u3.l1', 'الماضي القريب Pretérito perfecto («لقد فعلتُ»): بكلمات بسيطة', [
+    'الصيغة: <b>he / has / ha / hemos / habéis / han</b> + <b>اسم المفعول (participio)</b>.',
+    'اسم المفعول: أفعال -ar ← <b>-ado</b> (hablado)؛ أفعال -er/-ir ← <b>-ido</b> (comido, vivido).',
+    'أسماء مفعول شاذّة يجب حفظها: hacer ← <b>hecho</b>, decir ← <b>dicho</b>, ver ← <b>visto</b>, escribir ← <b>escrito</b>, poner ← <b>puesto</b>, abrir ← <b>abierto</b>, volver ← <b>vuelto</b>.',
+    'نستعمله لأشياء انتهت في فترة لم تنتهِ بعد (<b>hoy, esta semana, este año</b>) ولتجارب الحياة (<b>¿Has estado alguna vez en México?</b>). لا تضع <b>no</b> أو <b>ya</b> بين he واسم المفعول: No he comido.']);
+  add('a2.u3.l2', 'الماضي البسيط (indefinido) للأفعال المنتظمة: بكلمات بسيطة', [
+    'استعمل <b>indefinido</b> لأفعال انتهت في وقت محدّد في الماضي: ayer (أمس)، anoche (ليلة أمس)، el año pasado (العام الماضي)، hace dos días (قبل يومين).',
+    'النهايات: -ar ← <b>-é, -aste, -ó, -amos, -asteis, -aron</b> (hablé, hablaste, habló…). -er/-ir ← <b>-í, -iste, -ió, -imos, -isteis, -ieron</b> (comí, comiste, comió…).',
+    'الحركة (التيلدي) مهمّة: <b>hablé</b> (تكلّمتُ، ماضٍ) مقابل <b>hable</b> (Subjuntivo)؛ <b>habló</b> (تكلّم هو) مقابل <b>hablo</b> (أتكلّم).',
+    '<b>hace</b> + مدّة = «قبل»: Llegué <b>hace dos horas</b> (وصلتُ قبل ساعتين).']);
+  add('a2.u3.l3', 'الماضي البسيط الشاذّ: بكلمات بسيطة', [
+    'بعض الأفعال الشائعة جداً يتغيّر جذرها في indefinido وتأخذ نهايات خاصة <b>-e, -iste, -o, -imos, -isteis, -ieron</b> (بلا حركات): estuve, tuve, hice, pude, puse, vine, dije.',
+    '«فعل هو/هي» تكون <b>hizo</b> (بحرف z).',
+    '<b>Ser</b> و<b>ir</b> لهما الصيغ نفسها تماماً: fui, fuiste, fue, fuimos, fuisteis, fueron. والسياق يحدّد المعنى: <b>Fui a Madrid</b> = ذهبتُ؛ <b>Fue un viaje largo</b> = كانت رحلة طويلة.']);
+  add('a2.u4.l1', 'الخطط مع «ir a»: بكلمات بسيطة', [
+    'للخطط: <b>voy a / vas a / va a / vamos a / vais a / van a</b> + <b>المصدر</b>: Voy a estudiar esta noche = سأدرس الليلة.',
+    'كلمات المستقبل: mañana (غداً)، esta noche (الليلة)، el sábado (السبت)، el próximo mes (الشهر القادم)، el año que viene (العام القادم).',
+    'للاقتراح: <b>¿Vamos al cine?</b> · للقبول: <b>¡Claro!</b> / <b>Vale, perfecto</b> · للاعتذار بأدب: <b>Lo siento, no puedo. Tengo que estudiar</b>.']);
+  add('a2.u4.l2', 'المقارنات: بكلمات بسيطة', [
+    '<b>más… que</b> = أكثر… من (Ana es más alta que Eva). <b>menos… que</b> = أقل… من. <b>tan… como</b> = بقدر… (Pablo es tan simpático como su hermano).',
+    'الشاذّ: bueno ← <b>mejor</b>, malo ← <b>peor</b>, grande ← <b>mayor</b> (في العمر)، pequeño ← <b>menor</b> (في العمر). لا تقل أبداً «más mejor».',
+    'مع الأعداد نستعمل <b>de</b>: Tengo más <b>de</b> veinte libros (أكثر من عشرين).']);
+  add('a2.u4.l3', 'الصحة والنصائح: بكلمات بسيطة', [
+    '<b>Doler</b> (يؤلم) يعمل مثل gustar: <b>Me duele</b> la cabeza (شيء واحد) · <b>Me duelen</b> las piernas (عدة أشياء).',
+    'الأعراض: Tengo fiebre (عندي حمّى) · tos (سعال) · dolor de estómago (ألم في المعدة).',
+    '<b>Tener que</b> + المصدر = يجب: Tengo que ir al médico. <b>Deber</b> + المصدر = ينبغي (نصيحة): Debes descansar.',
+    'في الطوارئ قل <b>Necesito ayuda</b> (أحتاج مساعدة) و<b>Es una emergencia</b> (إنها حالة طوارئ)، ثم أعطِ موقعك: Estoy en la calle…']);
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  // Significado en árabe de las palabras de los niveles A1–B1 (a partir de B2 la ayuda se retira)
+  L.C.glossAr = {
+"hola":"مرحباً","buenos días":"صباح الخير","buenas tardes":"مساء الخير (بعد الظهر)","buenas noches":"مساء الخير / تصبح على خير","adiós":"وداعاً","hasta luego":"إلى اللقاء","por favor":"من فضلك","gracias":"شكراً","me llamo":"اسمي","soy":"أنا (أكون)","de":"من / ـ(مِن) / لـ","encantado":"تشرّفتُ بمعرفتك","el nombre":"الاسم","el país":"البلد","el estudiante":"الطالب","vivir":"يعيش / يسكن",
+"cero":"صفر","uno":"واحد","cinco":"خمسة","diez":"عشرة","quince":"خمسة عشر","veinte":"عشرون","treinta":"ثلاثون","cien":"مئة",
+"la familia":"العائلة","la madre":"الأم","el padre":"الأب","el hermano":"الأخ","la hermana":"الأخت","los abuelos":"الجدّان / الأجداد","el hijo":"الابن","tener":"يملك / عنده",
+"el lunes":"الاثنين","el sábado":"السبت","el domingo":"الأحد","la semana":"الأسبوع","el mes":"الشهر","enero":"يناير","hoy":"اليوم","mañana":"غداً",
+"la hora":"الساعة / الوقت","el minuto":"الدقيقة","el reloj":"الساعة (للمعصم أو الحائط)","en punto":"تماماً (الساعة)","y media":"والنصف","la mañana":"الصباح","la tarde":"بعد الظهر / العصر","la noche":"الليل",
+"el agua":"الماء","el pan":"الخبز","la leche":"الحليب","el café":"القهوة","la manzana":"التفاحة","el pollo":"الدجاج","querer":"يريد / يحبّ","gustar":"يُعجب","el color":"اللون","rojo":"أحمر","azul":"أزرق","verde":"أخضر",
+"la mesa":"الطاولة","el libro":"الكتاب","la casa":"البيت","grande":"كبير","la ciudad":"المدينة","la calle":"الشارع","el parque":"الحديقة","el supermercado":"السوبرماركت","la farmacia":"الصيدلية","el hospital":"المستشفى","estar":"يكون (مكان / حالة)","hay":"يوجد",
+"hablar":"يتكلّم","trabajar":"يعمل","estudiar":"يدرس","caminar":"يمشي","comprar":"يشتري","necesitar":"يحتاج","escuchar":"يستمع","el español":"اللغة الإسبانية",
+"comer":"يأكل","beber":"يشرب","leer":"يقرأ","aprender":"يتعلّم","escribir":"يكتب","abrir":"يفتح","correr":"يركض","recibir":"يستلم",
+"qué":"ماذا","quién":"مَن","dónde":"أين","cuándo":"متى","cómo":"كيف","por qué":"لماذا","cuánto":"كم","ir":"يذهب",
+"levantarse":"يستيقظ / ينهض","ducharse":"يستحمّ","desayunar":"يتناول الفطور","vestirse":"يرتدي ملابسه","acostarse":"يذهب إلى النوم","normalmente":"عادةً","a veces":"أحياناً","nunca":"أبداً",
+"la tienda":"المتجر","la talla":"المقاس","probarse":"يجرّب (ملابس)","el precio":"السعر","la tarjeta":"البطاقة","el descuento":"الخصم","demasiado":"أكثر من اللازم","costar":"يكلّف",
+"la carta":"قائمة الطعام / الرسالة","el camarero":"النادل","la cuenta":"الحساب (الفاتورة)","el plato":"الطبق","pedir":"يطلب","recomendar":"ينصح بـ","el postre":"الحلوى","la propina":"البقشيش",
+"el billete":"التذكرة","la estación":"المحطة / الفصل","el andén":"الرصيف","la maleta":"الحقيبة","el viaje":"الرحلة","salir":"يغادر / يخرج","llegar":"يصل","el retraso":"التأخير",
+"la reserva":"الحجز","la habitación":"الغرفة","la llave":"المفتاح","el desayuno":"الفطور","incluido":"مشمول","la noche (de hotel)":"ليلة (في الفندق)",
+"alto":"طويل / عالٍ","bajo":"قصير / منخفض","delgado":"نحيف","simpático":"لطيف","tranquilo":"هادئ","moreno":"أسمر الشعر / البشرة","rubio":"أشقر","ruidoso":"صاخب",
+"ya":"بالفعل / الآن","todavía":"ما زال / بعدُ","alguna vez":"هل سبق أن / في وقت ما","esta mañana":"هذا الصباح","hoy mismo":"اليوم نفسه","el participio":"اسم المفعول (Participio)",
+"ayer":"أمس","anoche":"ليلة أمس","el año pasado":"العام الماضي","la semana pasada":"الأسبوع الماضي","hace":"قبل (مدّة)","terminar":"ينتهي / ينهي",
+"estuvo":"كان (ماضٍ، مكان/حالة)","fue":"كان / ذهب","tuvo":"كان عنده","hizo":"فعل / صنع","dijo":"قال","vino":"جاء","pudo":"استطاع","puso":"وضع",
+"el plan":"الخطّة","el fin de semana":"عطلة نهاية الأسبوع","las vacaciones":"العطلة","quedar":"يتّفق على اللقاء / يبقى","visitar":"يزور","próximo":"القادم",
+"más":"أكثر","menos":"أقلّ","tan":"بهذا القدر / إلى هذا الحد","mejor":"أفضل","peor":"أسوأ","rápido":"سريع",
+"doler":"يؤلم","la cabeza":"الرأس","el estómago":"المعدة","la fiebre":"الحمّى","descansar":"يرتاح","la receta":"الوصفة (طبّية أو طبخ)","la medicina":"الدواء","enfermo":"مريض",
+"soler":"اعتاد على (يفعل عادةً)","mientras":"بينما","de niño":"في الطفولة","antes":"قبل / سابقاً","entonces":"حينها / إذن","al principio":"في البداية","de repente":"فجأةً","después de":"بعد","finalmente":"أخيراً","en cambio":"في المقابل",
+"además":"إضافةً إلى ذلك","sin embargo":"ومع ذلك","por un lado":"من جهة","por otro lado":"من جهة أخرى","por eso":"لهذا السبب","aunque":"مع أنّ / رغم أنّ",
+"prometer":"يَعِد","tal vez":"ربما","dentro de":"بعد (مدّة) / داخل","seguro":"متأكّد / آمن","la predicción":"التنبّؤ / التوقّع",
+"opinar":"يُبدي رأيه / يرى","aconsejar":"ينصح","la opinión":"الرأي","estar a favor":"أن يكون مؤيّداً","estar en contra":"أن يكون معارضاً","depender":"يعتمد على","el consejo":"النصيحة",
+"la causa":"السبب","la consecuencia":"النتيجة","por lo tanto":"لذلك","debido a":"بسبب","ya que":"بما أنّ","así que":"لذا","provocar":"يتسبّب في",
+"ojalá":"إن شاء الله / أتمنى","esperar que":"يأمل أن","desear":"يتمنّى","recomendar que":"ينصح بأن","es importante que":"من المهم أن",
+"estimado":"عزيزي / المحترم (في الرسائل)","atentamente":"مع خالص التحية","adjuntar":"يُرفق","solicitar":"يطلب (رسمياً) / يتقدّم لـ","el puesto":"الوظيفة / المنصب","el currículum":"السيرة الذاتية","agradecer":"يشكر","la entrevista":"المقابلة","la experiencia":"الخبرة","el candidato":"المرشّح","contratar":"يوظّف","el sueldo":"الراتب","la empresa":"الشركة","el horario":"الجدول / ساعات العمل",
+"quisiera":"أودّ","podría":"هل يمكن / يمكنني (بأدب)","sería":"سيكون","le importaría":"هل تمانع","disculpe":"المعذرة",
+"la hipótesis":"الفرضية","imaginar":"يتخيّل","ganar la lotería":"يربح اليانصيب","viviría":"سيعيش","contar que":"يروي أنّ","preguntar si":"يسأل إن كان","explicar":"يشرح","responder":"يجيب","avisar":"يُعلم / ينبّه",
+"banco":"مصرف / مقعد","llamar":"يتّصل / يسمّي","tomar":"يأخذ / يشرب","tarde":"متأخر","amigo":"صديق","trabajo":"عمل","escuela":"مدرسة","universidad":"جامعة","profesor":"معلّم / أستاذ","médico":"طبيب","coche":"سيارة","tren":"قطار","avión":"طائرة","dinero":"مال","barato":"رخيص","caro":"غالٍ","bueno":"جيّد","malo":"سيّئ","pequeño":"صغير","nuevo":"جديد","viejo":"قديم / عجوز","bonito":"جميل","feliz":"سعيد","triste":"حزين","cansado":"متعب",
+"cenar":"يتناول العشاء","dormir":"ينام","la comida":"الطعام / الغداء","esperar":"ينتظر / يأمل","pasar":"يمرّ / يحدث / يقضي","dar":"يعطي","tener hambre":"أن يكون جائعاً","tener sed":"أن يكون عطشاناً","tener razón":"أن يكون محقّاً","estar de acuerdo":"يوافق","darse cuenta":"يدرك","como":"مثل / كما / كيف",
+"ordenador":"حاسوب","teléfono":"هاتف","árbol":"شجرة","río":"نهر","ser":"يكون (هوية / أصل / صفة)","hacer":"يفعل / يصنع","poder":"يستطيع","ver":"يرى","saber":"يعرف","decir":"يقول","venir":"يأتي","poner":"يضع","viajar":"يسافر"
+  };
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
+  // Ayuda de la interfaz en más idiomas: [español, fr, pt, it, de, tr]. Lo que no está aquí se muestra en inglés.
+  const COLS = ['fr', 'pt', 'it', 'de', 'tr'];
+  const R = [
+['Inicio','Accueil','Início','Home','Start','Ana sayfa'],['Aprender','Apprendre','Aprender','Imparare','Lernen','Öğren'],['Vocabulario','Vocabulaire','Vocabulário','Vocabolario','Wortschatz','Kelimeler'],['Gramática','Grammaire','Gramática','Grammatica','Grammatik','Dilbilgisi'],['Escuchar','Écouter','Ouvir','Ascoltare','Hören','Dinle'],['Pronunciación','Prononciation','Pronúncia','Pronuncia','Aussprache','Telaffuz'],['Traductor','Traducteur','Tradutor','Traduttore','Übersetzer','Çevirmen'],['Mi progreso','Ma progression','Meu progresso','I miei progressi','Mein Fortschritt','İlerlemem'],['Progreso','Progression','Progresso','Progressi','Fortschritt','İlerleme'],['Leer','Lire','Ler','Leggere','Lesen','Oku'],['Escribir','Écrire','Escrever','Scrivere','Schreiben','Yaz'],['Historias','Histoires','Histórias','Storie','Geschichten','Hikâyeler'],['Práctica','Pratique','Prática','Pratica','Üben','Alıştırma'],['Repaso diario','Révision du jour','Revisão diária','Ripasso del giorno','Tägliche Wiederholung','Günlük tekrar'],['Favoritos','Favoris','Favoritos','Preferiti','Favoriten','Favoriler'],['Primeros pasos','Premiers pas','Primeiros passos','Primi passi','Erste Schritte','İlk adımlar'],['Certificados','Certificats','Certificados','Certificati','Zertifikate','Sertifikalar'],['Menú','Menu','Menu','Menu','Menü','Menü'],['Cuenta','Compte','Conta','Account','Konto','Hesap'],['Buscar','Rechercher','Buscar','Cerca','Suchen','Ara'],['Configuración','Paramètres','Configurações','Impostazioni','Einstellungen','Ayarlar'],
+['Continuar','Continuer','Continuar','Continua','Weiter','Devam'],['Siguiente','Suivant','Seguinte','Avanti','Weiter','Sonraki'],['← Anterior','← Précédent','← Anterior','← Indietro','← Zurück','← Önceki'],['Comprobar','Vérifier','Verificar','Verifica','Prüfen','Kontrol et'],['Cancelar','Annuler','Cancelar','Annulla','Abbrechen','İptal'],['Cerrar','Fermer','Fechar','Chiudi','Schließen','Kapat'],['Empezar','Commencer','Começar','Inizia','Starten','Başla'],['Ver','Voir','Ver','Vedi','Ansehen','Gör'],['Seguir aprendiendo','Continuer à apprendre','Continuar aprendendo','Continua a imparare','Weiterlernen','Öğrenmeye devam'],['Haz la prueba de nivel','Passe le test de niveau','Faça o teste de nível','Fai il test di livello','Mach den Einstufungstest','Seviye testini çöz'],['Prueba de nivel','Test de niveau','Teste de nível','Test di livello','Einstufungstest','Seviye testi'],
+['Explicación','Explication','Explicação','Spiegazione','Erklärung','Açıklama'],['Vocabulario nuevo','Nouveau vocabulaire','Vocabulário novo','Nuovo vocabolario','Neuer Wortschatz','Yeni kelimeler'],['Escucha','Écoute','Escuta','Ascolto','Hören','Dinleme'],['Lectura','Lecture','Leitura','Lettura','Lesen','Okuma'],['Escritura','Écriture','Escrita','Scrittura','Schreiben','Yazma'],['Examen','Examen','Exame','Esame','Prüfung','Sınav'],['Resultado','Résultat','Resultado','Risultato','Ergebnis','Sonuç'],['¡Correcto!','Correct !','Correto!','Corretto!','Richtig!','Doğru!'],['¡Muy bien!','Très bien !','Muito bem!','Molto bene!','Sehr gut!','Çok iyi!'],['Tu respuesta','Ta réponse','Sua resposta','La tua risposta','Deine Antwort','Cevabın'],
+['Meta diaria','Objectif du jour','Meta diária','Obiettivo giornaliero','Tagesziel','Günlük hedef'],['Practicar ahora','S’entraîner maintenant','Praticar agora','Esercitati ora','Jetzt üben','Şimdi çalış'],['Reto del día','Défi du jour','Desafio do dia','Sfida del giorno','Tagesherausforderung','Günün meydan okuması'],['Racha actual','Série en cours','Sequência atual','Serie attuale','Aktuelle Serie','Güncel seri'],['Logros','Succès','Conquistas','Traguardi','Erfolge','Başarılar'],['Nivel','Niveau','Nível','Livello','Stufe','Seviye'],['Principiante','Débutant','Iniciante','Principiante','Anfänger','Başlangıç'],['Elemental','Élémentaire','Elementar','Elementare','Grundstufe','Temel'],['Intermedio','Intermédiaire','Intermediário','Intermedio','Mittelstufe','Orta'],['Intermedio alto','Intermédiaire supérieur','Intermediário alto','Intermedio alto','Gehobene Mittelstufe','Orta-üst'],['Avanzado','Avancé','Avançado','Avanzato','Fortgeschritten','İleri'],['Bloqueada','Verrouillé','Bloqueado','Bloccato','Gesperrt','Kilitli'],['Disponible','Disponible','Disponível','Disponibile','Verfügbar','Açık'],
+['sustantivo','nom','substantivo','sostantivo','Substantiv','isim'],['verbo','verbe','verbo','verbo','Verb','fiil'],['adjetivo','adjectif','adjetivo','aggettivo','Adjektiv','sıfat'],['adverbio','adverbe','advérbio','avverbio','Adverb','zarf'],['Apariencia','Apparence','Aparência','Aspetto','Darstellung','Görünüm'],['Audio','Audio','Áudio','Audio','Audio','Ses'],['Escuchar despacio','Écouter lentement','Ouvir devagar','Ascolta lentamente','Langsam hören','Yavaş dinle'],['Mis palabras','Mes mots','Minhas palavras','Le mie parole','Meine Wörter','Kelimelerim'],['Para repasar','À réviser','Para revisar','Da ripassare','Zu wiederholen','Tekrar edilecek'],['Dominada','Maîtrisé','Dominada','Padroneggiata','Beherrscht','Öğrenildi'],['Nueva','Nouveau','Nova','Nuova','Neu','Yeni'],['Hecho','Fait','Feito','Fatto','Erledigt','Tamam'],['Pendiente','À faire','Pendente','Da fare','Offen','Bekliyor'],['Unidad','Unité','Unidade','Unità','Einheit','Ünite'],['Lección','Leçon','Lição','Lezione','Lektion','Ders'],['Lecciones','Leçons','Lições','Lezioni','Lektionen','Dersler'],
+['Familia','Famille','Família','Famiglia','Familie','Aile'],['Comida','Nourriture','Comida','Cibo','Essen','Yemek'],['Ciudad','Ville','Cidade','Città','Stadt','Şehir'],['Salud','Santé','Saúde','Salute','Gesundheit','Sağlık'],['Trabajo','Travail','Trabalho','Lavoro','Arbeit','İş'],['Viajes','Voyages','Viagens','Viaggi','Reisen','Seyahat'],['Compras','Achats','Compras','Acquisti','Einkaufen','Alışveriş'],['Emociones','Émotions','Emoções','Emozioni','Gefühle','Duygular'],['Naturaleza','Nature','Natureza','Natura','Natur','Doğa'],['Tecnología','Technologie','Tecnologia','Tecnologia','Technik','Teknoloji'],['Educación','Éducation','Educação','Istruzione','Bildung','Eğitim'],
+['Presente','Présent','Presente','Presente','Präsens','Şimdiki zaman'],['Futuro','Futur','Futuro','Futuro','Futur','Gelecek'],['Condicional','Conditionnel','Condicional','Condizionale','Konditional','Koşul kipi'],['Subjuntivo','Subjonctif','Conjuntivo','Congiuntivo','Konjunktiv','Dilek kipi'],['Ser y estar','Ser et estar','Ser e estar','Ser e estar','Ser und estar','Ser ve estar']
+  ];
+  const X = {}; COLS.forEach((c) => { X[c] = new Map(); });
+  R.forEach((r) => COLS.forEach((c, i) => X[c].set(r[0], r[i + 1])));
+  L.C.uiTrX = X;
+})(window.LWS);
+
+;
+(function (L) {
+  'use strict';
   const C = L.C, { mc, fill, order } = L.Q;
   C.grammar = [];
   const G = (g) => {
