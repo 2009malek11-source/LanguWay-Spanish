@@ -10,6 +10,8 @@
   const keyOf = (w) => L.stripAcc(L.norm(w));
   function addKey(k, e) { if (!k) return; const a = D.keys.get(k) || []; if (!a.includes(e)) a.push(e); D.keys.set(k, a); }
 
+  const enKey = (t) => String(t || '').toLowerCase().replace(/\([^)]*\)/g, ' ').replace(/[^a-z' ]/g, ' ').replace(/\s+/g, ' ').trim();
+  D.enKey = enKey;
   D.build = function () {
     D.byId.clear(); D.entries = []; D.keys.clear(); D.forms.clear();
     const upsert = (w, pos, level, topic, senses, extra) => {
@@ -32,6 +34,14 @@
       ['pres', 'indef'].forEach((t) => (v[t] || []).forEach((f) => { const k = keyOf(f); const arr = D.forms.get(k) || []; if (!arr.some((x) => x.e === e && x.t === t && x.f === f)) arr.push({ e, t, f }); D.forms.set(k, arr); }));
     });
     D.entries.forEach((e) => { addKey(keyOf(e.w), e); addKey(keyOf(e.w.replace(ART, '')), e); });
+    D.en = new Map();
+    D.entries.forEach((e) => {
+      const g1 = C.gloss && C.gloss[e.w];
+      const all = [].concat(Array.isArray(g1) ? g1 : g1 ? [g1] : [], C.gloss2 && C.gloss2[e.w] ? [C.gloss2[e.w]] : []);
+      e.gloss = all.length ? Array.from(new Set(all.join(';').split(';').map((x) => x.trim()).filter(Boolean))).join('; ') : null;
+      if (!e.gloss) return;
+      e.gloss.split(';').forEach((g) => { const k = enKey(g); if (!k) return; const a = D.en.get(k) || []; if (!a.includes(e)) a.push(e); D.en.set(k, a); const k2 = k.replace(/^(to|the|a|an) /, ''); if (k2 !== k && k2) { const b = D.en.get(k2) || []; if (!b.includes(e)) b.push(e); D.en.set(k2, b); } });
+    });
     D.built = true;
     return D;
   };
@@ -50,6 +60,21 @@
       D.keys.forEach((list, key) => { if (key.length >= 3 && (key.startsWith(k) || (k.length >= 4 && key.includes(k)))) list.forEach((e) => sug.add(e)); });
       if (sug.size < 4 && k.length >= 3) D.keys.forEach((list, key) => { if (Math.abs(key.length - k.length) <= 2 && L.lev(key, k) <= (k.length > 5 ? 2 : 1)) list.forEach((e) => sug.add(e)); });
       D.forms.forEach((list, key) => { if (k.length >= 4 && L.lev(key, k) <= 1) list.forEach((f) => sug.add(f.e)); });
+      out.suggestions = Array.from(sug).slice(0, 6);
+    }
+    return out;
+  };
+  // Inglés → español: busca por el significado en inglés
+  D.lookupEn = function (q) {
+    if (!D.built) D.build();
+    const k = enKey(q), k2 = k.replace(/^(to|the|a|an) /, '');
+    const out = { q, entries: [], forms: [], suggestions: [] };
+    if (!k) return out;
+    [k, k2].forEach((x) => (D.en.get(x) || []).forEach((e) => { if (!out.entries.includes(e)) out.entries.push(e); }));
+    if (!out.entries.length && k2.length >= 3) {
+      const sug = new Set();
+      D.en.forEach((list, key) => { if (key.startsWith(k2) || (k2.length >= 4 && key.includes(' ' + k2))) list.forEach((e) => sug.add(e)); });
+      if (sug.size < 3 && k2.length >= 4) D.en.forEach((list, key) => { if (!key.includes(' ') && Math.abs(key.length - k2.length) <= 1 && L.lev(key, k2) <= 1) list.forEach((e) => sug.add(e)); });
       out.suggestions = Array.from(sug).slice(0, 6);
     }
     return out;
@@ -2429,28 +2454,54 @@
     S.markProg(); S.count('lookups'); await U.save(true);
   }
 
-  function resultsView(out, q, ctx) {
+  // Palabras muy frecuentes que no son entradas del diccionario (solo para el modo «palabra por palabra»)
+  const FN = [['yo','I'],['tú','you'],['él','he'],['ella','she'],['usted','you (formal)'],['nosotros','we'],['ellos','they'],['ellas','they'],['el','the'],['la','the'],['los','the'],['las','the'],['un','a; an'],['una','a; an'],['y','and'],['o','or'],['pero','but'],['en','in; on'],['con','with'],['sin','without'],['para','for; in order to'],['por','for; because of'],['a','to; at'],['que','that; which'],['no','no; not'],['sí','yes'],['mi','my'],['tu','your'],['su','his; her; their; your'],['es','is'],['son','are'],['muy','very'],['también','also; too'],['aquí','here'],['allí','there'],['lo','it; him'],['me','me; myself'],['te','you; yourself'],['se','himself; herself; themselves'],['del','of the; from the'],['al','to the'],['esto','this'],['eso','that'],['qué','what']];
+  const FN_ES = new Map(FN.map(([e, g]) => [L.stripAcc(L.norm(e)), g]));
+  const FN_EN = new Map();
+  FN.forEach(([e, g]) => g.split(';').forEach((x) => { const k = x.replace(/\(.*\)/, '').trim().toLowerCase(); if (k && !FN_EN.has(k)) FN_EN.set(k, e); }));
+  FN_EN.set('i', 'yo'); FN_EN.set('is', 'es'); FN_EN.set('are', 'son'); FN_EN.set('am', 'soy'); FN_EN.set('want', 'quiero'); FN_EN.set('to', 'a; para');
+  const first = (g) => String(g || '').split(';')[0].trim();
+  function sentenceView(q, dir) {
+    const toks = q.split(/\s+/).map((t) => t.replace(/^[¿¡"'(«]+|[?!.,;:"')»]+$/g, '')).filter(Boolean);
+    const rows = toks.map((t) => {
+      let tr = null;
+      if (dir === 'es') { const r = D.lookup(t); const e = r.entries[0]; if (!e && FN_ES.has(L.stripAcc(L.norm(t)))) tr = FN_ES.get(L.stripAcc(L.norm(t))); else if (e) tr = first(e.gloss) + (r.forms.length ? ' (form of «' + e.w + '»)' : ''); }
+      else { const r = D.lookupEn(t); const e = r.entries[0]; if (e) tr = e.w; else if (FN_EN.has(t.toLowerCase())) tr = FN_EN.get(t.toLowerCase()); }
+      return [t, tr];
+    });
+    const found = rows.filter((r) => r[1]).length;
     const box = h('div', { 'aria-live': 'polite' });
+    box.appendChild(h('div', { class: 'alert' }, h('strong', null, dir === 'es' ? 'Palabra por palabra · Word by word (Español → English). ' : 'Word by word (English → Español). '), 'Esto no es una traducción completa de la frase: solo muestra cada palabra del diccionario de la plataforma. · This is not a full sentence translation: it only shows each word found in the platform dictionary (' + found + ' of ' + rows.length + ').'));
+    const tb = h('table', null, h('thead', null, h('tr', null, h('th', { scope: 'col' }, dir === 'es' ? 'Español' : 'English'), h('th', { scope: 'col' }, dir === 'es' ? 'English' : 'Español'))),
+      h('tbody', null, rows.map(([t, tr]) => h('tr', null, h('td', null, t), h('td', null, tr ? (dir === 'es' ? tr : h('a', { href: '#/traductor/' + encodeURIComponent(tr) }, tr)) : h('span', { class: 'muted' }, 'no está en el diccionario · not in the dictionary'))))));
+    box.appendChild(h('div', { class: 'card', style: 'overflow-x:auto' }, tb));
+    return box;
+  }
+  function resultsView(out, q, ctx, dir) {
+    const box = h('div', { 'aria-live': 'polite' });
+    if (dir === 'en' && out.entries.length) box.appendChild(h('div', { class: 'alert ok' }, h('strong', null, 'English → Español: '), '«' + q + '» = ', out.entries.map((e, i) => [i ? ' · ' : '', h('a', { href: '#/traductor/' + encodeURIComponent(e.w) }, e.w)])));
     if (!out.entries.length) {
-      box.appendChild(h('div', { class: 'alert' }, h('strong', null, 'No encontramos «' + q + '» en el diccionario de la plataforma. '), 'Revisa la ortografía (y las tildes) o prueba con otra palabra. El diccionario crece con cada versión.'));
+      box.appendChild(h('div', { class: 'alert' }, h('strong', null, 'No encontramos «' + q + '» en el diccionario de la plataforma · Not found in the dictionary. '), 'Revisa la ortografía (y las tildes) o prueba con otra palabra. El diccionario crece con cada versión.'));
       if (out.suggestions.length) box.appendChild(h('div', null, h('p', null, '¿Querías buscar alguna de estas palabras?'), h('div', { class: 'row' }, out.suggestions.map((e) => h('a', { class: 'btn btn-ghost btn-sm', href: '#/traductor/' + encodeURIComponent(e.w) }, e.w)))));
       return box;
     }
     if (out.forms.length) {
       out.forms.forEach((f) => box.appendChild(h('div', { class: 'alert ok' }, '«' + f.f + '» es una forma del verbo ', h('a', { href: '#/traductor/' + encodeURIComponent(f.e.w) }, f.e.w), ': ' + D.TENSES[f.t].toLowerCase() + ', ' + D.PERSONS[(f.e.forms[f.t] || []).indexOf(f.f)] + '.')));
     }
-    out.entries.forEach((e) => { const c = U.wordCard(e, { english: true, context: ctx, source: 'traductor' }); const ft = formsTable(e); if (ft) c.insertBefore(ft, c.querySelector('.acts')); const rl = relatedLessons(e); if (rl) c.insertBefore(rl, c.querySelector('.acts')); box.appendChild(c); });
+    out.entries.forEach((e) => { if (dir !== 'en' && e.gloss) box.appendChild(h('div', { class: 'alert ok', lang: 'en' }, h('strong', null, 'Español → English: '), '«' + e.w + '» = ' + e.gloss)); const c = U.wordCard(e, { english: true, context: ctx, source: 'traductor' }); const ft = formsTable(e); if (ft) c.insertBefore(ft, c.querySelector('.acts')); const rl = relatedLessons(e); if (rl) c.insertBefore(rl, c.querySelector('.acts')); box.appendChild(c); });
     return box;
   }
 
   function page(initial, ctx) {
     const root = h('div');
-    root.appendChild(U.pageHead('Traductor', 'Escribe una palabra, una forma de verbo o una expresión en español. Verás su significado explicado en español, su significado en inglés y un ejemplo en inglés.'));
+    root.appendChild(U.pageHead('Traductor', 'Traduce palabras y expresiones del español al inglés y del inglés al español. Verás la traducción, la explicación en español y un ejemplo. Translate words and phrases both ways between Spanish and English.'));
     const form = h('form', { class: 'search-box', role: 'search' });
-    const inp = h('input', { type: 'search', class: 'inp', id: 'tr-q', 'aria-label': 'Palabra en español', placeholder: 'Escribe una palabra… (p. ej. aprender, tengo, tener razón)', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', lang: 'es', value: initial || '' });
+    const inp = h('input', { type: 'search', class: 'inp', id: 'tr-q', 'aria-label': 'Palabra en español o en inglés', placeholder: 'Escribe en español o en inglés · Type in Spanish or English (aprender, to learn, tengo)', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', lang: 'es', value: initial || '' });
     const go = h('button', { class: 'btn btn-primary', type: 'submit', style: 'margin-top:10px' }, 'Buscar');
     const sugg = h('div', { class: 'sugg', role: 'listbox', hidden: true });
-    form.append(inp, sugg, go);
+    let dir = 'auto';
+    const dirBox = h('div', { class: 'tabs', role: 'group', 'aria-label': 'Dirección de la traducción · Direction', style: 'margin-bottom:10px' }, [['auto', 'Auto'], ['es', 'Español → English'], ['en', 'English → Español']].map(([k, t]) => h('button', { type: 'button', class: 'btn btn-ghost btn-sm', 'aria-pressed': String(k === dir), 'data-d': k, onclick: () => { dir = k; dirBox.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.d === dir))); if (inp.value.trim()) search(); } }, t)));
+    form.append(dirBox, inp, sugg, go);
     const keys = h('div', { class: 'special-keys' }, ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ'].map((c) => h('button', { type: 'button', class: 'key', 'aria-label': 'Insertar ' + c, onclick: () => { const s = inp.selectionStart || inp.value.length; inp.setRangeText(c, s, inp.selectionEnd || s, 'end'); inp.focus(); inp.dispatchEvent(new Event('input')); } }, c)));
     const out = h('div', { style: 'margin-top:18px' });
     root.append(h('div', { class: 'card' }, form, keys), out);
@@ -2472,9 +2523,18 @@
     document.addEventListener('click', (e) => { if (!form.contains(e.target)) closeS(); });
     async function search(q) {
       q = String(q || inp.value).trim(); closeS(); if (!q) { L.toast('Escribe una palabra para buscar.', '', 2000); inp.focus(); return; }
-      const r = D.lookup(q); out.innerHTML = '';
-      out.appendChild(resultsView(r, q, ctx));
-      if (r.entries.length) { await remember(r.entries[0].w); drawHist(); }
+      out.innerHTML = '';
+      let used = dir, r;
+      if (dir === 'en') r = D.lookupEn(q);
+      else { r = D.lookup(q); used = 'es'; if (dir === 'auto' && !r.entries.length) { const r2 = D.lookupEn(q); if (r2.entries.length) { r = r2; used = 'en'; } } }
+      const multi = q.split(/\s+/).filter(Boolean).length > 1;
+      if (!r.entries.length && multi) {
+        if (dir === 'auto') { const sc = (d) => q.split(/\s+/).filter((t) => (d === 'es' ? (D.lookup(t.replace(/[^\p{L}']/gu, '')).entries.length || FN_ES.has(L.stripAcc(L.norm(t)))) : (D.lookupEn(t.replace(/[^\p{L}']/gu, '')).entries.length || FN_EN.has(t.toLowerCase())))).length; used = sc('en') > sc('es') ? 'en' : 'es'; }
+        out.appendChild(sentenceView(q, used));
+      } else {
+        out.appendChild(resultsView(r, q, ctx, used));
+        if (r.entries.length) { await remember(r.entries[0].w); drawHist(); }
+      }
       history.replaceState(null, '', '#/traductor/' + encodeURIComponent(q));
     }
     form.addEventListener('submit', (e) => { e.preventDefault(); search(); });
@@ -2491,7 +2551,6 @@
       hs.addEventListener('input', paint); histBox.append(hs, row); paint();
     }
     drawHist(); root.appendChild(histBox);
-    root.appendChild(h('section', { class: 'card', style: 'margin-top:14px' }, h('h2', null, '¿No te convence el resultado?'), h('p', null, 'Si no encuentras la palabra o la traducción no te satisface, prueba con nuestra otra aplicación de traducción.'), h('a', { class: 'btn btn-primary', href: 'https://2009malek11-source.github.io/Languway-Translator/', target: '_blank', rel: 'noopener noreferrer' }, 'Entrar a Languway Translator ↗'), h('p', { class: 'muted', style: 'margin-top:8px' }, 'Se abre en una pestaña nueva y necesita conexión a internet.')));
     const fav = S.prog.favorites.words;
     if (fav.length) root.appendChild(h('section', { class: 'card', style: 'margin-top:14px' }, h('h2', null, 'Palabras favoritas'), h('div', { class: 'row' }, fav.map((id) => D.get(id)).filter(Boolean).map((e) => h('a', { class: 'btn btn-ghost btn-sm', href: '#/traductor/' + encodeURIComponent(e.w) }, '★ ' + e.w)))));
     if (initial) search(initial); else setTimeout(() => inp.focus(), 60);
@@ -3124,11 +3183,6 @@
       h('p', null, 'Languway Spanish no usa publicidad ni rastreadores y no carga código de terceros. Sin cuenta, tu progreso se queda solo en este dispositivo. Si creas una cuenta, solo pedimos un nombre de usuario y una contraseña (nunca un correo): se guardan junto con tu progreso para que puedas continuar en otro teléfono. La contraseña se guarda cifrada y puedes borrar tu cuenta cuando quieras desde «Account & Backup».'),
       h('p', null, 'Las voces que oyes son las de tu dispositivo. El micrófono solo se activa cuando pulsas «Grabar», y la grabación no sale de tu dispositivo.'),
       h('p', { class: 'muted' }, 'Las lecciones, textos, ejercicios, historias e iconos son contenido original de Languway. El logotipo pertenece a sus autores. Los certificados son de finalización de la plataforma y no son títulos oficiales.')));
-    // Nuestros trabajos
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'De nuestros trabajos'), h('p', { class: 'muted' }, 'Otros proyectos de la serie Languway (se abren en una pestaña nueva y necesitan conexión a internet):'),
-      h('ul', { style: 'list-style:none;padding:0;margin:0' },
-        h('li', { style: 'margin:8px 0' }, h('a', { href: 'https://2009malek11-source.github.io/Languway-Translator/', target: '_blank', rel: 'noopener noreferrer' }, 'Languway Translator ↗'), h('div', { class: 'muted' }, 'Aplicación de traducción de la serie Languway.')),
-        h('li', { style: 'margin:8px 0' }, h('a', { href: 'https://2009malek11-source.github.io/Languway-English/', target: '_blank', rel: 'noopener noreferrer' }, 'Languway English ↗'), h('div', { class: 'muted' }, 'Sitio para aprender inglés.')))));
     return root;
   }, 'Configuración');
 })(window.LWS);
