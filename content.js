@@ -1,6 +1,8 @@
 // Guarda el aviso de instalación del navegador para usarlo desde el botón «Instalar»
 window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__bip = e; });
 window.addEventListener('appinstalled', function () { window.__bip = null; window.__installed = true; });
+// HTTPS obligatorio fuera de localhost
+try { if (location.protocol === 'http:' && !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) location.replace('https:' + location.href.substring(location.protocol.length)); } catch (e) {}
 if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.innerHTML = ''; } }
 // Introducción clásica: dura 3 segundos desde que empieza la carga
 (function () {

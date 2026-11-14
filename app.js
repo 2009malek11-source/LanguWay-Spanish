@@ -483,7 +483,7 @@
     for (const k of ['lessons', 'units', 'levelTests', 'activity', 'achievements', 'skills', 'counters']) if (p[k] != null && (typeof p[k] !== 'object' || Array.isArray(p[k]))) return bad('The backup structure is damaged (' + k + ').');
     const ignored = { lessons: 0, words: 0, qstats: 0 };
     const clean = defaultProg('x');
-    Object.assign(clean, JSON.parse(JSON.stringify(p)));
+    Object.assign(clean, JSON.parse(JSON.stringify(p), (k, v) => (k === '__proto__' || k === 'constructor' || k === 'prototype') ? undefined : v));
     clean.settings = Object.assign(defaultProg('x').settings, p.settings || {});
     clean.goals = Object.assign(defaultProg('x').goals, p.goals || {});
     clean.favorites = Object.assign(defaultProg('x').favorites, p.favorites || {});
