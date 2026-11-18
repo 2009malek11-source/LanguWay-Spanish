@@ -111,7 +111,7 @@
     const now = Date.now();
     return {
       userId, v: 1, created: now, updated: now,
-      settings: { voiceURI: '', rate: 1, volume: 1, dialect: 'auto', reduceMotion: false, strictAccents: false, fontScale: 1, lineHeight: 1, contrast: false, easyFont: false },
+      settings: { voiceURI: '', rate: 1, volume: 1, dialect: 'auto', reduceMotion: false, strictAccents: false, fontScale: 1, lineHeight: 1, contrast: false, easyFont: false, showImages: true, showTranslations: true, autoPlay: false, celebrate: true, accentBar: true, reviewLimit: 30 },
       goals: { lessonsPerWeek: 3, minutesPerDay: 15, focus: [] },
       placement: null, unlockedLevels: ['A1'], validatedLevels: [],
       lessons: {}, units: {}, levelTests: {},
@@ -1289,6 +1289,7 @@
       h('div', { class: 'w' }, h('span', { lang: 'es' }, e.w), L.Audio.btn(e.w, { small: true, name: e.w }), L.Audio.btn(e.w, { small: true, slow: true, name: e.w })),
       S.prog ? U.favBtn('words', e.id, e.w) : null));
     card.appendChild(h('div', { class: 'row' }, h('span', { class: 'pos' }, e.pos), h('span', { class: 'chip-tag' }, e.level), h('span', { class: 'chip-tag gray' }, e.topic)));
+    if (L.vis.enabled()) card.appendChild(L.vis.pic(e.w, e.pos));
     if (L.sup && L.sup.lang() === 'ar' && L.sup.mode() !== 'off' && L.C.glossAr && L.C.glossAr[e.w] && /^(A1|A2|B1)/.test(e.level || '')) {
       card.appendChild(h('div', { class: 'ar-gloss', lang: 'ar', dir: 'rtl', 'data-nosup': '1' }, h('b', null, 'المعنى بالعربية: '), L.C.glossAr[e.w]));
     }
@@ -1296,7 +1297,7 @@
       const sd = h('div', { class: 'sense' });
       if (e.senses.length > 1) sd.appendChild(h('div', { class: 'pos' }, 'Sentido ' + (i + 1) + (s.pos && s.pos !== e.pos ? ' · ' + s.pos : '')));
       sd.appendChild(h('p', { style: 'margin:.2em 0 .5em' }, h('b', null, 'Significado: '), s.def));
-      sd.appendChild(h('div', { class: 'ex' }, h('span', null, s.ex + ' '), L.Audio.btn(s.ex, { small: true, name: s.ex })));
+      sd.appendChild(h('div', { class: 'ex' }, h('span', { html: L.vis.markSentence(e.w, s.ex) + ' ' }), L.Audio.btn(s.ex, { small: true, name: s.ex })));
       if (opts.english) {
         const gl = L.C.glossFor(e, i);
         if (gl) sd.appendChild(h('div', { class: 'en', lang: 'en' }, h('b', null, 'Meaning in English'), gl));
@@ -1502,7 +1503,6 @@
   route('/aprender', () => {
     const root = h('div');
     root.appendChild(U.pageHead('Aprender', 'Elige tu nivel. Tu ruta avanza paso a paso del A1 al C2.'));
-    if (false) root.appendChild(h('div', { class: 'alert' }, h('strong', null, '¿No sabes por dónde empezar? '), 'Haz la prueba de nivel para descubrirlo. ', h('a', { class: 'btn btn-primary btn-sm', href: '#/prueba-de-nivel' }, 'Hacer la prueba de nivel')));
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Tu ruta de 30 niveles'), h('p', { class: 'muted' }, 'Estás en el nivel ' + S.currentStage() + ' de 30. Completa las lecciones y los exámenes para avanzar.'), U.stageTrack()));
     root.appendChild(h('div', { class: 'grid g3', style: 'margin-top:16px' }, C.levels.map(levelCard)));
     root.appendChild(h('p', { class: 'muted', style: 'margin-top:16px' }, 'Los niveles se están completando por etapas: ves la estructura completa, pero solo las lecciones con contenido terminado se pueden abrir.'));
@@ -1609,9 +1609,7 @@
       les.vocab.forEach((v) => {
         const wid = C.wordId(v[0]);
         const card = h('article', { class: 'wcard', 'aria-label': 'Palabra: ' + v[0] },
-          h('div', { class: 'row sb' }, h('div', { class: 'w' }, h('span', { lang: 'es' }, v[0]), L.Audio.btn(v[0], { small: true, name: v[0] })), U.favBtn('words', wid, v[0])),
-          h('span', { class: 'pos' }, v[1]), h('p', { style: 'margin:.2em 0' }, v[2]),
-          h('div', { class: 'ex' }, v[3], ' ', L.Audio.btn(v[3], { small: true, name: v[3] })));
+          L.vis.figure({ w: v[0], pos: v[1], def: v[2], ex: v[3], en: v[4] }), h('div', { class: 'row sb' }, h('span', { class: 'muted' }, 'Favorito'), U.favBtn('words', wid, v[0])));
         const add = h('button', { class: 'btn btn-ghost btn-sm', type: 'button' }, S.word(wid) ? '✓ En repaso' : '＋ Añadir al repaso');
         add.addEventListener('click', async () => { if (!S.word(wid)) { S.addWord(wid, 'lección ' + id, true); add.textContent = '✓ En repaso'; await U.save(); } });
         card.appendChild(h('div', { class: 'acts' }, add));
@@ -1635,7 +1633,7 @@
         if (g !== gen) return;
         box.innerHTML = ''; box.appendChild(h('div', { class: 'alert ok' }, '¡Muy bien! Pasa al siguiente paso.')); box.appendChild(nav(1, 3));
       } }, 'Comprobar lo aprendido →'));
-      host.append(h('div', { class: 'card' }, h('h2', null, les.explain.title), U.blocks(les.explain.body)), ...[L.coach && L.coach.enHelp(id)].filter(Boolean), box, bar);
+      host.append(h('div', { class: 'card' }, h('h2', null, les.explain.title), U.blocks(les.explain.body, { id, title: les.explain.title })), ...[L.coach && L.coach.enHelp(id)].filter(Boolean), box, bar);
     }
     function sListen() {
       const list = h('ul', { class: 'exlist' });
@@ -1680,7 +1678,7 @@
       const sm = E.summary(res, { pass: S.PASS, headline: passed ? '¡Lección superada!' : 'Casi lo tienes' });
       host.appendChild(h('div', { class: 'card' }, passed ? h('div', { class: 'celebrate center', 'aria-hidden': 'true' }, '🎉') : null, sm.el, saved ? h('p', { class: 'center muted' }, '✓ Resultado guardado en este dispositivo.') : null));
       const actions = h('div', { class: 'nav-actions' });
-      if (sm.wrong.length) actions.appendChild(h('button', { class: 'btn btn-ghost', onclick: async () => { await run(sm.wrong.map((r) => r.q), 'Repaso de errores'); await U.save(true); go(6 === cur ? 5 : 5); } }, 'Repetir las preguntas incorrectas'));
+      if (sm.wrong.length) actions.appendChild(h('button', { class: 'btn btn-ghost', onclick: async () => { await run(sm.wrong.map((r) => r.q), 'Repaso de errores'); await U.save(true); go(5); } }, 'Repetir las preguntas incorrectas'));
       if (passed) {
         const nx = nextAfter(id);
         if (nx && nx.kind === 'lesson') actions.appendChild(h('a', { class: 'btn btn-primary', href: '#/leccion/' + nx.id }, 'Siguiente lección →'));
@@ -1904,9 +1902,10 @@
       const e = D.get(ids[i]); if (!e) { i++; return card(); }
       let shown = false;
       const back = h('div', { class: 'hide' });
-      e.senses.slice(0, 2).forEach((s) => back.appendChild(h('div', { class: 'sense' }, h('p', null, h('b', null, 'Significado: '), s.def), h('p', { class: 'ex' }, s.ex, ' ', L.Audio.btn(s.ex, { small: true, name: s.ex })), h('p', { class: 'en', lang: 'en' }, h('b', null, 'Example in English'), s.en))));
+      back.appendChild(L.vis.pic(e.w, e.pos));
+      e.senses.slice(0, 2).forEach((s) => back.appendChild(h('div', { class: 'sense' }, h('p', null, h('b', null, 'Significado: '), s.def), h('p', { class: 'ex' }, h('span', { html: L.vis.markSentence(e.w, s.ex) }), ' ', L.Audio.btn(s.ex, { small: true, name: s.ex })), h('p', { class: 'en', lang: 'en' }, h('b', null, 'Example in English'), s.en))));
       const acts = h('div', { class: 'row', style: 'justify-content:center;margin-top:14px' });
-      const reveal = h('button', { class: 'btn btn-primary', onclick: () => { shown = true; back.classList.remove('hide'); reveal.remove(); acts.append(h('button', { class: 'btn btn-ghost', onclick: () => answer(true) }, 'La conozco'), h('button', { class: 'btn btn-primary', onclick: () => answer(false) }, 'Necesito practicarla')); } }, 'Mostrar el significado');
+      const reveal = h('button', { class: 'btn btn-primary', onclick: () => { shown = true; back.classList.remove('hide'); reveal.remove(); if (S.prog.settings.autoPlay) { try { L.Audio.speak(e.w, { name: e.w }); } catch (err) { /* sin voz */ } } acts.append(h('button', { class: 'btn btn-ghost', onclick: () => answer(true) }, 'La conozco'), h('button', { class: 'btn btn-primary', onclick: () => answer(false) }, 'Necesito practicarla')); } }, 'Mostrar el significado');
       acts.appendChild(reveal);
       host.appendChild(h('div', { class: 'card flash' }, h('div', { class: 'muted' }, 'Tarjeta ' + (i + 1) + ' de ' + ids.length), h('div', { class: 'big', lang: 'es' }, e.w), h('div', { class: 'row', style: 'justify-content:center' }, L.Audio.btn(e.w, { name: e.w }), L.Audio.btn(e.w, { slow: true, name: e.w }), h('span', { class: 'pos' }, e.pos)), back, acts));
     }
@@ -1935,7 +1934,7 @@
 
   route('/repaso', () => {
     const root = h('div'); root.appendChild(U.pageHead('Repaso diario', 'Las palabras que más necesitas repasar, ordenadas por dificultad.'));
-    const due = S.dueWords();
+    const due = S.dueWords().slice(0, S.prog.settings.reviewLimit || 30);
     const host = h('div'); root.appendChild(host);
     if (!S.words.size) { host.appendChild(U.empty('📚', 'Todavía no tienes palabras para repasar. Completa una lección o añade palabras desde el Traductor.', h('div', { class: 'row', style: 'justify-content:center' }, h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Ir a Aprender'), h('a', { class: 'btn btn-ghost', href: '#/vocabulario' }, 'Ver el Wordbook')))); return root; }
     if (!due.length) {
@@ -2926,7 +2925,7 @@
       box.appendChild(t); return box; } },
     { id: 'words', title: '4. First words · Las primeras palabras', body: () => {
       const box = h('div'); box.appendChild(h('p', null, 'These 18 words and phrases are enough for your first conversation. Tap to listen, then say them out loud.'));
-      WORDS.forEach((w) => box.appendChild(h('div', { class: 'row', style: 'margin:8px 0' }, L.Audio.btn(w[0], { small: true, name: w[0] }), h('span', null, h('b', { style: 'font-size:1.1rem' }, w[0]), ' — ' + w[1]))));
+      WORDS.forEach((w) => box.appendChild(h('div', { class: 'row', style: 'margin:8px 0' }, L.vis.mini(w[0]), L.Audio.btn(w[0], { small: true, name: w[0] }), h('span', null, h('b', { style: 'font-size:1.1rem' }, w[0]), ' — ' + w[1]))));
       return box; } },
     { id: 'how', title: '5. How Spanish works · Cómo funciona el español', body: () => {
       const box = h('div');
@@ -2942,7 +2941,7 @@
       const box = h('div'); const ar = L.sup && L.sup.lang() === 'ar';
       box.appendChild(h('p', null, 'Hundreds of Spanish words look like English words. Start with these 28: you already know what they mean!'));
       const g = h('div', { class: 'grid g2' });
-      (C.cognates || []).forEach((w) => g.appendChild(h('div', { class: 'card', style: 'padding:10px' }, h('div', { class: 'row sb' }, h('b', null, w[0]), L.Audio.btn(w[0], { small: true, name: w[0] })), h('span', { class: 'muted', lang: 'en' }, w[1]))));
+      (C.cognates || []).forEach((w) => g.appendChild(h('div', { class: 'card', style: 'padding:10px' }, L.vis.mini(w[0]), h('div', { class: 'row sb' }, h('b', null, w[0]), L.Audio.btn(w[0], { small: true, name: w[0] })), h('span', { class: 'muted', lang: 'en' }, w[1]))));
       box.appendChild(g);
       if (ar) {
         box.appendChild(h('h3', { style: 'margin-top:16px' }, 'كلمات إسبانية من أصل عربي'));
@@ -3154,117 +3153,6 @@
   }, 'Instalar y compartir');
 })(window.LWS);
 
-;
-(function (L) {
-  'use strict';
-  const { h, route } = L; const C = L.C, S = L.S, A = L.A, U = L.U;
-
-  async function setSetting(k, v) { S.prog.settings[k] = v; S.markProg(); await U.save(true); }
-
-  route('/configuracion', () => {
-    const root = h('div');
-    root.appendChild(U.pageHead('Configuración', 'Todo lo que cambies aquí se guarda en este dispositivo y afecta de verdad a la aplicación.'));
-    const st = S.prog.settings;
-
-    // Apariencia
-    const theme = h('select', { class: 'inp', id: 'set-theme', onchange: (e) => L.applyTheme(e.target.value) }, [['light', 'Modo claro'], ['dark', 'Modo oscuro']].map(([v, t]) => h('option', { value: v, selected: document.documentElement.getAttribute('data-theme') === v ? '' : null }, t)));
-    const motion = h('input', { type: 'checkbox', id: 'set-motion', checked: st.reduceMotion ? '' : null, onchange: async (e) => { await setSetting('reduceMotion', e.target.checked); document.documentElement.setAttribute('data-motion', e.target.checked ? 'reduce' : 'auto'); } });
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Apariencia'),
-      h('div', { class: 'field' }, h('label', { for: 'set-theme' }, 'Tema'), theme),
-      h('div', { class: 'field' }, h('label', { for: 'set-motion' }, motion, ' Reducir animaciones'), h('p', { class: 'muted' }, 'También se respeta la opción de tu sistema.'))));
-
-
-    // Lectura y accesibilidad
-    const sel = (id, opts, cur, key) => h('select', { class: 'inp', id, onchange: async (e) => { await setSetting(key, +e.target.value); L.applyPrefs(); } }, opts.map(([v, t]) => h('option', { value: v, selected: Math.abs(cur - v) < 0.001 ? '' : null }, t)));
-    const chk = (id, key, on) => h('input', { type: 'checkbox', id, checked: on ? '' : null, onchange: async (e) => { await setSetting(key, e.target.checked); L.applyPrefs(); } });
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Lectura y accesibilidad'),
-      h('div', { class: 'field' }, h('label', { for: 'set-fs' }, 'Tamaño del texto'), sel('set-fs', [[0.9, 'Pequeño'], [1, 'Normal'], [1.15, 'Grande'], [1.3, 'Muy grande']], st.fontScale || 1, 'fontScale')),
-      h('div', { class: 'field' }, h('label', { for: 'set-lh' }, 'Espacio entre líneas'), sel('set-lh', [[1, 'Normal'], [1.15, 'Amplio'], [1.3, 'Muy amplio']], st.lineHeight || 1, 'lineHeight')),
-      h('div', { class: 'field' }, h('label', { for: 'set-contrast' }, chk('set-contrast', 'contrast', st.contrast === true), ' Alto contraste')),
-      h('div', { class: 'field' }, h('label', { for: 'set-easy' }, chk('set-easy', 'easyFont', st.easyFont === true), ' Letra de lectura fácil (más espaciada)'))));
-
-    // Audio
-    const audio = h('section', { class: 'card' }, h('h2', null, 'Audio'));
-    const rate = h('input', { type: 'range', id: 'set-rate', min: '0.7', max: '1.1', step: '0.05', value: String(st.rate || 1), 'aria-describedby': 'rate-v' });
-    const rv = h('span', { id: 'rate-v' }, (st.rate || 1).toFixed(2) + '×');
-    rate.addEventListener('input', () => { rv.textContent = (+rate.value).toFixed(2) + '×'; }); rate.addEventListener('change', () => setSetting('rate', +rate.value));
-    const vol = h('input', { type: 'range', id: 'set-vol', min: '0.2', max: '1', step: '0.1', value: String(typeof st.volume === 'number' ? st.volume : 1) });
-    vol.addEventListener('change', () => setSetting('volume', +vol.value));
-    const voiceBox = h('div');
-    function drawVoices() {
-      voiceBox.innerHTML = '';
-      if (!L.Audio.supported()) { voiceBox.appendChild(h('div', { class: 'alert warn' }, 'Este navegador no puede reproducir voz. Las lecciones se pueden estudiar leyendo el texto.')); return; }
-      const vs = L.Audio.voices();
-      if (!vs.length) { voiceBox.appendChild(h('div', { class: 'alert warn' }, 'No hay una voz en español instalada en este dispositivo. Puedes instalarla en los ajustes de voz de tu sistema (Android: «Síntesis de voz»; iPhone: Accesibilidad › Contenido leído; Windows: Voz).')); return; }
-      const dl = L.Audio.dialects();
-      const dsel = h('select', { class: 'inp', id: 'set-dialect', onchange: async (e) => { await setSetting('dialect', e.target.value); await setSetting('voiceURI', ''); drawVoices(); } }, h('option', { value: 'auto' }, 'Automático'), dl.map((d) => h('option', { value: d.id, selected: st.dialect === d.id ? '' : null }, d.label)));
-      const vsel = h('select', { class: 'inp', id: 'set-voice', onchange: (e) => setSetting('voiceURI', e.target.value) }, h('option', { value: '' }, 'Elegir automáticamente'), vs.map((v) => h('option', { value: v.voiceURI, selected: st.voiceURI === v.voiceURI ? '' : null }, v.name + ' (' + v.lang + ')')));
-      voiceBox.append(h('p', { class: 'muted' }, 'Estas son las voces en español que tiene tu dispositivo. Solo se ofrecen las variedades disponibles ahora mismo; ninguna se considera más correcta que otra.'),
-        h('div', { class: 'field' }, h('label', { for: 'set-dialect' }, 'Variedad del español'), dsel), h('div', { class: 'field' }, h('label', { for: 'set-voice' }, 'Voz'), vsel));
-    }
-    L.Audio.ready().then(drawVoices); drawVoices();
-    audio.append(voiceBox, h('div', { class: 'field' }, h('label', { for: 'set-rate' }, 'Velocidad de lectura: ', rv), rate), h('div', { class: 'field' }, h('label', { for: 'set-vol' }, 'Volumen'), vol),
-      h('div', { class: 'row' }, L.Audio.btn('Hola, ¿cómo estás? Me llamo Lucía y vivo en Sevilla.', { label: 'Probar la voz', name: 'prueba' }), h('span', { class: 'muted' }, 'Probar la voz')));
-    root.appendChild(audio);
-
-    // Ejercicios
-    const strict = h('input', { type: 'checkbox', id: 'set-strict', checked: st.strictAccents ? '' : null, onchange: (e) => setSetting('strictAccents', e.target.checked) });
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Ejercicios escritos'), h('div', { class: 'field' }, h('label', { for: 'set-strict' }, strict, ' Exigir las tildes al escribir'), h('p', { class: 'muted' }, 'Si lo desactivas, una respuesta correcta sin tilde cuenta como acierto, pero la corrección te recuerda la tilde.'))));
-
-    // Objetivos
-    const g = S.prog.goals;
-    const lessons = h('select', { class: 'inp', id: 'goal-l', onchange: async (e) => { g.lessonsPerWeek = +e.target.value; S.markProg(); await U.save(true); } }, [1, 2, 3, 5, 7, 10].map((n) => h('option', { value: n, selected: g.lessonsPerWeek === n ? '' : null }, n + (n === 1 ? ' lección por semana' : ' lecciones por semana'))));
-    const mins = h('select', { class: 'inp', id: 'goal-m', onchange: async (e) => { g.minutesPerDay = +e.target.value; S.markProg(); await U.save(true); } }, [5, 10, 15, 20, 30, 45].map((n) => h('option', { value: n, selected: g.minutesPerDay === n ? '' : null }, n + ' minutos al día')));
-    const focus = h('div', { class: 'row' }, S.SKILLS.map((s) => { const cb = h('input', { type: 'checkbox', id: 'f-' + s, checked: g.focus.includes(s) ? '' : null, onchange: async () => { g.focus = S.SKILLS.filter((k) => document.getElementById('f-' + k).checked); S.markProg(); await U.save(true); } }); return h('label', { for: 'f-' + s, class: 'chip-tag' }, cb, ' ' + s); }));
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Mi plan de aprendizaje'), h('p', { class: 'muted' }, 'Tu objetivo orienta las sugerencias de «Mi progreso». Es flexible: puedes cambiarlo cuando quieras y no es un castigo si vas más despacio.'),
-      h('div', { class: 'field' }, h('label', { for: 'goal-l' }, 'Objetivo semanal'), lessons), h('div', { class: 'field' }, h('label', { for: 'goal-m' }, 'Tiempo diario'), mins), h('div', { class: 'field' }, h('label', null, 'Habilidades en las que quiero centrarme'), focus)));
-
-    // Prueba de nivel
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Prueba de nivel'),
-      S.prog.placement ? h('p', null, 'Resultado actual: ', h('strong', null, 'Nivel ' + S.startStage() + ' de 30'), ' (' + L.fmtDate(S.prog.placement.date) + ').') : h('p', null, 'Todavía no has hecho la prueba de nivel.'),
-      h('p', { class: 'muted' }, 'Repetirla no borra lo que ya has completado. Si el nuevo resultado es más alto, se desbloquean niveles y se abren sus lecciones para repasar; si es más bajo, tu progreso se conserva y simplemente se guarda el resultado.'),
-      h('a', { class: 'btn btn-ghost', href: '#/prueba-de-nivel' }, S.prog.placement ? 'Repetir la prueba de nivel' : 'Hacer la prueba de nivel')));
-
-    // Datos
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Mis datos y privacidad'),
-      h('p', null, 'Tu progreso vive en este dispositivo (en el almacenamiento del navegador). Con una cuenta, también se guarda en línea para que lo recuperes en otro dispositivo. Pide permiso al micrófono solo si pulsas «Grabar» en Pronunciación.'),
-      h('p', { class: 'muted', style: 'margin-top:10px' }, 'Si borras los datos del navegador o desinstalas la aplicación sin copia de seguridad, el progreso se pierde.')));
-
-    // Sesión
-    if (!A.isGuest()) root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Sesión'), h('p', null, 'Has iniciado sesión como ' + A.user.name + '. Cerrar sesión no borra tus datos.'), h('button', { class: 'btn btn-ghost', onclick: async () => { await A.signOut(); L.refreshAcct(); L.toast('Sesión cerrada. Tus datos siguen en este dispositivo.', 'ok', 3500); location.hash = '#/'; L.render(); } }, 'Cerrar sesión')));
-
-    // Avanzado
-    const info = h('p', { class: 'muted', 'aria-live': 'polite' }, 'Calculando el espacio…');
-    (async () => { try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); info.textContent = 'Espacio usado por Languway Spanish en este dispositivo: ' + (e.usage / 1048576).toFixed(1) + ' MB.'; } else info.textContent = 'Este navegador no informa del espacio usado.'; } catch (e) { info.textContent = 'No se pudo calcular el espacio.'; } })();
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Avanzado'), info,
-      h('div', { class: 'field' }, h('h3', null, 'Instalar y compartir'), h('p', { class: 'muted' }, 'Instala la aplicación, comparte el enlace o muestra el código QR.'), h('a', { class: 'btn btn-primary', href: '#/instalar' }, h('span', { 'aria-hidden': 'true' }, '📲'), ' Instalar y compartir')),
-      h('div', { class: 'field' }, h('h3', null, 'Almacenamiento seguro'), h('p', { class: 'muted' }, 'Pide al navegador que no borre tu progreso cuando falte espacio. El navegador puede aceptar o rechazar la petición.'),
-        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { try { const ok = navigator.storage && navigator.storage.persist ? await navigator.storage.persist() : false; L.toast(ok ? 'Almacenamiento protegido.' : 'El navegador no lo ha concedido (instalar la aplicación suele ayudar).', ok ? 'ok' : '', 5000); } catch (e) { L.toast('No disponible en este navegador.', 'err'); } } }, 'Proteger mi progreso')),
-      h('div', { class: 'field' }, h('h3', null, 'Actualizar la aplicación'), h('p', { class: 'muted' }, 'Busca una versión nueva de los archivos de la aplicación. Tu progreso no se toca.'),
-        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (!reg) { L.toast('No hay versión instalada que actualizar. Recarga la página.', ''); return; } await reg.update(); L.toast('Comprobado. Si hay una novedad, verás el aviso de actualización.', 'ok', 4500); } catch (e) { L.toast('No se pudo comprobar ahora (¿sin conexión?).', 'err'); } } }, 'Buscar actualizaciones')),
-      h('div', { class: 'field' }, h('h3', null, 'Limpiar la copia de la aplicación'), h('p', { class: 'muted' }, 'Borra los archivos guardados para el modo sin conexión y vuelve a descargarlos. No borra tu cuenta ni tu progreso. Úsalo si algo se ve raro tras una actualización.'),
-        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await L.modal({ title: '¿Limpiar la copia de la aplicación?', body: 'Se recargará la página. Tu cuenta y tu progreso no se borran.', escValue: false, actions: [{ label: 'Cancelar', value: false }, { label: 'Limpiar y recargar', value: true, primary: true }] }); if (!ok) return; try { await S.flush(); if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : []; await Promise.all(regs.map((r) => r.unregister())); } catch (e) {} location.reload(); } }, 'Limpiar y recargar')),
-      h('div', { class: 'field' }, h('h3', null, 'Restablecer los ajustes'), h('p', { class: 'muted' }, 'Vuelve al aspecto, audio y ejercicios por defecto. No borra lecciones ni palabras.'),
-        h('button', { class: 'btn btn-ghost', type: 'button', onclick: async () => { const ok = await L.modal({ title: '¿Restablecer los ajustes?', body: 'Se recuperan los valores por defecto de apariencia, audio y ejercicios.', escValue: false, actions: [{ label: 'Cancelar', value: false }, { label: 'Restablecer', value: true, primary: true }] }); if (!ok) return; Object.assign(S.prog.settings, S.defaultProg('x').settings); S.markProg(); await U.save(true); L.applyPrefs(); document.documentElement.setAttribute('data-motion', 'auto'); L.render(); } }, 'Restablecer'))));
-
-    if (L.sup) root.appendChild(L.sup.settingsCard());
-    // Cuenta: ayuda (English)
-    const acct = [h('h2', null, 'Account help'), L.accountFlows.limits(),
-      h('h3', { style: 'margin-top:14px' }, 'Forgot your password?'),
-      h('p', null, 'Accounts use only a username and a password, with no email address, so we cannot send a reset link or recover the password. Check Caps Lock and the exact username first. If you have a backup file, restore it into a new account. Or create a new account and start again.')];
-    if (A.isGuest()) acct.push(h('h3', { style: 'margin-top:14px' }, 'Moving from another phone?'), h('p', null, 'If you have a backup file, you can restore your account on this device.'),
-      h('div', { class: 'row' }, L.accountFlows.restoreAccountButton(), h('a', { class: 'btn btn-ghost', href: '#/cuenta/entrar' }, 'Sign In'), h('a', { class: 'btn btn-ghost', href: '#/cuenta/crear' }, 'Create Account')));
-    else acct.push(h('div', { class: 'row' }, h('a', { class: 'btn btn-ghost', href: '#/cuenta' }, 'Account & Backup')));
-    root.appendChild(h('section', { class: 'card' }, ...acct));
-    root.appendChild(h('div', { style: 'margin-top:14px' }, L.accountFlows.dataSections()));
-    // Privacidad y créditos
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Privacidad y créditos'),
-      h('p', null, 'Languway Spanish no usa publicidad ni rastreadores y no carga código de terceros. Sin cuenta, tu progreso se queda solo en este dispositivo. Si creas una cuenta, solo pedimos un nombre de usuario y una contraseña (nunca un correo): se guardan junto con tu progreso para que puedas continuar en otro teléfono. La contraseña se guarda cifrada y puedes borrar tu cuenta cuando quieras desde «Account & Backup».'),
-      h('p', null, 'Las voces que oyes son las de tu dispositivo. El micrófono solo se activa cuando pulsas «Grabar», y la grabación no sale de tu dispositivo.'),
-      h('p', { class: 'muted' }, 'Las lecciones, textos, ejercicios, historias e iconos son contenido original de Languway. El logotipo pertenece a sus autores. Los certificados son de finalización de la plataforma y no son títulos oficiales.')));
-    return root;
-  }, 'Configuración');
-})(window.LWS);
 
 ;
 (function (L) {
@@ -3758,8 +3646,7 @@
       }
       L.refreshAcct();
       L.toast(res.offline ? 'Signed in without internet. Sign in again when you are online to save your progress online.' : 'Welcome, ' + res.user.name + '!', 'ok', res.offline ? 5000 : 3000);
-      const next = S.nextLesson();
-      location.hash = !sign && !S.prog.placement ? '#/prueba-de-nivel' : (S.prog.lastLesson ? '#/' : '#/');
+      location.hash = !sign && !S.prog.placement ? '#/prueba-de-nivel' : '#/';
     });
     card.appendChild(form);
     card.appendChild(h('p', { class: 'center', style: 'margin-top:16px' }, sign ? 'New here? ' : 'Already have an account? ', h('a', { href: sign ? '#/cuenta/crear' : '#/cuenta/entrar' }, sign ? 'Create Account' : 'Sign In')));
@@ -4247,6 +4134,7 @@
     r.style.setProperty('--lh', String(clamp(st.lineHeight, 1, 1.5, 1)));
     r.setAttribute('data-contrast', st.contrast === true ? 'high' : 'normal');
     r.setAttribute('data-font', st.easyFont === true ? 'easy' : 'normal');
+    r.setAttribute('data-celebrate', st.celebrate === false ? 'off' : 'on');
   };
   (function initialTheme() {
     let t = null; try { t = localStorage.getItem('lws.theme'); } catch (e) {}
@@ -4364,7 +4252,7 @@
       if (match.r.title) document.title = (typeof match.r.title === 'function' ? match.r.title(match.params) : match.r.title) + ' · Languway Spanish';
       const t = $('#page-title'); window.scrollTo(0, 0); if (t) t.focus({ preventScroll: true });
     } catch (err) {
-      
+      console.error(err);
       if (tok !== renderToken) return;
       view.innerHTML = '';
       view.appendChild(L.U.errorBox('No se pudo cargar esta sección. Tu progreso no se ha perdido.', () => L.render()));
