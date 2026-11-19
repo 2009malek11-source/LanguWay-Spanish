@@ -428,3 +428,31 @@ h1 > .sup, h2 > .sup, h3 > .sup { font-weight: 600; font-size: .62em; }
 .accbar { position: fixed; z-index: 70; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 6px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgba(0,0,0,.12); flex-wrap: wrap; }
 .accbar[hidden] { display: none; }
 .acckey { font: inherit; font-size: 1.2rem; font-weight: 700; min-width: 40px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--yellow-d); background: var(--yellow-l); color: var(--text); cursor: pointer; }
+
+/* fotos reales */
+.vis-pic { position: relative; overflow: hidden; }
+.vis-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; background: var(--card, #fff); }
+.vis-credit { font-size: .78rem; margin: 4px 0 0; }
+.vis-credit a { color: inherit; }
+.linklike { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+.vis-photo-btn { margin: 6px 0 0; }
+
+/* plan, habla, puedo */
+.plan-bar { height: 10px; border-radius: 99px; background: var(--line, #e9e2cf); overflow: hidden; margin: 8px 0 12px; }
+.plan-bar i { display: block; height: 100%; background: var(--yellow-d, #d9a400); border-radius: inherit; transition: width .3s; }
+.plan-list { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
+.plan-item { display: flex; gap: 12px; align-items: center; margin: 0; }
+.plan-item > div { flex: 1; min-width: 0; }
+.plan-item.done { opacity: .75; }
+.plan-ic { font-size: 1.6rem; }
+.week-dots { display: flex; gap: 8px; margin: 8px 0; }
+.wd { flex: 1; text-align: center; border-radius: 12px; padding: 6px 0; background: var(--line, #eee); }
+.wd b { display: block; font-size: .75rem; }
+.wd.on { background: var(--yellow, #f6c93b); }
+.can-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.can-list .todo { opacity: .7; }
+.habla-es { font-size: 1.4rem; font-weight: 600; margin: 6px 0; }
+.habla-words .w-ok { color: var(--ok, #1c7c3c); }
+.habla-words .w-miss { color: var(--err, #b3261e); text-decoration: underline wavy; }
+.habla-score.good { color: var(--ok, #1c7c3c); } .habla-score.mid { color: #9a6a00; } .habla-score.low { color: var(--err, #b3261e); }
+.habla-score { font-size: 1.3rem; font-weight: 700; margin: 8px 0 0; }

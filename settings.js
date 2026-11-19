@@ -195,6 +195,7 @@
         }))),
         field('Palabras por sesión de repaso · Words per review session', select('set-reviewLimit', [[10, '10'], [20, '20'], [30, '30'], [50, '50'], [100, '100']], st().reviewLimit || 30, (v) => setSetting('reviewLimit', +v)), 'Limita cuántas palabras pendientes ves de una vez; las demás esperan para otro día.'),
         toggle('showImages', 'Mostrar imágenes con cada palabra nueva · Show pictures for new words', 'Cada palabra nueva aparece con una ilustración y una frase de ejemplo.', true),
+        field('Fotos reales · Real photos', select('set-realPhotos', [['auto', 'Automáticas cuando hay conexión · Automatic when online'], ['ask', 'Solo si las pido · Only on request'], ['off', 'Nunca · Never']], st().realPhotos || 'auto', (v) => setSetting('realPhotos', v)), 'Fotos de Wikipedia para objetos y lugares; se guardan para verlas sin conexión. Si una foto no corresponde, puedes ocultarla.'),
         toggle('showTranslations', 'Mostrar la traducción de las frases en mi idioma de ayuda · Show example translations', 'Debajo de cada frase de ejemplo, en inglés o árabe según tu idioma de ayuda.', true),
         toggle('autoPlay', 'Reproducir la pronunciación al abrir una palabra · Auto-play pronunciation', 'Se oye la palabra al tocar su ilustración.', false),
         toggle('celebrate', 'Animaciones de celebración · Celebrations', 'Emojis de felicitación al aprobar pruebas.', true),

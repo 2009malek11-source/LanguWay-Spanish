@@ -128,11 +128,79 @@
   const st = () => (L.S && L.S.prog && L.S.prog.settings) || {};
   V.enabled = () => st().showImages !== false;
 
+  // ---------- fotos reales (Wikipedia / Wikimedia Commons) ----------
+  // Se piden solo cuando hay conexión y se guardan en el dispositivo. Si fallan, queda la ilustración.
+  const PH = {
+    agua: 'Agua', pan: 'Pan', leche: 'Leche', café: 'Café', manzana: 'Manzana', mesa: 'Mesa', libro: 'Libro', casa: 'Casa', ciudad: 'Ciudad',
+    calle: 'Calle', parque: 'Parque', supermercado: 'Supermercado', farmacia: 'Farmacia', hospital: 'Hospital', reloj: 'Reloj', tienda: 'Tienda',
+    maleta: 'Maleta', desayuno: 'Desayuno', cabeza: 'Cabeza', estómago: 'Estómago', coche: 'Automóvil', tren: 'Tren', avión: 'Avión',
+    ordenador: 'Computadora', teléfono: 'Teléfono', árbol: 'Árbol', río: 'Río', chocolate: 'Chocolate', hotel: 'Hotel', restaurante: 'Restaurante',
+    televisión: 'Televisor', pasaporte: 'Pasaporte', aeropuerto: 'Aeropuerto', mapa: 'Mapa', postre: 'Postre', escuela: 'Escuela',
+    universidad: 'Universidad', foto: 'Fotografía', dinero: 'Dinero'
+  };
+  const lsGet = (k, d) => { try { const x = JSON.parse(localStorage.getItem(k)); return x == null ? d : x; } catch (e) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } };
+  const bare = (w) => norm(w).replace(ART, '');
+  V.photoMode = () => st().realPhotos || 'auto'; // auto | ask | off
+  V.photoTitle = (word) => PH[bare(word)] || null;
+  const banned = () => new Set(lsGet('lws.phx', []));
+  V.photoReport = (word) => { const b = banned(); b.add(bare(word)); lsSet('lws.phx', Array.from(b)); };
+
+  async function getJSON(url) {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 7000);
+    try { const r = await fetch(url, { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' }); return r.ok ? await r.json() : null; } catch (e) { return null; } finally { clearTimeout(t); }
+  }
+  // Devuelve { src, page, title } o null. Guarda el resultado (también los fallos) para no repetir peticiones.
+  V.photoFor = async function (word, opts) {
+    const key = bare(word); if (!key || banned().has(key)) return null;
+    const cache = lsGet('lws.ph', {});
+    if (cache[key] !== undefined && !(opts && opts.search && cache[key] === 0 && !cache[key + '#s'])) return cache[key] || null;
+    if (navigator.onLine === false) return null;
+    let res = null;
+    const title = PH[key];
+    if (title) {
+      const j = await getJSON('https://es.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_')));
+      if (j && j.type === 'standard' && j.thumbnail && j.thumbnail.source) res = { src: j.thumbnail.source, page: (j.content_urls && j.content_urls.desktop && j.content_urls.desktop.page) || '', title: j.title || title };
+    } else if (opts && opts.search) {
+      const j = await getJSON('https://es.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=1&prop=pageimages|info&inprop=url&piprop=thumbnail&pithumbsize=480&gsrsearch=' + encodeURIComponent(key));
+      const pg = j && j.query && j.query.pages ? Object.values(j.query.pages)[0] : null;
+      if (pg && pg.thumbnail && pg.thumbnail.source) res = { src: pg.thumbnail.source, page: pg.fullurl || '', title: pg.title };
+      cache[key + '#s'] = 1;
+    }
+    cache[key] = res || 0; lsSet('lws.ph', cache);
+    return res;
+  };
+
+  // Pone la foto sobre la ilustración (no sustituye al dibujo si falla)
+  V.attachPhoto = function (pic, word, pos, withControls) {
+    const mode = V.photoMode(); if (mode === 'off' || !V.enabled()) return;
+    const show = async (search) => {
+      const r = await V.photoFor(word, { search });
+      if (!r || !pic.parentNode) return false;
+      const img = h('img', { class: 'vis-photo', src: r.src, alt: 'Foto: ' + word, loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer' });
+      img.addEventListener('error', () => { img.remove(); pic.classList.remove('has-photo'); });
+      img.addEventListener('load', () => pic.classList.add('has-photo'));
+      pic.appendChild(img);
+      if (withControls && !pic.nextElementSibling?.classList?.contains('vis-credit')) {
+        const credit = h('div', { class: 'vis-credit muted' }, 'Foto real · Wikipedia: ', r.page ? h('a', { href: r.page, target: '_blank', rel: 'noopener noreferrer' }, r.title) : r.title, ' · ',
+          h('button', { type: 'button', class: 'linklike', onclick: () => { V.photoReport(word); img.remove(); pic.classList.remove('has-photo'); credit.remove(); L.toast('Listo: no volverás a ver esa foto.', 'ok', 2200); } }, 'La foto no corresponde · Report'));
+        pic.after(credit);
+      }
+      return true;
+    };
+    if (V.photoTitle(word) && mode === 'auto') { show(false); return; }
+    if (withControls && /sustantivo|noun|cognate/i.test(pos || '') && !banned().has(bare(word))) {
+      const btn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm vis-photo-btn', onclick: async () => { btn.disabled = true; btn.textContent = '…'; const ok = await show(true); if (ok) btn.remove(); else { btn.disabled = false; btn.textContent = 'No hay foto · Retry 📷'; } } }, '📷 Ver foto real · Real photo');
+      pic.after(btn);
+    }
+  };
+
   // Solo la imagen (clicable: pronuncia la palabra)
   V.pic = function (word, pos, extra) {
     const pic = h('div', { class: 'vis-pic' + (extra ? ' ' + extra : ''), role: 'button', tabindex: '0', 'aria-label': 'Escuchar: ' + word });
     if (!V.enabled()) { pic.hidden = true; return pic; }
     pic.appendChild(V.scene(word, pos));
+    if (!/\bmini\b/.test(extra || '')) V.attachPhoto(pic, word, pos, false);
     const go = () => { try { L.Audio.speak(word, { name: word }); } catch (e) { /* sin voz */ } };
     pic.addEventListener('click', go);
     pic.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
@@ -148,6 +216,7 @@
     const pic = h('div', { class: 'vis-pic', role: 'button', tabindex: '0', 'aria-label': 'Escuchar: ' + item.w });
     if (V.enabled()) pic.appendChild(V.scene(item.w, item.pos));
     else pic.hidden = true;
+    wrap.appendChild(pic);
     const say = () => { try { L.Audio.speak(item.ex || item.w, { name: item.w }); } catch (e) { /* sin voz */ } };
     if (st().autoPlay) pic.addEventListener('click', say);
     else pic.addEventListener('click', () => { try { L.Audio.speak(item.w, { name: item.w }); } catch (e) { /* sin voz */ } });
@@ -165,7 +234,8 @@
         if (lang === 'ar' && ar) cap.appendChild(h('div', { class: 'vis-ar', lang: 'ar', dir: 'rtl', 'data-nosup': '1' }, 'المعنى: ' + ar));
       }
     }
-    wrap.append(pic, cap);
+    wrap.appendChild(cap);
+    V.attachPhoto(pic, item.w, item.pos, true);
     return wrap;
   };
 })(window.LWS);

@@ -1,7 +1,7 @@
 /* Service Worker: guarda solo los archivos de la aplicación. */
-const VERSION = '7b41c0d9a2e6';
+const VERSION = 'c3f08a51d94b';
 const CACHE = 'languway-spanish-es-' + VERSION;
-const ASSETS = ["./", "app.js", "assistant.js", "settings.js", "visuals.js", "apple-touch-icon.png", "content.js", "favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "logo.png", "manifest.json", "mark.png", "qr.png", "styles.css"];
+const ASSETS = ["./", "app.js", "assistant.js", "settings.js", "plan.js", "visuals.js", "apple-touch-icon.png", "content.js", "favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "logo.png", "manifest.json", "mark.png", "qr.png", "styles.css"];
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((a) => new Request(a, { cache: 'reload' })))));
@@ -14,6 +14,10 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  if (url.origin === 'https://upload.wikimedia.org') { // fotos de palabras: se guardan para verlas sin conexión
+    e.respondWith(caches.open('lws-photos').then((c) => c.match(req).then((hit) => hit || fetch(req).then((res) => { if (res && (res.ok || res.type === 'opaque')) c.put(req, res.clone()); return res; }))));
+    return;
+  }
   if (url.origin !== location.origin) return; // enlaces externos: sin caché
   // Primero la red (así siempre ves la versión más reciente); sin conexión, la copia guardada.
   const net = fetch(req).then((res) => {

@@ -508,6 +508,8 @@
       if (typeof cs.onboarded !== 'boolean') delete cs.onboarded;
     }
     if (clean.settings && typeof clean.settings.easyRules !== 'boolean') delete clean.settings.easyRules;
+    if (clean.settings && !['auto', 'ask', 'off'].includes(clean.settings.realPhotos)) delete clean.settings.realPhotos;
+    delete clean.plan; // se recalcula cada día
     ['searchHistory', 'translatorHistory'].forEach((k) => { if (!Array.isArray(clean[k])) clean[k] = []; });
     clean.unlockedLevels = clean.unlockedLevels.filter((x) => C.level(x));
     if (!clean.unlockedLevels.includes('A1')) clean.unlockedLevels.unshift('A1');
@@ -1457,6 +1459,7 @@
   route('/', () => {
     const root = h('div');
     root.appendChild(continueCard());
+    if (L.plan && S.prog && S.prog.placement) root.appendChild(L.plan.card());
     if (S.prog && S.prog.placement && S.currentStage() <= 3 && !((S.prog.done['pre:steps'] || {}).best >= 75)) root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Primeros pasos · First steps'), h('p', null, 'Nuevo en español? New to Spanish? Learn the letters, the numbers and your first words in English, then take a short check.'), h('a', { class: 'btn btn-primary', href: '#/primeros-pasos' }, 'Empezar desde cero')));
     if (L.coach && S.prog && S.prog.placement) root.appendChild(L.coach.card(2));
     if (L.A.isGuest() && !L.memoryMode) root.appendChild(h('div', { class: 'alert', style: 'margin-top:16px' }, h('strong', null, 'Tu progreso se guarda en este dispositivo. '), 'Puedes estudiar sin cuenta. Para guardar tu progreso en línea y seguir en otro teléfono, ', h('a', { href: '#/cuenta/crear' }, 'crea una cuenta'), ' (solo nombre de usuario y contraseña).'));
