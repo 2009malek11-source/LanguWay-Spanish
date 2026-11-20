@@ -280,7 +280,7 @@
   S.levelDone = (lv) => !!(S.prog.levelTests[lv] && S.prog.levelTests[lv].done);
   S.levelUnlocked = (lv) => S.prog.unlockedLevels.includes(lv);
   S.levelValidated = (lv) => S.prog.validatedLevels.includes(lv);
-  // Etapa (1–30) desde la que empieza el estudiante según su prueba de nivel
+  // Etapa (1–25) desde la que empieza el estudiante según su prueba de nivel
   S.startStage = function () {
     const pl = S.prog.placement; if (!pl) return 1;
     let n = +pl.stage; if (!(n >= 1)) { const i = C.levelIdx(pl.level); n = i >= 0 ? i * 5 + 1 : 1; }
@@ -1359,14 +1359,24 @@
     return p;
   };
   U.audioLine = (text, o) => h('div', { class: 'row' }, L.Audio.btn(text, Object.assign({ small: true, name: text }, o || {})), h('span', null, text));
-  U.pageHead = (title, sub, crumbs) => h('div', { style: 'margin-bottom:16px' },
-    crumbs ? h('nav', { class: 'crumbs', 'aria-label': 'Ruta' }, crumbs.map((c, i) => [i ? ' › ' : '', c.href ? h('a', { href: c.href }, c.t) : c.t])) : null,
-    h('h1', { tabindex: '-1', id: 'page-title' }, title), sub ? h('p', { class: 'muted' }, sub) : null);
+  const HEAD_ICON = { aprender: 'book', leccion: 'book', unidad: 'book', vocabulario: 'abc', gramatica: 'blocks', escuchar: 'headphones', leer: 'doc', escribir: 'pen', frases: 'chat', conversacion: 'chat', historias: 'book', progreso: 'chart', certificados: 'trophy', examen: 'clipboard', practica: 'target', repaso: 'repeat', cuenta: 'user', configuracion: 'gear', buscar: 'search', 'mi-plan': 'calendar', puedo: 'check', habla: 'mic', traductor: 'translate', acerca: 'question' };
+  U.pageHead = (title, sub, crumbs, icon) => {
+    const path = (location.hash || '#/').replace(/^#/, '').split('?')[0] || '/';
+    const seg = path.split('/')[1] || '';
+    const bg = h('div', { class: 'ph-bg', 'aria-hidden': 'true' });
+    const head = h('header', { class: 'phead glass' }, bg,
+      h('div', { class: 'ph-in' },
+        crumbs ? h('nav', { class: 'crumbs', 'aria-label': 'Ruta' }, crumbs.map((c, i) => [i ? ' › ' : '', c.href ? h('a', { href: c.href }, c.t) : c.t])) : null,
+        h('div', { class: 'ph-row' }, h('span', { class: 'ph-ico', 'aria-hidden': 'true' }, L.ico(icon || HEAD_ICON[seg] || 'spark')),
+          h('div', { class: 'ph-tx' }, h('h1', { tabindex: '-1', id: 'page-title' }, title), sub ? h('p', { class: 'muted' }, sub) : null))));
+    if (L.photos) L.photos.attach(bg, L.photos.forRoute(path), { credit: 'text' });
+    return head;
+  };
   U.levelStatusChip = (st) => h('span', { class: 'chip-tag ' + (st === 'completado' ? 'green' : st === 'bloqueado' ? 'gray' : '') }, { completado: '✓ Completado', 'en curso': 'En curso', disponible: 'Disponible', bloqueado: '🔒 Bloqueado' }[st]);
-  // Pista de 30 niveles: hecho / actual / abierto / bloqueado
+  // Pista de ' + L.STAGES + ' niveles: hecho / actual / abierto / bloqueado
   U.stageTrack = function () {
     const S = L.S, cur = S.currentStage(), start = S.startStage();
-    return L.h('div', { class: 'stages', role: 'list', 'aria-label': 'Ruta de 30 niveles' }, L.stages().map((st) => {
+    return L.h('div', { class: 'stages', role: 'list', 'aria-label': 'Ruta de ' + L.STAGES + ' niveles' }, L.stages().map((st) => {
       const done = S.stageDone(st.n), isCur = st.n === cur;
       const st2 = done ? 'done' : isCur ? 'cur' : st.n < start ? 'skip' : st.n > cur ? 'lock' : 'open';
       return L.h('a', { class: 'stg ' + st2, role: 'listitem', href: '#/aprender/' + st.level, 'aria-label': 'Nivel ' + st.n + ' (' + st.level + ')' + (done ? ', completado' : isCur ? ', actual' : ''), title: 'Nivel ' + st.n + ' · ' + st.level },
@@ -1380,39 +1390,6 @@
   'use strict';
   const { h, route } = L; const C = L.C, S = L.S, U = L.U;
 
-  function continueCard() {
-    const st = S.stats();
-    const nxt = S.nextLesson();
-    if (!st.lessons && !S.prog.lastLesson && !S.prog.placement) {
-      return h('section', { class: 'hero' },
-        h('img', { src: 'logo.png', alt: 'Languway Spanish', class: 'hero-logo', width: 220, height: 186 }),
-        h('h1', null, 'Aprende español en español'),
-        h('p', { style: 'font-size:1.1rem' }, 'Lecciones con audio, ejercicios corregidos, repaso espaciado y progreso guardado en tu dispositivo. Haz la prueba de nivel para empezar en el punto justo, o si no sabes nada de español, empieza por los primeros pasos.'),
-        h('div', { class: 'row' },
-          h('a', { class: 'btn btn-primary', href: '#/prueba-de-nivel' }, 'Hacer la prueba de nivel'),
-          h('a', { class: 'btn btn-ghost', href: '#/primeros-pasos' }, 'No sé nada de español')));
-    }
-    const lv = S.currentLevel(); const p = S.levelProgress(lv);
-    const resume = S.prog.lastLesson && C.lessons[S.prog.lastLesson];
-    const target = nxt || (resume ? S.prog.lastLesson : null);
-    const les = target && C.lessons[target];
-    return h('section', { class: 'hero' },
-      h('div', { class: 'row sb' }, h('span', { class: 'chip-tag' }, 'Nivel ' + S.currentStage() + ' de 30 · ' + lv + ' ' + C.level(lv).name), S.streak() ? h('span', { class: 'chip-tag green' }, '🔥 ' + S.streak() + (S.streak() === 1 ? ' día seguido' : ' días seguidos')) : null),
-      (function () { const xl = S.xpLevel(), q = S.todayQ(), g = S.GOAL, done = q >= g; return h('div', { class: 'card', style: 'padding:10px;margin:8px 0' },
-        h('div', { class: 'row sb' }, h('b', null, 'Meta diaria'), h('span', { class: 'chip-tag ' + (done ? 'green' : '') }, Math.min(q, g) + ' / ' + g + ' respuestas')),
-        U.bar(Math.min(100, Math.round(100 * q / g))),
-        h('div', { class: 'row sb', style: 'margin-top:6px' }, h('span', null, '⭐ ' + xl.xp + ' XP'), h('span', null, 'Nivel de jugador ' + xl.lv)),
-        h('div', { class: 'muted' }, done ? '¡Meta cumplida hoy! Sesión corta de 5 minutos lista.' : 'Una sesión corta de 5 minutos: responde ' + (g - q) + ' preguntas más. ', done ? null : h('a', { href: '#/practica' }, 'Practicar ahora'), ' · ', (S.prog.activity[L.dayKey()] || {}).reto ? '🏆 Reto del día hecho' : h('a', { href: '#/reto' }, '🏆 Reto del día'))); })(),
-      h('h1', null, 'Continuar aprendiendo'),
-      les ? h('p', { style: 'font-size:1.1rem' }, S.lessonDone(target) ? 'Última lección: ' : 'Siguiente lección: ', h('strong', null, les.title), ' (' + les.level + ')') : h('p', null, 'Has completado todo el contenido disponible por ahora. Repasa tus palabras o practica tus errores.'),
-      h('div', { class: 'row sb' }, h('span', null, p.done + ' de ' + p.total + ' lecciones completadas'), h('b', null, p.pct + ' %')),
-      U.bar(p.pct),
-      h('div', { class: 'row', style: 'margin-top:14px' },
-        les ? h('a', { class: 'btn btn-primary', href: '#/leccion/' + target }, 'Continuar aprendiendo') : null,
-        h('a', { class: 'btn btn-ghost', href: '#/aprender/' + lv }, 'Ver el nivel ' + lv),
-        S.prog.placement ? null : h('a', { class: 'btn btn-ghost', href: '#/prueba-de-nivel' }, 'Prueba de nivel')));
-  }
-
   function levelsSection() {
     const wrap = h('ol', { class: 'roadmap' });
     const cur = S.prog.placement ? S.currentStage() : 0;
@@ -1423,7 +1400,7 @@
         h('a', { class: 'road-head', href: '#/aprender/' + lv.id }, h('span', { class: 'code' }, lv.id), h('span', { class: 'road-name' }, h('strong', null, lv.name), h('small', null, lv.desc)), U.levelStatusChip(S.prog.placement ? st : 'disponible')),
         h('div', { class: 'road-steps' }, stages.map((x) => {
           const done = S.prog.placement && S.stageDone(x.n), isCur = x.n === cur;
-          return h('a', { class: 'stg ' + (done ? 'done' : isCur ? 'cur' : (S.prog.placement && x.n > cur ? 'lock' : 'open')), href: '#/aprender/' + lv.id, 'aria-label': 'Nivel ' + x.n + ' de 30 (' + lv.id + ')' + (done ? ', completado' : isCur ? ', actual' : '') }, h('b', null, x.n));
+          return h('a', { class: 'stg ' + (done ? 'done' : isCur ? 'cur' : (S.prog.placement && x.n > cur ? 'lock' : 'open')), href: '#/aprender/' + lv.id, 'aria-label': 'Nivel ' + x.n + ' de ' + L.STAGES + ' (' + lv.id + ')' + (done ? ', completado' : isCur ? ', actual' : '') }, h('b', null, x.n));
         })),
         h('div', { class: 'road-bar' }, U.bar(p.pct))));
     });
@@ -1456,24 +1433,6 @@
     return wrap;
   }
 
-  route('/', () => {
-    const root = h('div');
-    root.appendChild(continueCard());
-    if (L.plan && S.prog && S.prog.placement) root.appendChild(L.plan.card());
-    if (S.prog && S.prog.placement && S.currentStage() <= 3 && !((S.prog.done['pre:steps'] || {}).best >= 75)) root.appendChild(h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Primeros pasos · First steps'), h('p', null, 'Nuevo en español? New to Spanish? Learn the letters, the numbers and your first words in English, then take a short check.'), h('a', { class: 'btn btn-primary', href: '#/primeros-pasos' }, 'Empezar desde cero')));
-    if (L.coach && S.prog && S.prog.placement) root.appendChild(L.coach.card(2));
-    if (L.A.isGuest() && !L.memoryMode) root.appendChild(h('div', { class: 'alert', style: 'margin-top:16px' }, h('strong', null, 'Tu progreso se guarda en este dispositivo. '), 'Puedes estudiar sin cuenta. Para guardar tu progreso en línea y seguir en otro teléfono, ', h('a', { href: '#/cuenta/crear' }, 'crea una cuenta'), ' (solo nombre de usuario y contraseña).'));
-    const backupWarn = backupReminder();
-    if (backupWarn) root.appendChild(backupWarn);
-    root.appendChild(h('h2', { style: 'margin-top:26px' }, 'Tu ruta de aprendizaje: A1 → C2'));
-    root.appendChild(levelsSection());
-    root.appendChild(h('h2', { style: 'margin-top:26px' }, 'Práctica rápida'));
-    root.appendChild(quickPractice());
-    root.appendChild(h('h2', { style: 'margin-top:26px' }, 'Tu actividad'));
-    root.appendChild(statsSection());
-    return root;
-  }, 'Inicio');
-
   function backupReminder() {
     const st = S.stats();
     if (st.lessons < 2) return null;
@@ -1484,6 +1443,7 @@
       last ? 'Tu última copia fue hace ' + days + ' días. ' : 'Todavía no has hecho ninguna copia. ',
       'Si borras los datos del navegador o desinstalas la app, perderás tu progreso. ', h('a', { href: '#/cuenta' }, 'Exportar mis datos'));
   }
+  L.homeParts = { levelsSection, quickPractice, statsSection, backupReminder };
 })(window.LWS);
 
 ;
@@ -1505,8 +1465,8 @@
 
   route('/aprender', () => {
     const root = h('div');
-    root.appendChild(U.pageHead('Aprender', 'Elige tu nivel. Tu ruta avanza paso a paso del A1 al C2.'));
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Tu ruta de 30 niveles'), h('p', { class: 'muted' }, 'Estás en el nivel ' + S.currentStage() + ' de 30. Completa las lecciones y los exámenes para avanzar.'), U.stageTrack()));
+    root.appendChild(U.pageHead('Aprender', 'Elige tu nivel. Tu ruta avanza paso a paso del A1 al C1.'));
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Tu ruta de ' + L.STAGES + ' niveles'), h('p', { class: 'muted' }, 'Estás en el nivel ' + S.currentStage() + ' de ' + L.STAGES + '. Completa las lecciones y los exámenes para avanzar.'), U.stageTrack()));
     root.appendChild(h('div', { class: 'grid g3', style: 'margin-top:16px' }, C.levels.map(levelCard)));
     root.appendChild(h('p', { class: 'muted', style: 'margin-top:16px' }, 'Los niveles se están completando por etapas: ves la estructura completa, pero solo las lecciones con contenido terminado se pueden abrir.'));
     return root;
@@ -1533,7 +1493,7 @@
     if (st === 'bloqueado') {
       const prev = C.levels[C.levelIdx(lv.id) - 1];
       root.appendChild(h('div', { class: 'alert warn', style: 'margin-top:14px' }, 'Este nivel todavía está bloqueado. Aprueba el examen final del nivel ' + prev.id + ' para abrirlo, o haz la prueba de nivel. Mientras tanto, puedes repasar las lecciones de niveles anteriores.', h('div', { style: 'margin-top:8px' }, h('a', { class: 'btn btn-primary btn-sm', href: '#/prueba-de-nivel' }, 'Hacer la prueba de nivel'))));
-          root.appendChild(h('div', { class: 'card', style: 'margin-top:14px' }, h('p', null, 'Las lecciones de este nivel se mostrarán cuando llegues a él. Ahora concéntrate en tu nivel actual: ' + (S.currentStage() ? 'nivel ' + S.currentStage() + ' de 30.' : '')), h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Volver a mi ruta')));
+          root.appendChild(h('div', { class: 'card', style: 'margin-top:14px' }, h('p', null, 'Las lecciones de este nivel se mostrarán cuando llegues a él. Ahora concéntrate en tu nivel actual: ' + (S.currentStage() ? 'nivel ' + S.currentStage() + ' de ' + L.STAGES + '.' : '')), h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Volver a mi ruta')));
       return root;
     }
     if (S.levelValidated(lv.id)) root.appendChild(h('div', { class: 'alert ok', style: 'margin-top:14px' }, 'Tu prueba de nivel indica que ya dominas este nivel. Todas las lecciones están abiertas para repasar en el orden que quieras.'));
@@ -1541,7 +1501,7 @@
     lv.units.forEach((un) => {
       const ready = C.unitReady(un); const udone = S.unitDone(lv.id, un.n);
       const card = h('section', { class: 'card' }, h('div', { class: 'row sb' }, h('h3', null, 'Unidad ' + un.n + ': ' + un.title), udone ? h('span', { class: 'chip-tag green' }, '✓ Unidad superada') : !ready ? h('span', { class: 'chip-tag gray' }, 'En preparación') : null));
-      un.lessons.forEach((ref) => { const sn = L.stageOf(ref.id); card.appendChild(h('div', { class: 'muted stg-label' }, 'Nivel ' + sn + ' de 30')); card.appendChild(lessonRow(ref)); });
+      un.lessons.forEach((ref) => { const sn = L.stageOf(ref.id); card.appendChild(h('div', { class: 'muted stg-label' }, 'Nivel ' + sn + ' de ' + L.STAGES + '')); card.appendChild(lessonRow(ref)); });
       if (ready) {
         const open = S.unitTestUnlocked(lv.id, un.n);
         const rec = S.prog.units[lv.id + '.' + un.n];
@@ -2648,9 +2608,9 @@
       return root;
     }
     const lv = S.currentLevel(); const p = S.levelProgress(lv);
-    root.appendChild(h('section', { class: 'card', style: 'margin-bottom:16px' }, h('h2', null, 'Ruta de 30 niveles'), U.stageTrack()));
+    root.appendChild(h('section', { class: 'card', style: 'margin-bottom:16px' }, h('h2', null, 'Ruta de ' + L.STAGES + ' niveles'), U.stageTrack()));
     root.appendChild(h('div', { class: 'grid g2' },
-      h('section', { class: 'card' }, h('h2', null, 'Nivel ' + S.currentStage() + ' de 30 (' + lv + ')'), h('p', { class: 'muted' }, C.level(lv).name), h('div', { class: 'row sb' }, h('span', null, p.done + ' de ' + p.total + ' lecciones'), h('b', null, p.pct + ' %')), U.bar(p.pct),
+      h('section', { class: 'card' }, h('h2', null, 'Nivel ' + S.currentStage() + ' de ' + L.STAGES + ' (' + lv + ')'), h('p', { class: 'muted' }, C.level(lv).name), h('div', { class: 'row sb' }, h('span', null, p.done + ' de ' + p.total + ' lecciones'), h('b', null, p.pct + ' %')), U.bar(p.pct),
         h('p', { style: 'margin-top:10px' }, 'Unidades superadas: ' + C.level(lv).units.filter((u) => S.unitDone(lv, u.n)).length + ' de ' + C.level(lv).units.length)),
       h('section', { class: 'card' }, h('h2', null, 'Mi objetivo'), (() => {
         const goal = S.prog.goals.lessonsPerWeek, wk = weekLessons();
@@ -2708,7 +2668,7 @@
   const { h, route } = L; const C = L.C, S = L.S, U = L.U, A = L.A, E = L.Engine;
   const SITE = (L.SITE_URL || 'https://2009malek11-source.github.io/LanguWay-Spanish/');
   const NAME_RE = /^[\p{L}][\p{L} .'-]{1,39}$/u;
-  const LV = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const LV = ['A1', 'A2', 'B1', 'B2', 'C1'];
   const cleanName = (v) => String(v || '').trim().replace(/\s+/g, ' ');
   const days = (a, b) => Math.max(1, Math.round((b - a) / 86400000));
 
@@ -2745,15 +2705,15 @@
     card.appendChild(h('div', { style: 'letter-spacing:.2em;font-weight:700' }, 'LANGUWAY SPANISH'));
     let title, line, extra = [];
     if (c.kind === 'stage') {
-      const n = +c.ref; title = 'Certificado · Nivel ' + n + ' de 30'; line = 'ha completado con éxito el nivel ' + n + ' de 30 (' + fmtLevel(n) + ').';
+      const n = +c.ref; title = 'Certificado · Nivel ' + n + ' de ' + L.STAGES + ''; line = 'ha completado con éxito el nivel ' + n + ' de ' + L.STAGES + ' (' + fmtLevel(n) + ').';
       if (d.lessons) extra.push('Lecciones superadas en este nivel del curso: ' + d.lessons);
-      extra.push(n < 30 ? 'Niveles que te quedan para completar los 30: ' + (30 - n) : '¡Has completado los 30 niveles!');
+      extra.push(n < L.STAGES ? 'Niveles que te quedan para completar los ' + L.STAGES + ': ' + (L.STAGES - n) : '¡Has completado los 25 niveles!');
     } else if (c.kind === 'level') {
       const i = LV.indexOf(c.ref); title = 'Certificado de nivel ' + c.ref; line = 'ha completado el nivel ' + c.ref + ' — ' + C.level(c.ref).name + '.';
       if (d.score != null) extra.push('Resultado del examen final del nivel: ' + d.score + ' %');
-      extra.push(i < 5 ? 'Niveles que te quedan (A1–C2): ' + (5 - i) : '¡Has completado todos los niveles!');
+      extra.push(i < LV.length - 1 ? 'Niveles que te quedan (A1–C1): ' + (LV.length - 1 - i) : '¡Has completado todos los niveles!');
     } else {
-      title = 'Diploma de Español · 30 niveles (A1–C2)'; line = 'ha completado los 30 niveles de español de Languway Spanish y ha aprobado el examen final global.';
+      title = 'Diploma de Español · 25 niveles (A1–C1)'; line = 'ha completado los 25 niveles de español de Languway Spanish y ha aprobado el examen final global.';
       if (d.score != null) extra.push('Nota del examen final global: ' + d.score + ' %');
       if (d.lessons) extra.push('Lecciones superadas: ' + d.lessons);
       if (d.words) extra.push('Palabras guardadas para repaso: ' + d.words);
@@ -2820,14 +2780,14 @@
   const allLevelsDone = () => LV.every((l) => S.levelDone(l));
   const finalDone = () => allLevelsDone() && S.prog.finalExam.best >= 75;
 
-  route('/certificado-nivel/:n', ({ params }) => { const n = +params.n; return certPage('stage', n, 'Certificado del nivel ' + n + ' de 30', () => n >= 1 && n <= 30 && S.stageDone(n), 'Todavía no has completado todas las lecciones del nivel ' + n + ' de 30.'); }, 'Certificado de nivel');
+  route('/certificado-nivel/:n', ({ params }) => { const n = +params.n; return certPage('stage', n, 'Certificado del nivel ' + n + ' de ' + L.STAGES + '', () => n >= 1 && n <= L.STAGES && S.stageDone(n), 'Todavía no has completado todas las lecciones del nivel ' + n + ' de ' + L.STAGES + '.'); }, 'Certificado de nivel');
   route('/certificado/:lv', ({ params }) => { const lv = String(params.lv).toUpperCase(); return certPage('level', lv, 'Certificado de nivel ' + lv, () => LV.includes(lv) && S.levelDone(lv), 'Todavía no tienes el certificado de este nivel. Aprueba el examen final del nivel para obtenerlo.'); }, 'Certificado');
-  route('/diploma', () => certPage('final', 'F', 'Diploma de Español', finalDone, 'El diploma se obtiene al aprobar los seis niveles (A1–C2) y el examen final global.', '#/examen-final'), 'Diploma');
+  route('/diploma', () => certPage('final', 'F', 'Diploma de Español', finalDone, 'El diploma se obtiene al aprobar los cinco niveles (A1–C1) y el examen final global.', '#/examen-final'), 'Diploma');
 
   // ---------- examen final global ----------
   route('/examen-final', async () => {
-    const root = h('div'); root.appendChild(U.pageHead('Examen final global', 'Una prueba completa de los seis niveles, de A1 a C2.', [{ t: 'Certificados', href: '#/certificados' }, { t: 'Examen final' }]));
-    if (!allLevelsDone()) { root.appendChild(h('div', { class: 'alert warn' }, 'El examen final global se abre cuando apruebes el examen final de los seis niveles (A1 a C2). Te faltan: ' + LV.filter((l) => !S.levelDone(l)).join(', ') + '.')); return root; }
+    const root = h('div'); root.appendChild(U.pageHead('Examen final global', 'Una prueba completa de los cinco niveles, de A1 a C1.', [{ t: 'Certificados', href: '#/certificados' }, { t: 'Examen final' }]));
+    if (!allLevelsDone()) { root.appendChild(h('div', { class: 'alert warn' }, 'El examen final global se abre cuando apruebes el examen final de los cinco niveles (A1 a C1). Te faltan: ' + LV.filter((l) => !S.levelDone(l)).join(', ') + '.')); return root; }
     const host = h('div'); root.appendChild(host);
     const ids = []; LV.forEach((l) => C.lessonList(l).forEach((r) => { if (C.lessons[r.id]) ids.push(r.id); }));
     async function start() {
@@ -2849,12 +2809,12 @@
 
   // ---------- índice de certificados ----------
   route('/certificados', () => {
-    const root = h('div'); root.appendChild(U.pageHead('Mis certificados', 'Un certificado por cada uno de los 30 niveles, uno por cada nivel A1–C2 y el diploma final.'));
+    const root = h('div'); root.appendChild(U.pageHead('Mis certificados', 'Un certificado por cada uno de los 25 niveles, uno por cada nivel A1–C1 y el diploma final.'));
     const row = (href, ok, t, sub) => h(ok ? 'a' : 'div', { class: 'lesson-row' + (ok ? ' done' : ' locked'), href: ok ? href : null }, h('span', { class: 'n' }, ok ? '✓' : '🔒'), h('span', { style: 'flex:1' }, h('strong', null, t), sub ? h('div', { class: 'muted' }, sub) : null), h('span', { class: 'chip-tag ' + (ok ? 'green' : 'gray') }, ok ? 'Ver' : 'Bloqueado'));
-    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Diploma final'), row('#/diploma', finalDone(), 'Diploma de Español · 30 niveles', finalDone() ? 'Nota: ' + S.prog.finalExam.best + ' %' : allLevelsDone() ? 'Aprueba el examen final global' : 'Se abre al aprobar A1–C2 y el examen final global'),
+    root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Diploma final'), row('#/diploma', finalDone(), 'Diploma de Español · 25 niveles', finalDone() ? 'Nota: ' + S.prog.finalExam.best + ' %' : allLevelsDone() ? 'Aprueba el examen final global' : 'Se abre al aprobar A1–C1 y el examen final global'),
       allLevelsDone() && !finalDone() ? h('a', { class: 'btn btn-primary', href: '#/examen-final' }, 'Hacer el examen final global') : null));
-    const cs = h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Niveles A1 a C2')); LV.forEach((l) => cs.appendChild(row('#/certificado/' + l, S.levelDone(l), 'Nivel ' + l + ' — ' + C.level(l).name))); root.appendChild(cs);
-    const ss = h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Los 30 niveles')); for (let n = 1; n <= 30; n++) ss.appendChild(row('#/certificado-nivel/' + n, S.stageDone(n), 'Nivel ' + n + ' de 30', fmtLevel(n))); root.appendChild(ss);
+    const cs = h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Niveles A1 a C1')); LV.forEach((l) => cs.appendChild(row('#/certificado/' + l, S.levelDone(l), 'Nivel ' + l + ' — ' + C.level(l).name))); root.appendChild(cs);
+    const ss = h('section', { class: 'card', style: 'margin-top:16px' }, h('h2', null, 'Los 25 niveles')); for (let n = 1; n <= L.STAGES; n++) ss.appendChild(row('#/certificado-nivel/' + n, S.stageDone(n), 'Nivel ' + n + ' de ' + L.STAGES + '', fmtLevel(n))); root.appendChild(ss);
     root.appendChild(h('p', null, h('a', { href: '#/verificar' }, 'Verificar un certificado')));
     return root;
   }, 'Certificados');
@@ -2871,7 +2831,7 @@
       btn.disabled = true; res.textContent = 'Verificando…';
       const r = await L.cloud.verifyCert(id.value.trim(), code.value.trim()); btn.disabled = false; res.innerHTML = '';
       if (r.ok) {
-        const t = r.kind === 'stage' ? 'Nivel ' + r.ref + ' de 30' : r.kind === 'level' ? 'Nivel ' + r.ref : 'Diploma final de español (30 niveles)';
+        const t = r.kind === 'stage' ? 'Nivel ' + r.ref + ' de ' + L.STAGES + '' : r.kind === 'level' ? 'Nivel ' + r.ref : 'Diploma final de español (25 niveles)';
         res.appendChild(h('div', { class: 'alert ok' }, h('strong', null, 'Certificado auténtico. '), 'Emitido a ', h('strong', null, r.name), ' · ' + t + ' · ' + L.fmtDate(r.issued) + (r.data && r.data.score != null ? ' · Nota: ' + r.data.score + ' %' : '') + '.'));
       } else res.appendChild(h('div', { class: 'alert warn' }, L.cloud.message(r)));
     }
@@ -3027,14 +2987,14 @@
       ['Haz la prueba de nivel', '30 preguntas para empezar en el punto justo. Si no sabes nada de español, empieza por «Primeros pasos».'],
       ['Estudia una lección al día', 'Cada lección tiene una explicación corta, ejemplos con audio y ejercicios con corrección.'],
       ['Repasa tus palabras', 'El repaso espaciado te enseña justo las palabras que estás a punto de olvidar.'],
-      ['Consigue tus certificados', 'Hay un certificado por cada uno de los 30 niveles, uno por cada nivel A1–C2 y un diploma final.']
+      ['Consigue tus certificados', 'Hay un certificado por cada uno de los 25 niveles, uno por cada nivel A1–C1 y un diploma final.']
     ];
     const root = h('div');
-    root.appendChild(L.U.pageHead('Acerca de Languway Spanish', 'Aprende español en español, paso a paso, de A1 a C2.'));
+    root.appendChild(L.U.pageHead('Acerca de Languway Spanish', 'Aprende español en español, paso a paso, de A1 a C1.'));
     root.appendChild(h('section', { class: 'card' }, h('h2', null, 'Cómo empezar'), h('ol', { class: 'about-steps' }, steps.map((x) => h('li', null, h('strong', null, x[0]), h('span', null, x[1])))),
       h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/prueba-de-nivel' }, 'Hacer la prueba de nivel'), h('a', { class: 'btn btn-ghost', href: '#/primeros-pasos' }, 'No sé nada de español'))));
     root.appendChild(h('section', { class: 'card', style: 'margin-top:14px' }, h('h2', null, 'Qué incluye'),
-      h('ul', null, h('li', null, '30 niveles que van de las letras y los números hasta el español más avanzado (C2).'), h('li', null, 'Audio en cada palabra y frase, y ejercicios de pronunciación.'), h('li', null, 'Ejercicios de opción múltiple, ordenar frases, relacionar y escribir.'), h('li', null, 'Tarjetas de repaso, vocabulario por temas y un traductor español–inglés.'), h('li', null, 'Un entrenador que explica las reglas en español e inglés y corrige tus errores.'), h('li', null, 'Racha diaria, insignias y barra de progreso.'))));
+      h('ul', null, h('li', null, '25 niveles que van de las letras y los números hasta el español avanzado (C1).'), h('li', null, 'Audio en cada palabra y frase, y ejercicios de pronunciación.'), h('li', null, 'Ejercicios de opción múltiple, ordenar frases, relacionar y escribir.'), h('li', null, 'Tarjetas de repaso, vocabulario por temas y un traductor español–inglés.'), h('li', null, 'Un entrenador que explica las reglas en español e inglés y corrige tus errores.'), h('li', null, 'Racha diaria, insignias y barra de progreso.'))));
     root.appendChild(h('section', { class: 'card', style: 'margin-top:14px' }, h('h2', null, 'Tus datos'), h('p', null, 'Sin cuenta, tu progreso se queda en este dispositivo. Con una cuenta (solo nombre de usuario y contraseña) también se guarda en línea. Más detalles en ', h('a', { href: '#/configuracion' }, 'Configuración'), '.')));
     return root;
   }, 'Acerca de');
@@ -3383,7 +3343,7 @@
     const search = h('input', { class: 'inp', type: 'search', 'aria-label': 'Buscar una regla · Search a rule', placeholder: 'Buscar (p. ej. ser, estar, subjuntivo, tilde)… / Search…', value: (q && q.q) || '' });
     const chips = h('div', { class: 'row' });
     let lvl = '';
-    ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'].forEach((x) => { const b = h('button', { type: 'button', class: 'btn btn-ghost', 'aria-pressed': x === '' ? 'true' : 'false', onclick: () => { lvl = x; chips.querySelectorAll('button').forEach((y) => y.setAttribute('aria-pressed', y === b ? 'true' : 'false')); draw(); } }, x || 'Todos · All'); chips.appendChild(b); });
+    ['', 'A1', 'A2', 'B1', 'B2', 'C1'].forEach((x) => { const b = h('button', { type: 'button', class: 'btn btn-ghost', 'aria-pressed': x === '' ? 'true' : 'false', onclick: () => { lvl = x; chips.querySelectorAll('button').forEach((y) => y.setAttribute('aria-pressed', y === b ? 'true' : 'false')); draw(); } }, x || 'Todos · All'); chips.appendChild(b); });
     root.appendChild(h('div', { class: 'card' }, search, h('div', { style: 'margin-top:10px' }, chips)));
     const host = h('div', { class: 'grid g3', style: 'margin-top:12px' }); root.appendChild(host);
     function draw() {
@@ -3853,7 +3813,7 @@
   const OK_T = new Set(['mc', 'fill', 'order', 'read']);
   const PER = 5, NEED = 4, BLOCKS = 6;   // 6 bloques x 5 = 30 preguntas exactas
 
-  // Preguntas de un nivel (1–30): salen de las lecciones de esa etapa
+  // Preguntas de un nivel (1–25): salen de las lecciones de esa etapa
   const poolCache = {};
   function pool(n) {
     if (poolCache[n]) return poolCache[n];
@@ -3869,7 +3829,7 @@
     return L.shuffle(out);
   }
 
-  // Búsqueda adaptativa sobre los 30 niveles, con confirmación final
+  // Búsqueda adaptativa sobre los 25 niveles, con confirmación final
   async function runTest(host) {
     const used = new Set(); const probes = []; const skillAgg = {};
     let lo = 0, hi = L.STAGES + 1;           // lo: mayor nivel superado; hi: menor nivel no superado
@@ -3912,13 +3872,13 @@
       host.innerHTML = '';
       host.appendChild(h('div', { class: 'card' }, h('h2', null, mandatory ? 'Tu examen de colocación' : 'Antes de empezar'),
         h('ul', null,
-          h('li', null, 'Tu ruta tiene ', h('strong', null, '30 niveles'), ', del A1 al C2.'),
+          h('li', null, 'Tu ruta tiene ', h('strong', null, '25 niveles'), ', del A1 al C1.'),
           h('li', null, 'La prueba empieza en un nivel medio y sube o baja según tus respuestas (30 preguntas en total).'),
           h('li', null, 'Mide vocabulario, gramática, lectura y orden de frases. Responde sin ayuda y sin traductor.'),
           h('li', null, 'Al terminar, tu nivel se abre y los anteriores quedan disponibles para repasar. Los niveles siguientes se abren cuando termines el tuyo.')),
         h('p', null, h('strong', null, '¿No sabes nada de español? '), 'No pasa nada: pulsa el botón de abajo y empezarás desde el principio, con las letras y los números.'),
         h('p', { class: 'muted' }, 'La prueba es una estimación: si el resultado no te parece justo, puedes repetirla en Configuración.'),
-        !mandatory && S.prog.placement ? h('div', { class: 'alert' }, 'Tu resultado actual: nivel ' + S.startStage() + ' de 30.') : null,
+        !mandatory && S.prog.placement ? h('div', { class: 'alert' }, 'Tu resultado actual: nivel ' + S.startStage() + ' de ' + L.STAGES + '.') : null,
         h('div', { class: 'row' }, h('button', { class: 'btn btn-primary', onclick: async () => {
           const r = await runTest(host);
           S.applyPlacement({ stage: r.stage, passedTop: r.passedTop, probes: r.probes, date: r.date });
@@ -3931,7 +3891,7 @@
       const skills = Object.entries(r.skillAgg).filter(([, a]) => a.t).map(([s, a]) => ({ s, p: L.pct(a.c, a.t), t: a.t })).sort((a, b) => b.p - a.p);
       const strong = skills.filter((x) => x.p >= 75), weak = skills.filter((x) => x.p < 60);
       host.appendChild(h('div', { class: 'card center' }, h('div', { class: 'celebrate', 'aria-hidden': 'true' }, '🧭'), h('p', { class: 'muted' }, 'Tu nivel de partida'),
-        h('h1', { id: 'page-title', tabindex: '-1', style: 'font-size:3rem;margin:.2em 0' }, 'Nivel ' + r.stage + ' de 30'),
+        h('h1', { id: 'page-title', tabindex: '-1', style: 'font-size:3rem;margin:.2em 0' }, 'Nivel ' + r.stage + ' de ' + L.STAGES + ''),
         h('p', null, h('strong', null, stg.level + ' · ' + lv.name)),
         r.passedTop >= 1 ? h('p', { class: 'muted' }, 'Has demostrado dominar hasta el nivel ' + r.passedTop + '.') : h('p', { class: 'muted' }, 'Empezarás desde los fundamentos.')));
       const grid = h('div', { class: 'grid g2', style: 'margin-top:16px' });
@@ -4002,105 +3962,6 @@
   route('/buscar/:q', ({ params }) => page(decodeURIComponent(params.q)), 'Buscar');
 })(window.LWS);
 
-;
-(function (L) {
-  'use strict';
-  // Iconos vectoriales propios (SVG en línea, color heredado). Sustituyen a los emojis y símbolos de texto.
-  const P = {
-    speaker: '<path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
-    play: '<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>',
-    stop: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>',
-    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
-    headphones: '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>',
-    compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
-    star: '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9L3.5 9.7l5.9-.8z" fill="currentColor"/>',
-    starO: '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9L3.5 9.7l5.9-.8z"/>',
-    cap: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/>',
-    hourglass: '<path d="M6 3h12M6 21h12M7 3v3a5 5 0 0 0 2.5 4.3L12 12l-2.5 1.7A5 5 0 0 0 7 18v3M17 3v3a5 5 0 0 1-2.5 4.3L12 12l2.5 1.7A5 5 0 0 1 17 18v3"/>',
-    book: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
-    bookOpen: '<path d="M12 6c-2-1.5-5-2-9-2v14c4 0 7 .5 9 2 2-1.5 5-2 9-2V4c-4 0-7 .5-9 2zM12 6v14"/>',
-    repeat: '<path d="M4 11V9a3 3 0 0 1 3-3h11l-3-3M20 13v2a3 3 0 0 1-3 3H6l3 3"/>',
-    x: '<path d="M6 6l12 12M18 6L6 18"/>',
-    blocks: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
-    pencil: '<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z"/><path d="M14.5 6.5l3 3"/>',
-    chat: '<path d="M20 12a7 7 0 0 1-10.3 6.1L4 20l1.6-4.3A7 7 0 1 1 20 12z"/>',
-    search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
-    home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
-    type: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
-    trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
-    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>',
-    menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
-    checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
-    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
-    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8M9.5 17h5"/>',
-    flame: '<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.5 1 2 2 2 0-3-.5-5 1-8z"/>',
-    sparkles: '<path d="M12 4l1.8 4.7L18.5 10.5l-4.7 1.8L12 17l-1.8-4.7L5.5 10.5l4.7-1.8z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/>',
-    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>',
-    note: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/>',
-    bars: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
-    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
-    wrench: '<path d="M14.5 6.5a4 4 0 0 0 5 5L11 20a2.1 2.1 0 0 1-3-3z"/><path d="M14.5 6.5l2.5-2.5"/>',
-    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
-    user: '<circle cx="12" cy="8" r="4"/><path d="M4 20c1-4 4-6 8-6s7 2 8 6"/>',
-    alert: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/>',
-    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.8c.7.6 1 1.3 1 2.2h5c0-.9.3-1.6 1-2.2A6 6 0 0 0 12 3z"/>',
-    cards: '<rect x="4" y="7" width="12" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/>',
-    inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
-    swap: '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
-    ext: '<path d="M8 16L18 6M10 6h8v8"/>',
-    download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14"/>',
-    share: '<circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.3 10.8l6.4-3.6M8.3 13.2l6.4 3.6"/>',
-    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
-    qr: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 14h2v2M14 18h2M18 18h2v2h-2z"/>',
-    paw: '<circle cx="7" cy="10" r="1.8"/><circle cx="12" cy="7" r="1.8"/><circle cx="17" cy="10" r="1.8"/><path d="M8 17c0-3 2-5 4-5s4 2 4 5c0 2-2 2-4 1-2 1-4 1-4-1z"/>',
-    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/>',
-    train: '<rect x="6" y="3" width="12" height="14" rx="3"/><path d="M6 11h12M9 21l2-4M15 21l-2-4"/><circle cx="9.5" cy="14" r=".8" fill="currentColor"/><circle cx="14.5" cy="14" r=".8" fill="currentColor"/>',
-    bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-8h5l3 8M10 8L9 5H7M12 13h5"/>',
-  };
-  const MAP = {
-    '🔊': 'speaker', '▶': 'play', '⏹': 'stop', '🔒': 'lock', '🎧': 'headphones', '🧭': 'compass', '★': 'star', '⭐': 'star', '🌟': 'star', '☆': 'starO',
-    '🎓': 'cap', '🐢': 'hourglass', '📚': 'book', '📘': 'book', '📕': 'book', '📖': 'bookOpen', '🔁': 'repeat', '✕': 'x', '🧩': 'blocks', '🧱': 'blocks',
-    '✍': 'pencil', '💬': 'chat', '🗣': 'chat', '🔍': 'search', '🔎': 'search', '🏠': 'home', '🔤': 'type', '📈': 'trend', '🎯': 'target', '☰': 'menu',
-    '✅': 'checkCircle', '✓': 'check', '🏆': 'trophy', '🏅': 'trophy', '🔥': 'flame', '🎉': 'sparkles', '✨': 'sparkles', '🎙': 'mic', '📝': 'note', '📜': 'note',
-    '📊': 'bars', '🌐': 'globe', '🛠': 'wrench', '⚙': 'gear', '👤': 'user', '⚠': 'alert', '💡': 'bulb', '🃏': 'cards', '📭': 'inbox', '↔': 'swap', '↗': 'ext',
-    '🐱': 'paw', '🏖': 'sun', '🚆': 'train', '📲': 'download', '📤': 'share', '📋': 'copy', '🚲': 'bike',
-  };
-  const RX = new RegExp('(' + Object.keys(MAP).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')[\\uFE0E\\uFE0F]?', 'g');
-  const NS = 'http://www.w3.org/2000/svg';
-  function svg(name, cls) {
-    const s = document.createElementNS(NS, 'svg');
-    s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'ic' + (cls ? ' ' + cls : '')); s.setAttribute('aria-hidden', 'true'); s.setAttribute('focusable', 'false');
-    s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round');
-    // contenido fijo y propio (no proviene del usuario)
-    s.innerHTML = P[name] || '';
-    return s;
-  }
-  function convert(root) {
-    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null); const list = [];
-    for (let n = w.nextNode(); n; n = w.nextNode()) {
-      const pn = n.parentNode && n.parentNode.nodeName;
-      if (pn === 'SCRIPT' || pn === 'STYLE' || pn === 'TEXTAREA' || pn === 'TITLE' || pn === 'OPTION') continue;
-      RX.lastIndex = 0; if (RX.test(n.nodeValue)) list.push(n);
-    }
-    list.forEach((n) => {
-      const t = n.nodeValue, frag = document.createDocumentFragment(); let last = 0; RX.lastIndex = 0; let m;
-      while ((m = RX.exec(t))) { if (m.index > last) frag.appendChild(document.createTextNode(t.slice(last, m.index))); frag.appendChild(svg(MAP[m[1]])); last = m.index + m[0].length; }
-      if (last < t.length) frag.appendChild(document.createTextNode(t.slice(last)));
-      n.parentNode.replaceChild(frag, n);
-    });
-  }
-  L.icon = svg; L.deEmoji = convert;
-  function start() {
-    let busy = false;
-    const mo = new MutationObserver((muts) => {
-      if (busy) return; busy = true;
-      try { muts.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) convert(n); else if (n.nodeType === 3 && n.parentNode) convert(n.parentNode); })); } finally { busy = false; }
-    });
-    mo.observe(document.body, { childList: true, subtree: true, characterData: false });
-    convert(document.body);
-  }
-  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
-})(window.LWS);
 
 ;
 (function (L) {
@@ -4109,24 +3970,25 @@
   const routes = L.routes;
   L.go = (path) => { if (location.hash === '#' + path) L.render(); else location.hash = '#' + path; };
 
-  const NAV = [
-    ['/', 'Inicio'], ['/aprender', 'Aprender'], ['/vocabulario', 'Vocabulario'], ['/gramatica', 'Gramática'],
-    ['/escuchar', 'Escuchar'], ['/pronunciacion', 'Pronunciación'], ['/traductor', 'Traductor'], ['/progreso', 'Mi progreso'],
+  // Secciones del sitio, agrupadas. La primera agrupación es la navegación principal.
+  const GROUPS = [
+    ['Principal', [['/', 'Inicio', 'home'], ['/aprender', 'Lecciones', 'book'], ['/progreso', 'Progreso', 'chart'], ['/certificados', 'Certificados', 'trophy'], ['/configuracion', 'Configuración', 'gear']]],
+    ['Aprender', [['/vocabulario', 'Vocabulario', 'abc'], ['/gramatica', 'Gramática', 'puzzle'], ['/escuchar', 'Escuchar', 'headphones'], ['/pronunciacion', 'Pronunciación', 'mic'], ['/habla', 'Habla', 'mic'], ['/leer', 'Leer', 'book'], ['/escribir', 'Escribir', 'pen'], ['/frases', 'Construcción de frases', 'blocks'], ['/conversacion', 'Conversación', 'chat'], ['/historias', 'Historias', 'doc'], ['/primeros-pasos', 'Primeros pasos', 'flag']]],
+    ['Practicar', [['/mi-plan', 'Mi plan de hoy', 'calendar'], ['/practica', 'Práctica', 'target'], ['/repaso', 'Repaso diario', 'repeat'], ['/errores', 'Práctica de errores', 'wrench'], ['/favoritos', 'Favoritos', 'star'], ['/puedo', 'Lo que ya puedes hacer', 'check']]],
+    ['Ayuda', [['/asistente', 'Asistente', 'spark'], ['/entrenador', 'Entrenador', 'bolt'], ['/traductor', 'Traductor', 'translate'], ['/buscar', 'Buscar', 'search']]],
+    ['Cuenta', [['/cuenta', 'Cuenta y copia', 'user'], ['/instalar', 'Instalar y compartir', 'download'], ['/acerca', 'Acerca de Languway', 'globe']]],
   ];
-  const MORE = [
-    ['/leer', 'Leer'], ['/escribir', 'Escribir'], ['/frases', 'Construcción de frases'], ['/conversacion', 'Conversación'],
-    ['/historias', 'Historias'], ['/practica', 'Práctica'], ['/repaso', 'Repaso diario'], ['/errores', 'Práctica de errores'],
-    ['/favoritos', 'Favoritos'], ['/primeros-pasos', 'Primeros pasos'], ['/entrenador', 'Entrenador'], ['/certificados', 'Certificados'], ['/acerca', 'Acerca de Languway'], ['/instalar', 'Instalar y compartir'], ['/configuracion', 'Configuración'],
-  ];
-  L.NAV = NAV; L.MORE = MORE;
+  L.GROUPS = GROUPS;
+  L.NAV = GROUPS[0][1].map((x) => [x[0], x[1]]);
+  L.MORE = GROUPS.slice(1).reduce((a, g) => a.concat(g[1].map((x) => [x[0], x[1]])), []);
 
   L.logoSvg = () => '<img src="mark.png" alt="" width="56" height="56" style="width:100%;height:auto;display:block">';
 
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem('lws.theme', t); } catch (e) {}
-    const m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', t === 'dark' ? '#16140d' : '#F2C94C');
-    const b = $('#theme-btn'); if (b) { b.setAttribute('aria-checked', String(t === 'dark')); b.setAttribute('aria-label', t === 'dark' ? 'Cambiar al modo claro' : 'Cambiar al modo oscuro'); b.setAttribute('title', b.getAttribute('aria-label')); }
+    try { localStorage.setItem('lws.theme', t); } catch (e) { /* sin almacenamiento */ }
+    const m = document.querySelector('meta[name=theme-color]'); if (m) m.setAttribute('content', t === 'dark' ? '#070d24' : '#2b3a8c');
+    $$('.theme-sw').forEach((b) => { b.setAttribute('aria-checked', String(t === 'dark')); b.setAttribute('aria-label', t === 'dark' ? 'Cambiar al modo claro' : 'Cambiar al modo oscuro'); b.setAttribute('title', b.getAttribute('aria-label')); });
   }
   L.applyTheme = applyTheme;
   // Preferencias de lectura (tamaño, interlineado, contraste, fuente) — se aplican en toda la app
@@ -4140,13 +4002,11 @@
     r.setAttribute('data-celebrate', st.celebrate === false ? 'off' : 'on');
   };
   (function initialTheme() {
-    let t = null; try { t = localStorage.getItem('lws.theme'); } catch (e) {}
-    if (!t) t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    let t = null; try { t = localStorage.getItem('lws.theme'); } catch (e) { /* sin almacenamiento */ }
+    if (!t) t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     applyTheme(t);
   })();
 
-  const ICONS = { '/': '🏠', '/aprender': '📚', '/vocabulario': '🔤', '/gramatica': '🧩', '/escuchar': '🎧', '/pronunciacion': '🗣️', '/traductor': '🌐', '/progreso': '📈',
-    '/leer': '📖', '/escribir': '✍️', '/frases': '🧱', '/conversacion': '💬', '/historias': '📜', '/practica': '🎯', '/repaso': '🔁', '/errores': '🛠️', '/favoritos': '⭐', '/instalar': '📲', '/configuracion': '⚙️' };
   function glare(el) { const g = $('.gglare'); if (!g || L.reducedMotion()) return; const r = el.getBoundingClientRect(), pr = el.parentNode.getBoundingClientRect(); g.style.left = (r.left - pr.left) + 'px'; g.style.width = r.width + 'px'; g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
   // Indicador de progreso circular para tareas con espera (p. ej. crear una copia)
   L.ring = function (msg) {
@@ -4154,54 +4014,77 @@
     document.body.appendChild(el);
     return { done(ok) { el.classList.add(ok === false ? 'bad' : 'ok'); setTimeout(() => el.remove(), ok === false ? 700 : 600); } };
   };
+
+  const ico = (n, c) => L.ico(n, c);
+  const brand = () => h('a', { class: 'logo', href: '#/', 'aria-label': 'Languway Spanish — Inicio' }, h('span', { class: 'logo-mark', html: L.logoSvg() }), h('span', { class: 'lt' }, 'Languway', h('small', null, 'Spanish')));
+  const themeSwitch = () => h('button', { class: 'theme-sw', type: 'button', role: 'switch', 'aria-checked': 'false', onclick: () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark') },
+    ico('moon'), h('span', { class: 'ts-label' }, 'Modo oscuro'), h('span', { class: 'ts-track', 'aria-hidden': 'true' }, h('i')));
+
+  // Avisos de la campana: lo que de verdad conviene hacer hoy
+  function notices() {
+    const out = [];
+    if (!L.S.prog) return out;
+    const due = L.S.dueWords().length;
+    if (due) out.push({ icon: 'repeat', text: due + (due === 1 ? ' palabra lista para repasar' : ' palabras listas para repasar'), href: '#/repaso' });
+    if (L.plan && L.S.prog.placement) { const t = L.plan.tasks().list.filter((x) => !x.done).length; if (t) out.push({ icon: 'calendar', text: 'Tu plan de hoy: ' + t + (t === 1 ? ' tarea pendiente' : ' tareas pendientes'), href: '#/mi-plan' }); }
+    const st = L.S.stats(); const last = L.S.prog.lastBackup;
+    if (st.lessons >= 2 && (!last || (Date.now() - last) / 86400000 >= 14)) out.push({ icon: 'download', text: 'Haz una copia de seguridad de tu progreso', href: '#/cuenta' });
+    return out;
+  }
+  L.refreshNotices = function () {
+    const n = notices(); const b = $('#bell-badge'); if (b) { b.textContent = String(n.length); b.hidden = !n.length; }
+    const box = $('#notif-list'); if (!box) return;
+    box.innerHTML = '';
+    if (!n.length) box.appendChild(h('p', { class: 'muted', style: 'margin:6px 4px' }, 'Todo al día. Buen trabajo.'));
+    n.forEach((x) => box.appendChild(h('a', { href: x.href, onclick: () => $('#notif').classList.remove('open') }, ico(x.icon), h('span', null, x.text))));
+  };
+
   function buildShell() {
     const app = $('#app'); app.innerHTML = '';
-    const nav = h('nav', { class: 'nav', 'aria-label': 'Principal' }, NAV.map(([p, t]) => h('a', { href: '#' + p, 'data-p': p }, t)));
-    const moreBtn = h('button', { class: 'more', type: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false', 'aria-controls': 'more-menu' }, 'Más ▾');
-    const menu = h('div', { class: 'menu', id: 'more-menu' }, MORE.map(([p, t]) => h('a', { href: '#' + p, 'data-p': p, onclick: () => menu.classList.remove('open') }, t)));
-    moreBtn.addEventListener('click', (e) => { e.stopPropagation(); const o = menu.classList.toggle('open'); moreBtn.setAttribute('aria-expanded', String(o)); });
-    document.addEventListener('click', () => { menu.classList.remove('open'); moreBtn.setAttribute('aria-expanded', 'false'); });
-    nav.appendChild(moreBtn);
+    const link = ([p, t, i], extra) => h('a', { href: '#' + p, 'data-p': p, onclick: extra }, ico(i), h('span', null, t));
 
-    const sInp = h('input', { type: 'search', class: 'sbar-inp', placeholder: 'Buscar…', 'aria-label': 'Buscar en el contenido', autocomplete: 'off', maxlength: '60', tabindex: '-1' });
-    const sBtn = h('button', { class: 'sbar-btn', type: 'button', 'aria-label': 'Buscar', title: 'Buscar' }, '🔍');
-    const search = h('form', { class: 'sbar', role: 'search', onsubmit: (e) => { e.preventDefault(); const v = sInp.value.trim(); sInp.value = ''; sInp.blur(); location.hash = v ? '#/buscar/' + encodeURIComponent(v) : '#/buscar'; } }, sInp, sBtn);
-    sBtn.addEventListener('click', () => { if (window.innerWidth < 760) { location.hash = '#/buscar'; return; } if (search.classList.contains('open') && sInp.value.trim()) { search.requestSubmit(); return; } search.classList.toggle('open'); if (search.classList.contains('open')) { sInp.tabIndex = 0; sInp.focus(); } else sInp.tabIndex = -1; });
-    sInp.addEventListener('blur', () => { if (!sInp.value) { search.classList.remove('open'); sInp.tabIndex = -1; } });
-    const theme = h('button', { class: 'dn', id: 'theme-btn', type: 'button', role: 'switch', 'aria-checked': 'false', onclick: () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark') },
-      h('span', { class: 'dn-sky', 'aria-hidden': 'true' }, h('span', { class: 'dn-stars' }), h('span', { class: 'dn-cloud c1' }), h('span', { class: 'dn-cloud c2' }), h('span', { class: 'dn-knob' })));
+    // ---- panel lateral (escritorio) ----
+    const side = h('aside', { class: 'sidebar', 'aria-label': 'Menú principal' },
+      brand(),
+      h('nav', { class: 'side-nav', 'aria-label': 'Principal' }, GROUPS[0][1].map((x) => link(x))),
+      h('div', { class: 'side-more' }, GROUPS.slice(1).map((g) => h('details', null, h('summary', null, g[0], ico('arrow', 'chev')), h('div', null, g[1].map((x) => link(x)))))),
+      h('div', { class: 'side-foot' }, themeSwitch(), h('div', { class: 'side-art', html: L.art.cathedral() })));
+
+    // ---- barra superior ----
+    const sInp = h('input', { type: 'search', class: 'sbar-inp', placeholder: 'Buscar lecciones…', 'aria-label': 'Buscar en el contenido', autocomplete: 'off', maxlength: '60' });
+    const search = h('form', { class: 'sbar', role: 'search', onsubmit: (e) => { e.preventDefault(); const v = sInp.value.trim(); sInp.value = ''; sInp.blur(); location.hash = v ? '#/buscar/' + encodeURIComponent(v) : '#/buscar'; } }, ico('search'), sInp);
+    const bell = h('div', { class: 'bell-wrap' },
+      h('button', { class: 'icon-btn', id: 'bell-btn', type: 'button', 'aria-label': 'Avisos', 'aria-haspopup': 'true', 'aria-expanded': 'false', onclick: (e) => { e.stopPropagation(); L.refreshNotices(); const o = $('#notif').classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', String(o)); } }, ico('bell'), h('span', { class: 'badge', id: 'bell-badge', hidden: true }, '0')),
+      h('div', { class: 'notif', id: 'notif', role: 'region', 'aria-label': 'Avisos' }, h('strong', null, 'Avisos'), h('div', { id: 'notif-list' })));
+    document.addEventListener('click', () => { const n = $('#notif'); if (n) n.classList.remove('open'); });
     const acct = h('a', { class: 'icon-btn acct', id: 'acct-btn', href: '#/cuenta' }, 'Sign In');
-    const dr = h('button', { class: 'icon-btn drawer-btn', type: 'button', 'aria-label': 'Abrir el menú', 'aria-expanded': 'false', 'aria-controls': 'drawer', onclick: () => toggleDrawer(true) }, '☰');
-    const hdr = h('header', { class: 'site-header' }, h('div', { class: 'wrap hbar' },
-      h('a', { class: 'logo', href: '#/', 'aria-label': 'Languway Spanish — Inicio' }, h('span', { html: L.logoSvg() }), h('span', { class: 'lt' }, 'Languway', h('small', null, 'Spanish'))),
-      nav, h('div', { class: 'hright' },
-        h('span', { class: 'pill warn', id: 'net-pill', hidden: true }, 'Sin conexión'),
-        h('span', { class: 'pill', id: 'save-pill', role: 'status' }), search, theme, acct, dr)), menu);
+    const gridBtn = h('button', { class: 'icon-btn drawer-btn', type: 'button', 'aria-label': 'Todas las secciones', 'aria-expanded': 'false', 'aria-controls': 'drawer', onclick: () => toggleDrawer(true) }, ico('grid'));
+    const hdr = h('header', { class: 'site-header topbar' }, h('div', { class: 'tb-in' },
+      h('div', { class: 'tb-brand' }, brand()), search,
+      h('div', { class: 'hright' }, h('span', { class: 'pill warn', id: 'net-pill', hidden: true }, 'Sin conexión'), h('span', { class: 'pill', id: 'save-pill', role: 'status' }),
+        gridBtn, bell, h('a', { class: 'icon-btn tb-gear', href: '#/configuracion', 'aria-label': 'Configuración', title: 'Configuración' }, ico('gear')), acct)));
+
+    // ---- panel de todas las secciones (móvil) ----
     const dInp = h('input', { type: 'search', placeholder: 'Buscar', 'aria-label': 'Buscar en el contenido', maxlength: '60', autocomplete: 'off' });
-    const dForm = h('form', { class: 'dsearch', role: 'search', onsubmit: (e) => { e.preventDefault(); const v = dInp.value.trim(); dInp.value = ''; toggleDrawer(false); location.hash = v ? '#/buscar/' + encodeURIComponent(v) : '#/buscar'; } }, h('span', { 'aria-hidden': 'true' }, '🔍'), dInp);
-    const ico = (p) => h('span', { class: 'di', 'aria-hidden': 'true' }, ICONS[p] || '•');
-    const dlink = ([p, t]) => h('a', { href: '#' + p, 'data-p': p, onclick: () => toggleDrawer(false) }, ico(p), h('span', null, t));
-    const drawer = h('aside', { class: 'drawer', id: 'drawer', 'aria-label': 'Menú' },
-      h('div', { class: 'row sb dhead' }, h('strong', { class: 'dtitle' }, 'Menú'), h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar el menú', onclick: () => toggleDrawer(false) }, '×')),
-      dForm,
-      NAV.map(dlink),
-      h('hr', { class: 'ddiv' }),
-      h('h4', null, 'Más secciones'),
-      MORE.map(dlink),
-      h('hr', { class: 'ddiv' }),
-      h('h4', null, 'Cuenta'), h('a', { href: '#/cuenta', 'data-p': '/cuenta', onclick: () => toggleDrawer(false) }, h('span', { class: 'di', 'aria-hidden': 'true' }, '👤'), h('span', null, 'Account & Backup')));
-    // Barra inferior de cristal (móvil)
-    const GN = [['/', 'Inicio', '🏠'], ['/aprender', 'Aprender', '📚'], ['/buscar', 'Buscar', '🔍'], ['/progreso', 'Progreso', '📈']];
+    const dForm = h('form', { class: 'dsearch', role: 'search', onsubmit: (e) => { e.preventDefault(); const v = dInp.value.trim(); dInp.value = ''; toggleDrawer(false); location.hash = v ? '#/buscar/' + encodeURIComponent(v) : '#/buscar'; } }, ico('search'), dInp);
+    const drawer = h('aside', { class: 'drawer', id: 'drawer', 'aria-label': 'Todas las secciones' },
+      h('div', { class: 'row sb dhead' }, h('strong', { class: 'dtitle' }, 'Secciones'), h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar el menú', onclick: () => toggleDrawer(false) }, ico('close'))),
+      dForm, themeSwitch(),
+      GROUPS.map((g) => h('div', { class: 'dgroup' }, h('h4', null, g[0]), g[1].map((x) => link(x, () => toggleDrawer(false))))));
+
+    // ---- barra inferior de cristal (móvil) ----
+    const GN = [['/', 'Inicio', 'home'], ['/progreso', 'Progreso', 'chart'], ['/aprender', 'Aprender', 'book', true], ['/certificados', 'Logros', 'trophy'], ['/cuenta', 'Perfil', 'user']];
     const gnav = h('nav', { class: 'gnav', 'aria-label': 'Navegación rápida' }, h('span', { class: 'gglare', 'aria-hidden': 'true' }),
-      GN.map(([p, t, i]) => h('a', { href: '#' + p, 'data-p': p, onclick: (e) => glare(e.currentTarget) }, h('span', { 'aria-hidden': 'true' }, i), h('small', null, t))),
-      h('button', { type: 'button', 'aria-label': 'Abrir el menú', onclick: () => toggleDrawer(true) }, h('span', { 'aria-hidden': 'true' }, '☰'), h('small', null, 'Menú')));
+      GN.map(([p, t, i, mid]) => h('a', { href: '#' + p, 'data-p': p, class: mid ? 'mid' : '', onclick: (e) => glare(e.currentTarget) }, ico(i), h('small', null, t))));
     const back = h('div', { class: 'drawer-back', id: 'drawer-back', onclick: () => toggleDrawer(false) });
     const main = h('main', { id: 'main', tabindex: '-1' }, h('div', { class: 'wrap', id: 'view' }));
     const foot = h('footer', { class: 'site-footer' }, h('div', { class: 'wrap' },
       h('p', null, 'Languway Spanish: aprende español en español. Tu progreso se guarda en este dispositivo; haz copias de seguridad desde ', h('a', { href: '#/cuenta' }, 'Account & Backup'), '.'),
       h('p', null, 'Los certificados son de finalización emitidos por la plataforma; no son títulos oficiales.')));
-    app.append(gnav, h('a', { class: 'skip', href: '#main', onclick: (e) => { e.preventDefault(); $('#main').focus(); } }, 'Saltar al contenido'), hdr, drawer, back, main, foot);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleDrawer(false); });
+    app.append(h('a', { class: 'skip', href: '#main', onclick: (e) => { e.preventDefault(); $('#main').focus(); } }, 'Saltar al contenido'), side, h('div', { class: 'shell' }, hdr, main, foot), gnav, drawer, back);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { toggleDrawer(false); const n = $('#notif'); if (n) n.classList.remove('open'); } });
+    applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+    L.refreshNotices(); if (L.photos) L.photos.warm();
   }
   function toggleDrawer(o) {
     $('#drawer').classList.toggle('open', o); $('#drawer-back').classList.toggle('open', o);
@@ -4253,6 +4136,7 @@
       if (out) view.appendChild(out);
       view.classList.remove('view-enter'); void view.offsetWidth; if (!L.reducedMotion()) view.classList.add('view-enter');
       if (match.r.title) document.title = (typeof match.r.title === 'function' ? match.r.title(match.params) : match.r.title) + ' · Languway Spanish';
+      if (L.refreshNotices) L.refreshNotices();
       const t = $('#page-title'); window.scrollTo(0, 0); if (t) t.focus({ preventScroll: true });
     } catch (err) {
       console.error(err);

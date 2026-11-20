@@ -1,7 +1,7 @@
 {
   "name": "Languway Spanish (ES) — aprende español en español",
   "short_name": "Languway ES",
-  "description": "Aprende español de A1 a C2 con lecciones, audio, ejercicios y repaso. Tu progreso se guarda en tu dispositivo.",
+  "description": "Aprende español de A1 a C1 con lecciones, audio, ejercicios y repaso. Tu progreso se guarda en tu dispositivo.",
   "lang": "es",
   "start_url": "./index.html?app=languway-spanish-es#/",
   "scope": "./",

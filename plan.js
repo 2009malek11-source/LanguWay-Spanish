@@ -54,7 +54,7 @@
   }
 
   // ---------- tarjeta para la página de inicio ----------
-  L.plan = {};
+  L.plan = { tasks };
   L.plan.card = function () {
     if (!S.prog) return h('span');
     const tk = tasks(); const done = tk.list.filter((x) => x.done).length;
@@ -88,7 +88,7 @@
       h('div', { class: 'week-dots', role: 'img', 'aria-label': act + ' / 7' }, days.map((d) => h('span', { class: 'wd' + (d.on ? ' on' : '') }, h('b', null, DOW[d.date.getDay()]), d.on ? '✓' : '·'))),
       h('p', null, T('Estudiaste ' + act + ' de los últimos 7 días.', 'You studied ' + act + ' of the last 7 days.', 'درست ' + act + ' من آخر 7 أيام.')),
       h('p', { class: 'muted' }, T('Aquí no se “rompe” nada: un día de descanso no borra tu avance. Lo que cuenta es volver. Tu meta: ' + goal + ' lecciones por semana (cámbiala en Configuración).', 'Nothing “breaks” here: a rest day does not erase your progress. What matters is coming back. Your goal: ' + goal + ' lessons a week (change it in Settings).', 'لا شيء “ينكسر” هنا: يوم راحة لا يمحو تقدّمك. المهم أن تعود. هدفك: ' + goal + ' دروس أسبوعياً (غيّره من الإعدادات).'))));
-    root.appendChild(h('div', { class: 'row' }, h('a', { class: 'btn btn-ghost', href: '#/puedo' }, T('Lo que ya puedes hacer', 'What you can already do', 'ما تستطيع فعله الآن')), h('a', { class: 'btn btn-ghost', href: '#/configuracion?s=aprendizaje' }, T('Cambiar mis metas', 'Change my goals', 'تغيير أهدافي'))));
+    root.appendChild(h('div', { class: 'row' }, h('a', { class: 'btn btn-ghost', href: '#/puedo' }, T('Lo que ya puedes hacer', 'What you can already do', 'ما تستطيع فعله الآن')), h('a', { class: 'btn btn-ghost', href: '#/configuracion/aprendizaje' }, T('Cambiar mis metas', 'Change my goals', 'تغيير أهدافي'))));
     return root;
   }, 'Mi plan');
 
@@ -236,9 +236,4 @@
     return root;
   }, 'Habla');
 
-  // ---------- menú ----------
-  if (L.MORE) {
-    const at = L.MORE.findIndex((x) => x[0] === '/repaso');
-    L.MORE.splice(at < 0 ? 0 : at, 0, ['/mi-plan', 'Mi plan de hoy'], ['/habla', 'Habla'], ['/puedo', 'Lo que ya puedes hacer']);
-  }
 })(window.LWS);

@@ -4,7 +4,7 @@
   const { h, route } = L;
   const S = L.S, A = L.A, U = L.U;
 
-  const AVATARS = ['🦊', '🐼', '🦁', '🐯', '🐨', '🐸', '🦉', '🐧', '🐬', '🦋', '🌟', '🚀', '🌙', '☀️', '🌵', '🍊', '📚', '🎯', '⚽', '🏔️'];
+  const AVATARS = ['star', 'flame', 'bolt', 'heart', 'rocket', 'moon', 'sun', 'globe', 'compass', 'book', 'cap', 'bulb', 'target', 'flag', 'trophy', 'spark', 'palette', 'puzzle', 'headphones', 'mic'];
   const REASONS = [['', '—'], ['travel', 'Viajar · Travel · السفر'], ['work', 'Trabajo · Work · العمل'], ['study', 'Estudios y exámenes · Study · الدراسة'], ['family', 'Familia y amigos · Family · العائلة'], ['culture', 'Cultura y lectura · Culture · الثقافة'], ['fun', 'Por gusto · For fun · للمتعة']];
   const LEVELS = [['basic', 'Básico · Basic · أساسي'], ['good', 'Bueno · Good · جيد'], ['fluent', 'Fluido · Fluent · طليق']];
   const st = () => S.prog.settings;
@@ -69,12 +69,12 @@
     const add = (id, icon, title, desc, build) => out.push({ id, icon, title, desc, build });
 
     // ===== 1. Perfil =====
-    add('perfil', '🧑', 'Perfil · Profile · الملف الشخصي', 'Nombre, avatar y motivo de estudio.', () => {
+    add('perfil', 'user', 'Perfil · Profile · الملف الشخصي', 'Nombre, avatar y motivo de estudio.', () => {
       const box = h('div');
       const nm = h('input', { class: 'inp', id: 'pf-name', type: 'text', maxlength: '40', autocomplete: 'name', value: st().displayName || (A.isGuest() ? '' : A.user.name) || '', 'data-noacc': '1' });
       const err = h('p', { class: 'field-err', role: 'alert' });
-      let av = st().avatar || AVATARS[0];
-      const grid = h('div', { class: 'avgrid', role: 'radiogroup', 'aria-label': 'Avatar' }, AVATARS.map((a) => h('button', { type: 'button', class: 'av' + (a === av ? ' on' : ''), role: 'radio', 'aria-checked': String(a === av), onclick: (e) => { av = a; grid.querySelectorAll('.av').forEach((b) => { b.classList.remove('on'); b.setAttribute('aria-checked', 'false'); }); e.currentTarget.classList.add('on'); e.currentTarget.setAttribute('aria-checked', 'true'); } }, a)));
+      let av = AVATARS.includes(st().avatar) ? st().avatar : AVATARS[0];
+      const grid = h('div', { class: 'avgrid', role: 'radiogroup', 'aria-label': 'Avatar' }, AVATARS.map((a) => h('button', { type: 'button', 'aria-label': a, class: 'av' + (a === av ? ' on' : ''), role: 'radio', 'aria-checked': String(a === av), onclick: (e) => { av = a; grid.querySelectorAll('.av').forEach((b) => { b.classList.remove('on'); b.setAttribute('aria-checked', 'false'); }); e.currentTarget.classList.add('on'); e.currentTarget.setAttribute('aria-checked', 'true'); } }, L.ico(a))));
       const why = select('pf-why', REASONS, st().reason || '', () => {});
       box.append(
         h('div', { class: 'field' }, h('label', { for: 'pf-name' }, 'Nombre que se muestra (también en los certificados) · Display name'), nm, err),
@@ -89,7 +89,7 @@
     });
 
     // ===== 2. Cuenta =====
-    add('cuenta', '🔐', 'Cuenta y seguridad · Account · الحساب', 'Usuario, sincronización, contraseña, cerrar sesión y eliminar la cuenta.', () => {
+    add('cuenta', 'lock', 'Cuenta y seguridad · Account · الحساب', 'Usuario, sincronización, contraseña, cerrar sesión y eliminar la cuenta.', () => {
       const box = h('div');
       if (A.isGuest()) {
         box.append(h('p', null, 'You are learning as a guest: your progress stays only on this device. Create an account (username + password, no email) to keep it online and use it on any phone.'),
@@ -135,7 +135,7 @@
     });
 
     // ===== 3. Idiomas =====
-    add('idiomas', '🌍', 'Mis idiomas · My languages · لغاتي', 'Lengua materna, idiomas que dominas y el idioma de ayuda. Puedes cambiarlos cuando quieras.', () => {
+    add('idiomas', 'globe', 'Mis idiomas · My languages · لغاتي', 'Lengua materna, idiomas que dominas y el idioma de ayuda. Puedes cambiarlos cuando quieras.', () => {
       const box = h('div'); const Sup = L.sup;
       const knownLv = Object.assign({}, st().knownLevels || {});
       const helpHost = h('div');
@@ -184,7 +184,7 @@
     });
 
     // ===== 4. Aprendizaje =====
-    add('aprendizaje', '🎯', 'Mi aprendizaje · Learning · التعلّم', 'Objetivos, habilidades, repaso, imágenes y traducciones.', () => {
+    add('aprendizaje', 'target', 'Mi aprendizaje · Learning · التعلّم', 'Objetivos, habilidades, repaso, imágenes y traducciones.', () => {
       const box = h('div'); const g = S.prog.goals;
       box.append(
         field('Objetivo semanal · Weekly goal', select('goal-l', [1, 2, 3, 5, 7, 10].map((n) => [n, n + (n === 1 ? ' lección por semana' : ' lecciones por semana')]), g.lessonsPerWeek, async (v) => { g.lessonsPerWeek = +v; S.markProg(); await U.save(true); })),
@@ -207,7 +207,7 @@
     });
 
     // ===== 5. Ejercicios y escritura =====
-    add('ejercicios', '✍️', 'Ejercicios y escritura · Exercises · التمارين', 'Tildes, teclado especial y corrección.', () => {
+    add('ejercicios', 'pen', 'Ejercicios y escritura · Exercises · التمارين', 'Tildes, teclado especial y corrección.', () => {
       const box = h('div');
       box.append(
         toggle('strictAccents', 'Exigir las tildes al escribir · Require accents', 'Si lo desactivas, una respuesta correcta sin tilde cuenta como acierto, pero la corrección te recuerda la tilde.', false),
@@ -216,7 +216,7 @@
     });
 
     // ===== 6. Audio =====
-    add('audio', '🔊', 'Audio y voz · Audio · الصوت', 'Voz, variedad del español, velocidad y volumen.', () => {
+    add('audio', 'speaker', 'Audio y voz · Audio · الصوت', 'Voz, variedad del español, velocidad y volumen.', () => {
       const box = h('div'); const s = st();
       const rate = h('input', { type: 'range', id: 'set-rate', min: '0.7', max: '1.1', step: '0.05', value: String(s.rate || 1) });
       const rv = h('span', null, (s.rate || 1).toFixed(2) + '×');
@@ -241,7 +241,7 @@
     });
 
     // ===== 7. Apariencia y lectura =====
-    add('apariencia', '🎨', 'Apariencia y lectura · Appearance · المظهر', 'Tema, animaciones, tamaño del texto, contraste y letra fácil.', () => {
+    add('apariencia', 'palette', 'Apariencia y lectura · Appearance · المظهر', 'Tema, animaciones, tamaño del texto, contraste y letra fácil.', () => {
       const box = h('div'); const s = st();
       const num = (id, opts, cur, key) => select(id, opts, cur, async (v) => { await setSetting(key, +v); L.applyPrefs(); });
       const chk = (id, key, label) => h('div', { class: 'field' }, h('label', { for: id }, h('input', { type: 'checkbox', id, checked: s[key] === true ? '' : null, onchange: async (e) => { await setSetting(key, e.target.checked); L.applyPrefs(); } }), ' ' + label));
@@ -255,7 +255,7 @@
     });
 
     // ===== 8. Datos y copias =====
-    add('datos', '💾', 'Datos y copias de seguridad · Data & backup · البيانات', 'Copias, importar, almacenamiento, actualizar y restablecer.', () => {
+    add('datos', 'download', 'Datos y copias de seguridad · Data & backup · البيانات', 'Copias, importar, almacenamiento, actualizar y restablecer.', () => {
       const box = h('div');
       const info = h('p', { class: 'muted', 'aria-live': 'polite' }, 'Calculando el espacio…');
       (async () => { try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); info.textContent = 'Espacio usado por Languway Spanish en este dispositivo: ' + (e.usage / 1048576).toFixed(1) + ' MB.'; } else info.textContent = 'Este navegador no informa del espacio usado.'; } catch (e) { info.textContent = 'No se pudo calcular el espacio.'; } })();
@@ -279,7 +279,7 @@
     });
 
     // ===== 9. Instalar y ayuda =====
-    add('instalar', '📲', 'Instalar, compartir y ayuda · Install & help · التثبيت', 'Instalar la app, código QR y ayuda de cuenta.', () => h('div', null,
+    add('instalar', 'rocket', 'Instalar, compartir y ayuda · Install & help · التثبيت', 'Instalar la app, código QR y ayuda de cuenta.', () => h('div', null,
       h('p', { class: 'muted' }, 'Instala la aplicación, comparte el enlace o muestra el código QR.'),
       h('a', { class: 'btn btn-primary', href: '#/instalar' }, h('span', { 'aria-hidden': 'true' }, '📲'), ' Instalar y compartir'),
       h('h3', { style: 'margin-top:16px' }, 'Forgot your password?'),
@@ -287,34 +287,47 @@
       h('a', { class: 'btn btn-ghost', href: '#/cuenta' }, 'Account & Backup')));
 
     // ===== 10. Privacidad =====
-    add('privacidad', '🛡️', 'Privacidad y créditos · Privacy · الخصوصية', 'Qué datos se guardan y cómo.', () => h('div', null,
-      h('p', null, 'Languway Spanish no usa publicidad ni rastreadores y no carga código de terceros. Sin cuenta, tu progreso se queda solo en este dispositivo. Si creas una cuenta, solo pedimos un nombre de usuario y una contraseña (nunca un correo): se guardan junto con tu progreso para que puedas continuar en otro teléfono. La contraseña se guarda cifrada y puedes borrar tu cuenta cuando quieras.'),
+    add('privacidad', 'shield', 'Privacidad y créditos · Privacy · الخصوصية', 'Qué datos se guardan y cómo.', () => h('div', null,
+      h('p', null, 'Languway Spanish no usa publicidad ni rastreadores y no carga código de terceros, salvo las fotos de las palabras, que se piden a Wikipedia/Wikimedia cuando hay conexión y se guardan en tu dispositivo (puedes desactivarlas en «Mi aprendizaje»). Sin cuenta, tu progreso se queda solo en este dispositivo. Si creas una cuenta, solo pedimos un nombre de usuario y una contraseña (nunca un correo): se guardan junto con tu progreso para que puedas continuar en otro teléfono. La contraseña se guarda cifrada y puedes borrar tu cuenta cuando quieras.'),
       h('p', null, 'Las voces que oyes son las de tu dispositivo. El micrófono solo se activa cuando pulsas «Grabar», y la grabación no sale de tu dispositivo.'),
-      h('p', { class: 'muted' }, 'Las lecciones, textos, ejercicios e historias son contenido original de Languway. Las imágenes de las palabras usan los emojis de tu dispositivo. Los certificados son de finalización de la plataforma y no son títulos oficiales.')));
+      h('p', { class: 'muted' }, 'Las lecciones, textos, ejercicios e historias son contenido original de Languway. Las fotos de las palabras vienen de Wikipedia/Wikimedia Commons con la licencia y el autor que se indican bajo cada foto; sin conexión se usa una ilustración integrada. Los certificados son de finalización de la plataforma y no son títulos oficiales.')));
     return out;
   }
 
+  const splitTitle = (t) => { const p = t.split(' · '); return { es: p[0], rest: p.slice(1).join(' · ') }; };
+
+  route('/configuracion/:id', ({ params }) => {
+    const s = sections().find((x) => x.id === params.id);
+    const root = h('div', { class: 'settings set-page' });
+    if (!s) { root.appendChild(U.pageHead('Configuración', 'Esta sección no existe.', [{ t: 'Configuración', href: '#/configuracion' }])); root.appendChild(h('a', { class: 'btn', href: '#/configuracion' }, 'Volver a Configuración')); return root; }
+    const tt = splitTitle(s.title);
+    root.appendChild(U.pageHead(tt.es, s.desc, [{ t: 'Configuración', href: '#/configuracion' }, { t: tt.es }], s.icon));
+    const body = h('div', { class: 'set-body card glass' });
+    try { body.appendChild(s.build()); } catch (e) { body.appendChild(U.errorBox('No se pudo cargar esta sección.')); if (window.console) console.error(e); }
+    root.appendChild(body);
+    root.appendChild(h('a', { class: 'btn btn-ghost', href: '#/configuracion' }, L.ico('arrow', 'flip'), ' Volver a Configuración'));
+    return root;
+  }, 'Configuración');
+
   route('/configuracion', ({ q }) => {
+    if (q && q.s && sections().some((x) => x.id === q.s)) { location.replace('#/configuracion/' + q.s); return h('div'); }
     const root = h('div', { class: 'settings' });
-    root.appendChild(U.pageHead('Configuración', 'Toca una sección para abrirla. Todo lo que cambies se guarda en tu cuenta y afecta de verdad a la aplicación.'));
+    root.appendChild(U.pageHead('Configuración', 'Elige una tarjeta para abrir su página. Todo lo que cambies se guarda en tu cuenta y afecta de verdad a la aplicación.', null, 'gear'));
     const secs = sections();
-    const list = h('div', { class: 'set-list' });
+    const list = h('div', { class: 'set-cards' });
     const els = secs.map((s) => {
-      let built = false; const body = h('div', { class: 'set-body' });
-      const det = h('details', { class: 'set-sec card', id: 'sec-' + s.id, 'data-title': (s.title + ' ' + s.desc).toLowerCase() },
-        h('summary', null, h('span', { class: 'set-ic', 'aria-hidden': 'true' }, s.icon), h('span', { class: 'set-tt' }, h('strong', null, s.title), h('small', { class: 'muted' }, s.desc)), h('span', { class: 'set-chev', 'aria-hidden': 'true' }, '▾')),
-        body);
-      det.addEventListener('toggle', () => { if (det.open && !built) { built = true; try { body.appendChild(s.build()); } catch (e) { body.appendChild(U.errorBox('No se pudo cargar esta sección.')); if (window.console) console.error(e); } } });
-      list.appendChild(det); return det;
+      const tt = splitTitle(s.title);
+      const a = h('a', { class: 'set-card card glass', href: '#/configuracion/' + s.id, id: 'sec-' + s.id, 'data-title': (s.title + ' ' + s.desc).toLowerCase() },
+        h('span', { class: 'set-ic', 'aria-hidden': 'true' }, L.ico(s.icon)),
+        h('span', { class: 'set-tt' }, h('strong', null, tt.es), h('small', { class: 'muted' }, tt.rest), h('span', { class: 'set-ds' }, s.desc)),
+        h('span', { class: 'set-chev', 'aria-hidden': 'true' }, L.ico('arrow')));
+      list.appendChild(a); return a;
     });
+    const empty = h('p', { class: 'muted', hidden: true }, 'No hay ajustes que coincidan.');
     const find = h('input', { type: 'search', class: 'inp', id: 'set-find', placeholder: 'Buscar un ajuste… · Search settings', 'aria-label': 'Buscar un ajuste', autocomplete: 'off', maxlength: '40', 'data-noacc': '1' });
-    find.addEventListener('input', () => { const t = find.value.trim().toLowerCase(); els.forEach((d) => { d.hidden = !!t && !d.dataset.title.includes(t); }); });
-    root.appendChild(h('div', { class: 'row set-tools' }, find,
-      h('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => els.forEach((d) => { if (!d.hidden) d.open = true; }) }, 'Expandir todo'),
-      h('button', { class: 'btn btn-ghost btn-sm', type: 'button', onclick: () => els.forEach((d) => { d.open = false; }) }, 'Contraer todo')));
-    root.appendChild(list);
-    const want = q && q.s ? els.find((d) => d.id === 'sec-' + q.s) : null;
-    if (want) setTimeout(() => { want.open = true; want.scrollIntoView({ block: 'start' }); }, 0);
+    find.addEventListener('input', () => { const t = find.value.trim().toLowerCase(); let n = 0; els.forEach((d) => { const hide = !!t && !d.dataset.title.includes(t); d.hidden = hide; if (!hide) n++; }); empty.hidden = n > 0; });
+    root.appendChild(h('div', { class: 'row set-tools' }, find));
+    root.appendChild(list); root.appendChild(empty);
     return root;
   }, 'Configuración');
 
