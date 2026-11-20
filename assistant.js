@@ -278,7 +278,7 @@
     });
     document.body.appendChild(b);
   }
-  function sync() { const b = document.getElementById('ask-fab'); if (!b) return; const p = location.hash.replace(/^#/, ''); b.hidden = /^\/(asistente|bienvenida|cuenta|verificar)/.test(p); }
+  function sync() { const b = document.getElementById('ask-fab'); if (!b) return; const p = location.hash.replace(/^#/, ''); b.hidden = !/^\/(leccion|gramatica|entrenador|traductor|libro)/.test(p); }
   window.addEventListener('hashchange', sync);
   document.addEventListener('DOMContentLoaded', () => { fab(); sync(); });
   if (document.readyState !== 'loading') { fab(); sync(); }

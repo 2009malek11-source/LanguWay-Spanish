@@ -78,67 +78,23 @@
   };
 
 
-  // ---------- fotos reales de España (Wikipedia / Wikimedia Commons) ----------
-  // Se piden solo con conexión y se guardan en el dispositivo; si no hay foto queda la ilustración vectorial.
+  // ---------- fotografías (archivos incluidos en la app, funcionan sin conexión) ----------
   const P = (L.photos = {});
-  const TITLES = {
-    sagrada: 'Sagrada Familia', plaza: 'Plaza Mayor de Madrid', alhambra: 'Alhambra', guell: 'Parque Güell', sevilla: 'Plaza de España (Sevilla)',
-    ciudad: 'Ciudad de las Artes y las Ciencias', mezquita: 'Mezquita-catedral de Córdoba', bilbao: 'Museo Guggenheim Bilbao', prado: 'Museo del Prado',
-    toledo: 'Toledo (España)', segovia: 'Acueducto de Segovia', santiago: 'Catedral de Santiago de Compostela', ronda: 'Puente Nuevo', palacio: 'Palacio Real de Madrid'
+  const FILES = { hero: 'ph-hero.jpg', street: 'ph-street.jpg', street2: 'ph-street2.jpg', city: 'ph-city.jpg', flag: 'ph-flag.jpg', globe: 'ph-globe.jpg' };
+  P.src = (key) => FILES[key] || null;
+  // Pone la foto dentro de `el`, debajo del contenido; si no carga, queda el fondo vectorial
+  P.attach = function (el, key) {
+    const src = FILES[key]; if (!el || !src || el.querySelector(':scope > .ph-img')) return;
+    const img = new Image(); img.className = 'ph-img'; img.alt = ''; img.decoding = 'async';
+    img.onload = () => { el.classList.add('has-ph'); requestAnimationFrame(() => img.classList.add('on')); };
+    img.onerror = () => img.remove();
+    img.src = src; el.insertBefore(img, el.firstChild);
   };
-  P.keys = Object.keys(TITLES);
-  const KEY = 'lws.pb';
-  const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
-  const write = (o) => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* sin almacenamiento */ } };
-  const pending = {};
-  P.enabled = () => { const s = L.S && L.S.prog && L.S.prog.settings; return !(s && s.realPhotos === 'off'); };
-  P.cached = (key) => { const r = read()[key]; return r && r.src ? r : null; };
-  P.get = function (key) {
-    const c = P.cached(key); if (c) return Promise.resolve(c);
-    if (!TITLES[key] || navigator.onLine === false || !P.enabled()) return Promise.resolve(null);
-    if (pending[key]) return pending[key];
-    try { if (sessionStorage.getItem('lws.pbf.' + key)) return Promise.resolve(null); } catch (e) { /* sin sesión */ }
-    pending[key] = (async () => {
-      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 8000);
-      try {
-        const url = 'https://es.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=pageimages|info&inprop=url&piprop=thumbnail&pithumbsize=1280&titles=' + encodeURIComponent(TITLES[key]);
-        const r = await fetch(url, { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-        const j = r.ok ? await r.json() : null;
-        const pg = j && j.query && j.query.pages ? Object.values(j.query.pages)[0] : null;
-        if (pg && pg.thumbnail && /^https:\/\/upload\.wikimedia\.org\//.test(pg.thumbnail.source)) {
-          const res = { src: pg.thumbnail.source, page: pg.fullurl || '', title: pg.title || TITLES[key] };
-          const all = read(); all[key] = res; write(all); return res;
-        }
-      } catch (e) { /* sin red */ } finally { clearTimeout(t); delete pending[key]; }
-      try { sessionStorage.setItem('lws.pbf.' + key, '1'); } catch (e) { /* sin sesión */ }
-      return null;
-    })();
-    return pending[key];
-  };
-  // Pone la foto dentro de `el` (debajo del contenido). o.credit: 'link' | 'text'
-  P.attach = function (el, key, o) {
-    o = o || {};
-    P.get(key).then((r) => {
-      if (!r || el.querySelector(':scope > .ph-img')) return;
-      const img = new Image(); img.className = 'ph-img'; img.alt = ''; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';
-      img.onload = () => { el.classList.add('has-ph'); requestAnimationFrame(() => img.classList.add('on')); };
-      img.onerror = () => img.remove();
-      img.src = r.src; el.insertBefore(img, el.firstChild);
-      if (o.credit) {
-        const c = document.createElement(o.credit === 'link' ? 'a' : 'span'); c.className = 'ph-credit';
-        c.textContent = 'Foto: Wikipedia · ' + r.title;
-        if (o.credit === 'link' && r.page) { c.href = r.page; c.target = '_blank'; c.rel = 'noopener noreferrer'; }
-        el.appendChild(c);
-      }
-    });
-  };
-  // Pide en segundo plano las fotos de la interfaz para que estén guardadas la próxima vez
-  P.warm = function () { if (!P.enabled()) return; ['sagrada', 'plaza', 'alhambra', 'guell', 'sevilla', 'ciudad', 'mezquita', 'bilbao'].forEach((k, i) => setTimeout(() => P.get(k), 400 + i * 350)); };
-  // Foto por sección (banner de página)
+  // Foto de cabecera para cada sección
   P.forRoute = function (path) {
     const seg = String(path || '/').split('/')[1] || '';
-    const map = { aprender: 'plaza', leccion: 'plaza', unidad: 'plaza', vocabulario: 'sevilla', gramatica: 'alhambra', escuchar: 'guell', leer: 'mezquita', escribir: 'prado', frases: 'toledo', conversacion: 'bilbao', historias: 'segovia', progreso: 'ciudad', certificados: 'palacio', examen: 'sagrada', practica: 'santiago', repaso: 'ronda' };
-    return map[seg] || 'sagrada';
+    const map = { aprender: 'street2', leccion: 'street2', unidad: 'street2', vocabulario: 'street', gramatica: 'city', escuchar: 'hero', leer: 'city', escribir: 'street', frases: 'street2', conversacion: 'street', historias: 'city', progreso: 'globe', certificados: 'hero', examen: 'hero', practica: 'street2', repaso: 'globe', configuracion: 'globe', cuenta: 'city', 'mi-plan': 'hero', puedo: 'street', habla: 'street2', buscar: 'city' };
+    return map[seg] || 'hero';
   };
 
   // ---------- pantalla de bienvenida ----------
@@ -153,7 +109,7 @@
       '<p class="sp-sub">SPANISH</p><p class="sp-tag">Aprende español en español</p></div>' +
       '<div class="sp-spark">' + Array.from({ length: 18 }, (_, i) => '<b style="--a:' + (i * 20) + 'deg;--d:' + (0.4 + (i % 6) * 0.18).toFixed(2) + 's"></b>').join('') + '</div>' +
       '<button type="button" class="sp-skip" aria-label="Entrar">Toca para entrar</button>';
-    const cp = P.cached('sagrada'); if (cp) { const im = new Image(); im.className = 'ph-img on'; im.alt = ''; im.src = cp.src; el.querySelector('.sp-sky').appendChild(im); }
+    P.attach(el.querySelector('.sp-sky'), 'hero');
     let gone = false;
     const out = () => { if (gone) return; gone = true; el.classList.add('out'); setTimeout(() => el.remove(), 700); };
     el.addEventListener('click', out);

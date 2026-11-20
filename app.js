@@ -1369,7 +1369,7 @@
         crumbs ? h('nav', { class: 'crumbs', 'aria-label': 'Ruta' }, crumbs.map((c, i) => [i ? ' › ' : '', c.href ? h('a', { href: c.href }, c.t) : c.t])) : null,
         h('div', { class: 'ph-row' }, h('span', { class: 'ph-ico', 'aria-hidden': 'true' }, L.ico(icon || HEAD_ICON[seg] || 'spark')),
           h('div', { class: 'ph-tx' }, h('h1', { tabindex: '-1', id: 'page-title' }, title), sub ? h('p', { class: 'muted' }, sub) : null))));
-    if (L.photos) L.photos.attach(bg, L.photos.forRoute(path), { credit: 'text' });
+    if (L.photos) L.photos.attach(bg, L.photos.forRoute(path));
     return head;
   };
   U.levelStatusChip = (st) => h('span', { class: 'chip-tag ' + (st === 'completado' ? 'green' : st === 'bloqueado' ? 'gray' : '') }, { completado: '✓ Completado', 'en curso': 'En curso', disponible: 'Disponible', bloqueado: '🔒 Bloqueado' }[st]);
@@ -1390,49 +1390,6 @@
   'use strict';
   const { h, route } = L; const C = L.C, S = L.S, U = L.U;
 
-  function levelsSection() {
-    const wrap = h('ol', { class: 'roadmap' });
-    const cur = S.prog.placement ? S.currentStage() : 0;
-    C.levels.forEach((lv) => {
-      const p = S.levelProgress(lv.id); const st = S.levelStatus(lv.id);
-      const stages = L.stages().filter((x) => x.level === lv.id);
-      wrap.appendChild(h('li', { class: 'road-row' + (st === 'bloqueado' ? ' locked' : '') },
-        h('a', { class: 'road-head', href: '#/aprender/' + lv.id }, h('span', { class: 'code' }, lv.id), h('span', { class: 'road-name' }, h('strong', null, lv.name), h('small', null, lv.desc)), U.levelStatusChip(S.prog.placement ? st : 'disponible')),
-        h('div', { class: 'road-steps' }, stages.map((x) => {
-          const done = S.prog.placement && S.stageDone(x.n), isCur = x.n === cur;
-          return h('a', { class: 'stg ' + (done ? 'done' : isCur ? 'cur' : (S.prog.placement && x.n > cur ? 'lock' : 'open')), href: '#/aprender/' + lv.id, 'aria-label': 'Nivel ' + x.n + ' de ' + L.STAGES + ' (' + lv.id + ')' + (done ? ', completado' : isCur ? ', actual' : '') }, h('b', null, x.n));
-        })),
-        h('div', { class: 'road-bar' }, U.bar(p.pct))));
-    });
-    return wrap;
-  }
-
-  function quickPractice() {
-    const due = S.dueWords().length;
-    const items = [
-      ['📝', 'Práctica de vocabulario', '#/practica/vocabulario', 'Elige o escribe la palabra correcta.'],
-      ['🧩', 'Práctica de gramática', '#/practica/gramatica', 'Preguntas de las reglas que has estudiado.'],
-      ['🎧', 'Comprensión auditiva', '#/escuchar', 'Escucha y responde.'],
-      ['🔊', 'Pronunciación', '#/pronunciacion', 'Sonidos, sílabas y entonación.'],
-      ['🧱', 'Construcción de frases', '#/frases', 'Ordena las palabras tocando.'],
-      ['🔁', 'Repaso diario', '#/repaso', due ? due + (due === 1 ? ' palabra para repasar' : ' palabras para repasar') : 'Palabras que toca repasar hoy.'],
-    ];
-    return h('div', { class: 'grid g3' }, items.map((x) => h('a', { class: 'card', href: x[2], style: 'text-decoration:none;color:inherit' }, h('div', { style: 'font-size:1.8rem' }, x[0]), h('h3', null, x[1]), h('p', { class: 'muted', style: 'margin:0' }, x[3]))));
-  }
-
-  function statsSection() {
-    const st = S.stats();
-    if (!st.answered && !st.lessons && !st.words) return h('div', { class: 'empty' }, h('span', { class: 'big', 'aria-hidden': 'true' }, '📊'), h('p', null, 'Aquí verás tus estadísticas reales cuando empieces a estudiar. Todavía no hay actividad.'));
-    const weak = S.weakSkills();
-    const g = h('div', { class: 'grid g4' }, [
-      ['Lecciones completadas', st.lessons], ['Palabras estudiadas', st.words], ['Palabras dominadas', st.mastered], ['Ejercicios respondidos', st.answered], ['Días de estudio', st.days], ['Palabras por repasar', st.due],
-    ].map((x) => h('div', { class: 'card stat' }, h('b', null, x[1]), h('span', null, x[0]))));
-    const wrap = h('div', null, g);
-    wrap.appendChild(h('p', { class: 'muted', style: 'margin-top:10px' }, 'Última actividad: ' + (st.last ? L.fmtDate(new Date(st.last + 'T12:00:00').getTime()) : '—')));
-    if (weak.length) wrap.appendChild(h('div', { class: 'alert' }, h('strong', null, 'Habilidades para mejorar: '), weak.map((w) => w.s + ' (' + w.p + ' %)').join(', '), '. ', h('a', { href: '#/errores' }, 'Practicar mis errores')));
-    return wrap;
-  }
-
   function backupReminder() {
     const st = S.stats();
     if (st.lessons < 2) return null;
@@ -1443,7 +1400,7 @@
       last ? 'Tu última copia fue hace ' + days + ' días. ' : 'Todavía no has hecho ninguna copia. ',
       'Si borras los datos del navegador o desinstalas la app, perderás tu progreso. ', h('a', { href: '#/cuenta' }, 'Exportar mis datos'));
   }
-  L.homeParts = { levelsSection, quickPractice, statsSection, backupReminder };
+  L.homeParts = { backupReminder };
 })(window.LWS);
 
 ;
@@ -1476,11 +1433,13 @@
     const ready = !!C.lessons[ref.id]; const done = S.lessonDone(ref.id); const unlocked = ready && S.lessonUnlocked(ref.id);
     const rec = S.lessonRec(ref.id);
     const n = ref.id.split('.l')[1];
-    const tag = !ready ? 'En preparación' : done ? '✓ ' + rec.best + ' %' : unlocked ? (S.prog.lastLesson === ref.id ? 'Continuar' : 'Empezar') : '🔒 Bloqueada';
-    return h(unlocked ? 'a' : 'div', { class: 'lesson-row' + (done ? ' done' : '') + (unlocked ? '' : ' locked'), href: unlocked ? '#/leccion/' + ref.id : null, 'aria-disabled': unlocked ? null : 'true' },
-      h('span', { class: 'n' }, done ? '✓' : n),
-      h('span', { style: 'flex:1' }, h('strong', null, ref.title), ready ? h('div', { class: 'muted' }, C.lessons[ref.id].vocab.length + ' palabras · examen de ' + (C.lessons[ref.id].quiz.length + 2) + ' preguntas') : h('div', { class: 'muted' }, 'Contenido en preparación')),
-      h('span', { class: 'chip-tag ' + (done ? 'green' : 'gray') }, tag));
+    const tag = !ready ? 'En preparación' : done ? rec.best + ' %' : unlocked ? (S.prog.lastLesson === ref.id ? 'Continuar' : 'Empezar') : 'Bloqueada';
+    const main = h(unlocked ? 'a' : 'div', { class: 'lr-main', href: unlocked ? '#/leccion/' + ref.id : null, 'aria-disabled': unlocked ? null : 'true' },
+      h('span', { class: 'n' }, done ? L.ico('check') : n),
+      h('span', { class: 'lr-tx' }, h('strong', null, ref.title), ready ? h('span', { class: 'muted' }, C.lessons[ref.id].vocab.length + ' palabras · examen de ' + (C.lessons[ref.id].quiz.length + 2) + ' preguntas') : h('span', { class: 'muted' }, 'Contenido en preparación'),
+        h('span', { class: 'chip-tag ' + (done ? 'green' : 'gray') }, tag)));
+    const book = ready ? h(done ? 'a' : 'span', { class: 'lr-book' + (done ? '' : ' off'), href: done ? '#/libro/' + ref.id : null, 'aria-label': done ? 'Libro de palabras de la lección ' + n : 'El libro de palabras se abre al completar la lección ' + n, title: done ? 'Libro de palabras' : 'Se abre al completar la lección' }, L.ico(done ? 'book' : 'lock'), h('small', null, 'Libro')) : null;
+    return h('div', { class: 'lesson-row lr' + (done ? ' done' : '') + (unlocked || done ? '' : ' locked') }, main, book);
   }
 
   route('/aprender/:lv', ({ params }) => {
@@ -1646,6 +1605,7 @@
         const nx = nextAfter(id);
         if (nx && nx.kind === 'lesson') actions.appendChild(h('a', { class: 'btn btn-primary', href: '#/leccion/' + nx.id }, 'Siguiente lección →'));
         else if (nx && nx.kind === 'unit') actions.appendChild(h('a', { class: 'btn btn-primary', href: '#/unidad/' + nx.lv + '/' + nx.n }, 'Repaso y examen de la unidad →'));
+        actions.appendChild(h('a', { class: 'btn btn-ghost', href: '#/libro/' + id }, L.ico('book'), ' Libro de palabras'));
         actions.appendChild(h('a', { class: 'btn btn-ghost', href: '#/aprender/' + les.level }, 'Volver al nivel'));
       } else {
         actions.appendChild(h('button', { class: 'btn btn-primary', onclick: () => go(5) }, 'Intentar el examen de nuevo'));
@@ -2448,12 +2408,6 @@
   'use strict';
   const { h, route } = L; const C = L.C, S = L.S, U = L.U, D = L.dict;
 
-  function formsTable(e) {
-    if (!e.forms) return null;
-    const tb = h('table', { class: 'tbl' }, h('thead', null, h('tr', null, h('th', null, 'Persona'), Object.keys(e.forms).map((t) => h('th', null, D.TENSES[t])))),
-      h('tbody', null, D.PERSONS.map((p, i) => h('tr', null, h('td', null, p), Object.keys(e.forms).map((t) => h('td', null, h('span', null, e.forms[t][i] + ' '), L.Audio.btn(e.forms[t][i], { small: true, name: e.forms[t][i] })))))));
-    return h('details', { open: '' }, h('summary', { style: 'cursor:pointer;font-weight:700;margin:8px 0' }, 'Conjugación de «' + e.w + '»'), tb);
-  }
   function relatedLessons(e) {
     const own = e.lessons || [];
     if (!own.length) return null;
@@ -2495,19 +2449,20 @@
     if (dir === 'en' && out.entries.length) box.appendChild(h('div', { class: 'alert ok' }, h('strong', null, 'English → Español: '), '«' + q + '» = ', out.entries.map((e, i) => [i ? ' · ' : '', h('a', { href: '#/traductor/' + encodeURIComponent(e.w) }, e.w)])));
     if (!out.entries.length) {
       box.appendChild(h('div', { class: 'alert' }, h('strong', null, 'No encontramos «' + q + '» en el diccionario de la plataforma · Not found in the dictionary. '), 'Revisa la ortografía (y las tildes) o prueba con otra palabra. El diccionario crece con cada versión.'));
+      if (L.explain) box.appendChild(L.explain.unknown(q));
       if (out.suggestions.length) box.appendChild(h('div', null, h('p', null, '¿Querías buscar alguna de estas palabras?'), h('div', { class: 'row' }, out.suggestions.map((e) => h('a', { class: 'btn btn-ghost btn-sm', href: '#/traductor/' + encodeURIComponent(e.w) }, e.w)))));
       return box;
     }
     if (out.forms.length) {
       out.forms.forEach((f) => box.appendChild(h('div', { class: 'alert ok' }, '«' + f.f + '» es una forma del verbo ', h('a', { href: '#/traductor/' + encodeURIComponent(f.e.w) }, f.e.w), ': ' + D.TENSES[f.t].toLowerCase() + ', ' + D.PERSONS[(f.e.forms[f.t] || []).indexOf(f.f)] + '.')));
     }
-    out.entries.forEach((e) => { if (dir !== 'en' && e.gloss) box.appendChild(h('div', { class: 'alert ok', lang: 'en' }, h('strong', null, 'Español → English: '), '«' + e.w + '» = ' + e.gloss)); const c = U.wordCard(e, { english: true, context: ctx, source: 'traductor' }); const ft = formsTable(e); if (ft) c.insertBefore(ft, c.querySelector('.acts')); const rl = relatedLessons(e); if (rl) c.insertBefore(rl, c.querySelector('.acts')); box.appendChild(c); });
+    out.entries.forEach((e) => { if (dir !== 'en' && e.gloss) box.appendChild(h('div', { class: 'alert ok', lang: 'en' }, h('strong', null, 'Español → English: '), '«' + e.w + '» = ' + e.gloss)); const c = U.wordCard(e, { english: true, context: ctx, source: 'traductor' }); const rl = relatedLessons(e); if (rl) c.insertBefore(rl, c.querySelector('.acts')); box.appendChild(c); if (L.explain) box.appendChild(L.explain.block(e, ctx)); });
     return box;
   }
 
   function page(initial, ctx) {
     const root = h('div');
-    root.appendChild(U.pageHead('Traductor', 'Traduce palabras y expresiones del español al inglés y del inglés al español. Verás la traducción, la explicación en español y un ejemplo. Translate words and phrases both ways between Spanish and English.'));
+    root.appendChild(U.pageHead('Traductor', 'Escribe una palabra y te explico cómo se usa. Translate words and phrases both ways between Spanish and English.'));
     const form = h('form', { class: 'search-box', role: 'search' });
     const inp = h('input', { type: 'search', class: 'inp', id: 'tr-q', 'aria-label': 'Palabra en español o en inglés', placeholder: 'Escribe en español o en inglés · Type in Spanish or English (aprender, to learn, tengo)', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', lang: 'es', value: initial || '' });
     const go = h('button', { class: 'btn btn-primary', type: 'submit', style: 'margin-top:10px' }, 'Buscar');
@@ -2538,7 +2493,7 @@
       q = String(q || inp.value).trim(); closeS(); if (!q) { L.toast('Escribe una palabra para buscar.', '', 2000); inp.focus(); return; }
       out.innerHTML = '';
       let used = dir, r;
-      if (dir === 'en') r = D.lookupEn(q);
+      if (/[\u0600-\u06FF]/.test(q) && L.explain) { r = { q, entries: L.explain.fromAr(q), forms: [], suggestions: [] }; used = 'es'; } else if (dir === 'en') r = D.lookupEn(q);
       else { r = D.lookup(q); used = 'es'; if (dir === 'auto' && !r.entries.length) { const r2 = D.lookupEn(q); if (r2.entries.length) { r = r2; used = 'en'; } } }
       const multi = q.split(/\s+/).filter(Boolean).length > 1;
       if (!r.entries.length && multi) {
@@ -2602,6 +2557,7 @@
   route('/progreso', async () => {
     const root = h('div');
     root.appendChild(U.pageHead('Mi progreso', 'Estos datos salen de lo que has hecho de verdad en la plataforma.'));
+    if (L.study) root.appendChild(L.study.nowCard());
     const st = S.stats();
     if (!st.answered && !st.lessons && !st.words && !S.prog.placement) {
       root.appendChild(U.empty('📊', 'Todavía no hay actividad que mostrar. Completa tu primera lección o la prueba de nivel y aquí aparecerá tu progreso.', h('div', { class: 'row', style: 'justify-content:center' }, h('a', { class: 'btn btn-primary', href: '#/aprender' }, 'Empezar a aprender'), h('a', { class: 'btn btn-ghost', href: '#/prueba-de-nivel' }, 'Prueba de nivel'))));
@@ -3773,21 +3729,10 @@
   route('/cuenta', () => {
     if (A.isGuest()) { location.hash = '#/cuenta/entrar'; return null; }
     const root = h('div');
-    root.appendChild(h('h1', { id: 'page-title', tabindex: '-1' }, 'Account & Backup'));
     const sw = secureWarn(); if (sw) root.appendChild(sw);
-    const guest = A.isGuest();
-    const who = h('section', { class: 'card' });
-    if (guest) {
-      who.append(h('h2', null, 'You are learning as a guest'), h('p', null, 'Your progress is saved on this device only. Create an account with just a username and a password to keep your progress online and continue on any phone.'),
-        h('div', { class: 'row' }, h('a', { class: 'btn btn-primary', href: '#/cuenta/crear' }, 'Create Account'), h('a', { class: 'btn btn-ghost', href: '#/cuenta/entrar' }, 'Sign In'), restoreAccountButton()));
-    } else {
-      who.append(h('h2', null, A.user.name), h('p', { class: 'muted' }, '@' + (A.user.username || A.user.email) + ' · ' + (A.hasCloud() ? 'Saved online' : 'Not connected online: sign in again to sync') + ' · Account created ' + L.fmtDate(A.user.created) + ' · Last sign-in ' + L.fmtDateTime(A.user.lastLogin)),
-        h('div', { class: 'row' }, h('button', { class: 'btn btn-ghost', onclick: passwordFlow }, 'Change password'), h('button', { class: 'btn btn-ghost', onclick: async () => { await A.signOut(); L.refreshAcct(); L.toast('Signed out. Your progress is saved in your account.', 'ok', 3500); location.hash = '#/'; L.render(); } }, 'Sign Out')));
-    }
-    root.appendChild(who);
-    root.appendChild(h('p', { class: 'center muted' }, 'Backup, storage and delete options are in ', h('a', { href: '#/configuracion' }, 'Configuración'), '.'));
+    root.appendChild(L.study.profile({ passwordFlow, signOut: async () => { await A.signOut(); L.refreshAcct(); location.hash = '#/'; L.render(); } }));
     return root;
-  }, 'Account & Backup');
+  }, 'Mi perfil');
 
   function storageInfo() {
     const box = h('div', null, h('p', { class: 'muted' }, 'Checking…'));
@@ -3972,11 +3917,10 @@
 
   // Secciones del sitio, agrupadas. La primera agrupación es la navegación principal.
   const GROUPS = [
-    ['Principal', [['/', 'Inicio', 'home'], ['/aprender', 'Lecciones', 'book'], ['/progreso', 'Progreso', 'chart'], ['/certificados', 'Certificados', 'trophy'], ['/configuracion', 'Configuración', 'gear']]],
-    ['Aprender', [['/vocabulario', 'Vocabulario', 'abc'], ['/gramatica', 'Gramática', 'puzzle'], ['/escuchar', 'Escuchar', 'headphones'], ['/pronunciacion', 'Pronunciación', 'mic'], ['/habla', 'Habla', 'mic'], ['/leer', 'Leer', 'book'], ['/escribir', 'Escribir', 'pen'], ['/frases', 'Construcción de frases', 'blocks'], ['/conversacion', 'Conversación', 'chat'], ['/historias', 'Historias', 'doc'], ['/primeros-pasos', 'Primeros pasos', 'flag']]],
-    ['Practicar', [['/mi-plan', 'Mi plan de hoy', 'calendar'], ['/practica', 'Práctica', 'target'], ['/repaso', 'Repaso diario', 'repeat'], ['/errores', 'Práctica de errores', 'wrench'], ['/favoritos', 'Favoritos', 'star'], ['/puedo', 'Lo que ya puedes hacer', 'check']]],
-    ['Ayuda', [['/asistente', 'Asistente', 'spark'], ['/entrenador', 'Entrenador', 'bolt'], ['/traductor', 'Traductor', 'translate'], ['/buscar', 'Buscar', 'search']]],
-    ['Cuenta', [['/cuenta', 'Cuenta y copia', 'user'], ['/instalar', 'Instalar y compartir', 'download'], ['/acerca', 'Acerca de Languway', 'globe']]],
+    ['Principal', [['/', 'Inicio', 'home'], ['/aprender', 'Lecciones', 'book'], ['/progreso', 'Progreso', 'chart'], ['/traductor', 'Traductor', 'translate'], ['/configuracion', 'Configuración', 'gear']]],
+    ['Estudiar', [['/libros', 'Libros de palabras', 'abc'], ['/repaso', 'Repaso diario', 'repeat'], ['/mi-plan', 'Mi plan de hoy', 'calendar'], ['/practica', 'Práctica libre', 'target']]],
+    ['Herramientas', [['/vocabulario', 'Diccionario', 'search'], ['/gramatica', 'Gramática', 'puzzle'], ['/pronunciacion', 'Pronunciación', 'mic'], ['/asistente', 'Asistente', 'spark']]],
+    ['Cuenta', [['/cuenta', 'Mi perfil', 'user'], ['/certificados', 'Certificados', 'trophy'], ['/instalar', 'Instalar y compartir', 'download']]],
   ];
   L.GROUPS = GROUPS;
   L.NAV = GROUPS[0][1].map((x) => [x[0], x[1]]);
@@ -4024,19 +3968,31 @@
   function notices() {
     const out = [];
     if (!L.S.prog) return out;
-    const due = L.S.dueWords().length;
-    if (due) out.push({ icon: 'repeat', text: due + (due === 1 ? ' palabra lista para repasar' : ' palabras listas para repasar'), href: '#/repaso' });
-    if (L.plan && L.S.prog.placement) { const t = L.plan.tasks().list.filter((x) => !x.done).length; if (t) out.push({ icon: 'calendar', text: 'Tu plan de hoy: ' + t + (t === 1 ? ' tarea pendiente' : ' tareas pendientes'), href: '#/mi-plan' }); }
-    const st = L.S.stats(); const last = L.S.prog.lastBackup;
-    if (st.lessons >= 2 && (!last || (Date.now() - last) / 86400000 >= 14)) out.push({ icon: 'download', text: 'Haz una copia de seguridad de tu progreso', href: '#/cuenta' });
+    const S = L.S, st = S.stats(), today = S.todayQ();
+    if (st.streak > 0 && !today) out.push({ icon: 'flame', text: 'Tu racha de ' + st.streak + (st.streak === 1 ? ' día está' : ' días está') + ' en juego', sub: 'Practica hoy para mantenerla', href: '#/practica', hot: true });
+    if (today >= S.GOAL) out.push({ icon: 'trophy', text: '¡Meta diaria completada!', sub: today + ' respuestas hoy', href: '#/progreso' });
+    else if (today > 0) out.push({ icon: 'target', text: 'Te faltan ' + (S.GOAL - today) + ' respuestas para tu meta de hoy', sub: 'Llevas ' + today + ' de ' + S.GOAL, href: '#/practica' });
+    const nl = S.nextLesson && S.nextLesson();
+    if (nl && L.C.lessons[nl]) out.push({ icon: 'book', text: 'Lista tu próxima lección: ' + L.C.lessons[nl].title, sub: 'Nivel ' + L.C.lessons[nl].level, href: '#/leccion/' + nl });
+    if (st.due) out.push({ icon: 'repeat', text: st.due + (st.due === 1 ? ' palabra lista para repasar' : ' palabras listas para repasar'), sub: 'Repaso espaciado', href: '#/repaso' });
+    if (L.plan && S.prog.placement) { const t = L.plan.tasks().list.filter((x) => !x.done).length; if (t) out.push({ icon: 'calendar', text: 'Tu plan de hoy: ' + t + (t === 1 ? ' tarea pendiente' : ' tareas pendientes'), sub: 'Mi plan', href: '#/mi-plan' }); }
+    const weak = S.weakSkills && S.weakSkills()[0];
+    if (weak) out.push({ icon: 'bulb', text: 'Conviene reforzar: ' + weak.s + ' (' + weak.p + ' %)', sub: 'Práctica dirigida', href: '#/practica' });
+    const last = S.prog.lastBackup;
+    if (st.lessons >= 2 && (!last || (Date.now() - last) / 86400000 >= 14)) out.push({ icon: 'download', text: 'Haz una copia de seguridad de tu progreso', sub: 'Cuenta y copias', href: '#/cuenta' });
     return out;
   }
+  L.continueHref = function () {
+    try { const id = L.S.prog && L.S.nextLesson(); if (id && L.C.lessons[id]) return '#/leccion/' + id; } catch (e) { /* sin progreso */ }
+    return '#/aprender';
+  };
   L.refreshNotices = function () {
+    const mid = document.querySelector('.gnav a.mid'); if (mid) mid.setAttribute('href', L.continueHref());
     const n = notices(); const b = $('#bell-badge'); if (b) { b.textContent = String(n.length); b.hidden = !n.length; }
     const box = $('#notif-list'); if (!box) return;
     box.innerHTML = '';
     if (!n.length) box.appendChild(h('p', { class: 'muted', style: 'margin:6px 4px' }, 'Todo al día. Buen trabajo.'));
-    n.forEach((x) => box.appendChild(h('a', { href: x.href, onclick: () => $('#notif').classList.remove('open') }, ico(x.icon), h('span', null, x.text))));
+    n.forEach((x) => box.appendChild(h('a', { href: x.href, class: x.hot ? 'hot' : '', onclick: () => $('#notif').classList.remove('open') }, ico(x.icon), h('span', null, h('b', null, x.text), x.sub ? h('small', null, x.sub) : null))));
   };
 
   function buildShell() {
@@ -4048,7 +4004,7 @@
       brand(),
       h('nav', { class: 'side-nav', 'aria-label': 'Principal' }, GROUPS[0][1].map((x) => link(x))),
       h('div', { class: 'side-more' }, GROUPS.slice(1).map((g) => h('details', null, h('summary', null, g[0], ico('arrow', 'chev')), h('div', null, g[1].map((x) => link(x)))))),
-      h('div', { class: 'side-foot' }, themeSwitch(), h('div', { class: 'side-art', html: L.art.cathedral() })));
+      h('div', { class: 'side-foot' }, themeSwitch(), h('div', { class: 'side-art' })));
 
     // ---- barra superior ----
     const sInp = h('input', { type: 'search', class: 'sbar-inp', placeholder: 'Buscar lecciones…', 'aria-label': 'Buscar en el contenido', autocomplete: 'off', maxlength: '60' });
@@ -4073,18 +4029,18 @@
       GROUPS.map((g) => h('div', { class: 'dgroup' }, h('h4', null, g[0]), g[1].map((x) => link(x, () => toggleDrawer(false))))));
 
     // ---- barra inferior de cristal (móvil) ----
-    const GN = [['/', 'Inicio', 'home'], ['/progreso', 'Progreso', 'chart'], ['/aprender', 'Aprender', 'book', true], ['/certificados', 'Logros', 'trophy'], ['/cuenta', 'Perfil', 'user']];
+    const GN = [['/', 'Inicio', 'home'], ['/progreso', 'Progreso', 'chart'], ['/aprender', 'Continuar', 'book', true], ['/traductor', 'Traductor', 'translate'], ['/cuenta', 'Perfil', 'user']];
     const gnav = h('nav', { class: 'gnav', 'aria-label': 'Navegación rápida' }, h('span', { class: 'gglare', 'aria-hidden': 'true' }),
       GN.map(([p, t, i, mid]) => h('a', { href: '#' + p, 'data-p': p, class: mid ? 'mid' : '', onclick: (e) => glare(e.currentTarget) }, ico(i), h('small', null, t))));
     const back = h('div', { class: 'drawer-back', id: 'drawer-back', onclick: () => toggleDrawer(false) });
     const main = h('main', { id: 'main', tabindex: '-1' }, h('div', { class: 'wrap', id: 'view' }));
     const foot = h('footer', { class: 'site-footer' }, h('div', { class: 'wrap' },
-      h('p', null, 'Languway Spanish: aprende español en español. Tu progreso se guarda en este dispositivo; haz copias de seguridad desde ', h('a', { href: '#/cuenta' }, 'Account & Backup'), '.'),
+      h('p', null, 'Languway Spanish: aprende español en español. Tu progreso se guarda en este dispositivo; haz copias de seguridad desde ', h('a', { href: '#/configuracion/datos' }, 'Configuración'), '.'),
       h('p', null, 'Los certificados son de finalización emitidos por la plataforma; no son títulos oficiales.')));
     app.append(h('a', { class: 'skip', href: '#main', onclick: (e) => { e.preventDefault(); $('#main').focus(); } }, 'Saltar al contenido'), side, h('div', { class: 'shell' }, hdr, main, foot), gnav, drawer, back);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { toggleDrawer(false); const n = $('#notif'); if (n) n.classList.remove('open'); } });
     applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
-    L.refreshNotices(); if (L.photos) L.photos.warm();
+    L.refreshNotices();
   }
   function toggleDrawer(o) {
     $('#drawer').classList.toggle('open', o); $('#drawer-back').classList.toggle('open', o);

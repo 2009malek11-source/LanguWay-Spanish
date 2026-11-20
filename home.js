@@ -41,18 +41,18 @@
   // ---------- banner con carrusel ----------
   function hero(started, target) {
     const slides = [
-      { t: ['Aprende ', 'español', ' de forma inteligente'], p: 'Un idioma nuevo… un mundo más grande.', btn: started ? 'Continuar' : 'Empezar a aprender', href: started ? '#/leccion/' + target : '#/prueba-de-nivel', icon: 'play' },
-      { t: ['Escucha, ', 'repite', ' y compara'], p: 'Practica tu pronunciación con tu propia voz.', btn: 'Practicar a hablar', href: '#/habla', icon: 'mic' },
+      { t: ['Aprende ', 'español', 'de forma inteligente'], p: 'Un idioma nuevo… un mundo más grande.', btn: started ? 'Continuar' : 'Empezar a aprender', href: started ? '#/leccion/' + target : '#/prueba-de-nivel', icon: 'play' },
+      { t: ['Escucha, ', 'repite', 'y compara'], p: 'Practica tu pronunciación con tu propia voz.', btn: 'Practicar a hablar', href: '#/habla', icon: 'mic' },
       { t: ['Tu plan, ', 'a tu medida', ''], p: 'Constancia sin presión: un día de descanso no rompe nada.', btn: 'Ver mi plan', href: '#/mi-plan', icon: 'calendar' }
     ];
     let cur = 0, timer = null;
     const copy = h('div', { class: 'hh-copy' });
     const dots = h('div', { class: 'hh-dots', role: 'tablist', 'aria-label': 'Mensajes' });
     const sec = h('section', { class: 'home-hero', 'aria-roledescription': 'carrusel' }, h('div', { class: 'hh-art', html: L.art.scene() }), copy, dots);
-    L.photos.attach(sec.querySelector('.hh-art'), 'sagrada', { credit: 'link' });
+    L.photos.attach(sec.querySelector('.hh-art'), 'hero');
     function draw() {
       const s = slides[cur]; copy.innerHTML = '';
-      copy.append(h('h1', { id: 'page-title', tabindex: '-1' }, s.t[0], h('em', null, s.t[1]), s.t[2]), h('p', null, s.p),
+      copy.append(h('h1', { id: 'page-title', tabindex: '-1' }, s.t[0], h('em', null, s.t[1]), s.t[2].trim() ? [h('br'), s.t[2].trim()] : null), h('p', null, s.p),
         h('div', { class: 'row' }, h('a', { class: 'btn btn-primary btn-lg', href: s.href }, ico(s.icon), s.btn, ico('arrow')),
           !started && cur === 0 ? h('a', { class: 'btn btn-glass btn-lg', href: '#/primeros-pasos' }, 'No sé nada de español') : null));
       copy.classList.remove('swap'); void copy.offsetWidth; if (!L.reducedMotion()) copy.classList.add('swap');
@@ -71,7 +71,7 @@
     card.appendChild(h('div', { class: 'lh-head' }, h('h2', null, ico('star'), started ? 'Tu próxima lección' : 'Tu primera lección'), h('a', { class: 'view-all', href: '#/aprender' }, 'Ver todas', ico('arrow'))));
     if (!les) { card.appendChild(h('p', { class: 'muted' }, 'Has completado todo el contenido disponible. Repasa tus palabras para mantenerlas frescas.')); card.appendChild(h('a', { class: 'btn btn-primary', href: '#/repaso' }, ico('repeat'), 'Ir al repaso')); return card; }
     card.appendChild(h('div', { class: 'lh-body' },
-      (() => { const a = h('a', { class: 'lh-pic', href: '#/leccion/' + target, 'aria-label': 'Empezar: ' + les.title, html: L.art.street() + L.icoHtml('play', 'lh-play') }); L.photos.attach(a, 'plaza', { credit: 'text' }); return a; })(),
+      (() => { const a = h('a', { class: 'lh-pic', href: '#/leccion/' + target, 'aria-label': 'Empezar: ' + les.title, html: L.art.street() + L.icoHtml('play', 'lh-play') }); L.photos.attach(a, 'street'); return a; })(),
       h('div', { class: 'lh-info' },
         h('span', { class: 'chip-tag' }, 'Nivel ' + les.level + ' · Unidad ' + les.unit),
         h('h3', null, les.title),
@@ -94,9 +94,14 @@
   }
 
   function quickAccess() {
-    const items = [['/vocabulario', 'Diccionario', 'book'], ['/traductor', 'Traductor', 'translate'], ['/certificados', 'Certificados', 'trophy'], ['/mi-plan', 'Horario', 'calendar'], ['/habla', 'Habla', 'mic'], ['/repaso', 'Repaso', 'repeat']];
+    const items = [['/vocabulario', 'Diccionario', 'book'], ['/traductor', 'Traductor', 'translate'], ['/libros', 'Libros', 'abc'], ['/mi-plan', 'Horario', 'calendar']];
     return h('section', { class: 'glass quick' }, h('h2', null, ico('bolt'), 'Acceso rápido'),
       h('div', { class: 'q-grid' }, items.map((x) => h('a', { href: '#' + x[0], class: 'q-tile' }, ico(x[2], 'q-ico'), h('span', null, x[1])))));
+  }
+
+  function keepGoing() {
+    const el = h('section', { class: 'keep', 'aria-label': 'Ánimo' }, ico('star'), h('div', null, h('b', null, '¡Sigue así!'), h('span', null, 'Lo estás haciendo genial.')));
+    L.photos.attach(el, 'globe'); return el;
   }
 
   function funFact() {
@@ -106,14 +111,9 @@
       h('div', { class: 'fact-copy' }, h('h2', null, ico('bulb'), 'Dato curioso'),
         h('p', { class: 'fact-es', lang: 'es' }, f[0], ' ', L.Audio.btn(f[0].replace(/[¡!¿?]/g, ''), { small: true, name: f[0] })),
         sup() === 'none' ? h('p', { class: 'muted' }, f[3]) : h('p', { class: 'muted', dir: sup() === 'ar' ? 'rtl' : 'ltr' }, (sup() === 'ar' ? 'تعني: «' : 'means “') + tr + (sup() === 'ar' ? '»' : '”'), h('br'), f[3])),
-      h('div', { class: 'fact-flag', html: L.art.flag() }));
+      h('div', { class: 'fact-flag' }, h('img', { src: L.photos.src('flag'), alt: '', loading: 'lazy' })));
   }
 
-  function allSections() {
-    const sec = h('section', { class: 'glass all-sec' }, h('h2', null, ico('grid'), 'Todas las secciones'));
-    L.GROUPS.slice(1, 4).forEach((g) => sec.appendChild(h('div', { class: 'as-group' }, h('h3', null, g[0]), h('div', { class: 'as-grid' }, g[1].map((x) => h('a', { href: '#' + x[0] }, ico(x[2]), h('span', null, x[1])))))));
-    return sec;
-  }
 
   route('/', () => {
     const root = h('div', { class: 'home' });
@@ -135,19 +135,12 @@
 
     root.appendChild(h('div', { class: 'home-grid' }, lessonCard(target, started), goalCard()));
     root.appendChild(h('div', { class: 'home-grid two' }, quickAccess(), funFact()));
+    root.appendChild(keepGoing());
 
     if (L.plan && placed) root.appendChild(L.plan.card());
     if (placed && S.currentStage() <= 3 && !((S.prog.done['pre:steps'] || {}).best >= 75)) root.appendChild(h('section', { class: 'glass', style: 'margin-top:16px' }, h('h2', null, ico('flag'), 'Primeros pasos · First steps'), h('p', null, '¿Nuevo en español? Aprende las letras, los números y las primeras palabras. · New to Spanish? Learn the letters, numbers and first words.'), h('a', { class: 'btn btn-primary', href: '#/primeros-pasos' }, 'Empezar')));
-    if (L.coach && placed) root.appendChild(L.coach.card(2));
     if (L.A.isGuest() && !L.memoryMode) root.appendChild(h('div', { class: 'alert', style: 'margin-top:16px' }, h('strong', null, 'Tu progreso se guarda en este dispositivo. '), 'Puedes estudiar sin cuenta. Para guardar tu progreso en línea y seguir en otro teléfono, ', h('a', { href: '#/cuenta/crear' }, 'crea una cuenta'), '.'));
     const warn = L.homeParts.backupReminder(); if (warn) root.appendChild(warn);
-    root.appendChild(allSections());
-    root.appendChild(h('h2', { class: 'sec-title' }, 'Tu ruta de aprendizaje: A1 → C1'));
-    root.appendChild(L.homeParts.levelsSection());
-    root.appendChild(h('h2', { class: 'sec-title' }, 'Práctica rápida'));
-    root.appendChild(L.homeParts.quickPractice());
-    root.appendChild(h('h2', { class: 'sec-title' }, 'Tu actividad'));
-    root.appendChild(L.homeParts.statsSection());
     return root;
   }, 'Inicio');
 })(window.LWS);
