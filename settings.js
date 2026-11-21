@@ -68,6 +68,8 @@
     const out = [];
     const add = (id, icon, title, desc, build) => out.push({ id, icon, title, desc, build });
 
+    add('funciones', 'bulb', 'Características y uso · Features & how to use · الميزات وكيفية استخدامها', 'Guía completa de cada función: qué hace, cómo se usa paso a paso, qué incluye y sus limitaciones.', () => L.features.page());
+
     // ===== 1. Perfil =====
     add('perfil', 'user', 'Perfil · Profile · الملف الشخصي', 'Nombre, avatar y motivo de estudio.', () => {
       const box = h('div');

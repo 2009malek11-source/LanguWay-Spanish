@@ -1,7 +1,7 @@
 /* Service Worker: guarda solo los archivos de la aplicación. */
-const VERSION = 'f58c0d3a71b9';
+const VERSION = 'a93e5b10c7d2';
 const CACHE = 'languway-spanish-es-' + VERSION;
-const ASSETS = ["./", "app.js", "assistant.js", "settings.js", "plan.js", "home.js", "study.js", "explain.js", "art.js", "icons.js", "visuals.js", "apple-touch-icon.png", "content.js", "favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "logo.png", "manifest.json", "mark.png", "qr.png", "styles.css", "ph-hero.jpg", "ph-street.jpg", "ph-street2.jpg", "ph-city.jpg", "ph-flag.jpg", "ph-globe.jpg"];
+const ASSETS = ["./", "app.js", "assistant.js", "settings.js", "plan.js", "home.js", "study.js", "features.js", "explain.js", "art.js", "icons.js", "visuals.js", "apple-touch-icon.png", "content.js", "favicon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "logo.png", "manifest.json", "mark.png", "qr.png", "styles.css", "ph-hero.jpg", "ph-street.jpg", "ph-street2.jpg", "ph-city.jpg", "ph-flag.jpg", "ph-globe.jpg"];
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((a) => new Request(a, { cache: 'reload' })))));

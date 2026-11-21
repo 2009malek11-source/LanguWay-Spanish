@@ -682,3 +682,14 @@ h1 > .sup, h2 > .sup, h3 > .sup { font-weight: 600; font-size: .62em; }
 .ph-bg::after { background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 95%, transparent) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 60%, color-mix(in srgb, var(--bg) 45%, transparent) 100%); }
 .wb-item .w { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .tbl .say { background: none; border: 0; padding: 4px 2px; color: inherit; font: inherit; cursor: pointer; text-align: start; } .tbl .say:hover { color: var(--yellow-d); text-decoration: underline; }
+
+/* ===== guía de características ===== */
+.feat-bar { margin-bottom: 14px; align-items: center; } .feat-bar .inp { flex: 1; min-width: 200px; max-width: 420px; }
+.feat-quick, .feat-index, .feat-card { margin-bottom: 16px; } .feat-quick h2, .feat-index h2 { display: flex; gap: 10px; align-items: center; font-size: 1.15rem; }
+.feat-quick ol { margin: 8px 0 0; padding-inline-start: 1.3em; display: grid; gap: 6px; }
+.feat-head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; } .feat-ic { flex: none; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--gold); color: #3a2600; } .feat-ic .ico { width: 26px; height: 26px; }
+.feat-tt { flex: 1; min-width: 160px; } .feat-tt h3 { margin: 0; font-size: 1.2rem; overflow-wrap: break-word; }
+.feat-sec { margin-top: 14px; } .feat-sec h4 { display: flex; gap: 8px; align-items: center; margin: 0 0 6px; font-size: .95rem; } .feat-sec h4 .ico { width: 18px; height: 18px; color: var(--yellow-d); }
+.feat-sec ol, .feat-sec ul { margin: 0; padding-inline-start: 1.3em; display: grid; gap: 6px; } .feat-sec p { margin: 0; }
+.feat-sec.warn { padding: 12px 14px; border-radius: 16px; background: var(--warn-bg, rgba(255, 170, 40, .12)); border: 1px solid rgba(255, 170, 40, .35); } .feat-sec.warn h4 .ico { color: #ff9a1f; }
+.feat-card:focus { outline: none; box-shadow: 0 0 0 3px var(--yellow); }

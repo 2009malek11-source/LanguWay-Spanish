@@ -1373,7 +1373,7 @@
     return head;
   };
   U.levelStatusChip = (st) => h('span', { class: 'chip-tag ' + (st === 'completado' ? 'green' : st === 'bloqueado' ? 'gray' : '') }, { completado: '✓ Completado', 'en curso': 'En curso', disponible: 'Disponible', bloqueado: '🔒 Bloqueado' }[st]);
-  // Pista de ' + L.STAGES + ' niveles: hecho / actual / abierto / bloqueado
+  // Pista de 25 niveles: hecho / actual / abierto / bloqueado
   U.stageTrack = function () {
     const S = L.S, cur = S.currentStage(), start = S.startStage();
     return L.h('div', { class: 'stages', role: 'list', 'aria-label': 'Ruta de ' + L.STAGES + ' niveles' }, L.stages().map((st) => {

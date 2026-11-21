@@ -3240,7 +3240,7 @@ window.LWS = window.LWS || {};
     [/^(\d+) \/ (\d+) respuestas$/, '$1 / $2 answers', '$1 / $2 إجابة'],
     [/^Nivel de jugador (\d+)$/, 'Player level $1', 'مستوى اللاعب $1'],
     [/^Una sesión corta de 5 minutos: responde (\d+) preguntas más\.?\s*$/, 'A short 5-minute session: answer $1 more questions.', 'جلسة قصيرة من 5 دقائق: أجب عن $1 أسئلة أخرى.'],
-    [/^Nivel (\d+) de 30( \(([A-C][12])\))?(, (actual|completado))?$/, 'Level $1 of 30', 'المستوى $1 من 30'],
+    [/^Nivel (\d+) de 25( \(([A-C][12])\))?(, (actual|completado))?$/, 'Level $1 of 25', 'المستوى $1 من 25'],
     [/^Nivel (\d+) \(([A-C][12])\)(, (actual|completado))?$/, 'Level $1 ($2)', 'المستوى $1 ($2)'],
     [/^Nivel ([A-C][12])$/, 'Level $1', 'المستوى $1'],
     [/^Nivel ([A-C][12]) [·—] (Principiante|Elemental|Intermedio alto|Intermedio|Avanzado|Maestría)$/, 'Level $1 · $L2', 'المستوى $1 · $L2'],
