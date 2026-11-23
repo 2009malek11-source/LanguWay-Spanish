@@ -402,6 +402,7 @@ window.LWS = window.LWS || {};
       u(2, 'Mi mundo', ['La familia', 'Los días y los meses', 'La hora']),
       u(3, 'Comida y ciudad', ['Comida y bebida', 'Colores y objetos', 'Lugares de la ciudad']),
       u(4, 'Acciones diarias', ['Verbos en -ar', 'Verbos en -er e -ir', 'Preguntas y frases cortas']),
+      u(5, 'Gramática esencial', ['Género, número y artículos', 'Estar, tener y hay', 'Gustar, posesivos y demostrativos']),
     ]);
   lv('A2', 'Elemental', 'Situaciones cotidianas: rutina, compras, viajes, restaurantes y primeras narraciones en pasado.',
     ['Rutina y vida diaria', 'Compras, viajes y restaurantes', 'Describir personas y lugares', 'Pasado básico', 'Planes cercanos y comparaciones'], [
@@ -409,6 +410,7 @@ window.LWS = window.LWS || {};
       u(2, 'Viajar y describir', ['Viajes y transporte', 'En el hotel', 'Describir personas y lugares']),
       u(3, 'El pasado', ['Pretérito perfecto', 'Pretérito indefinido regular', 'Pretérito indefinido irregular']),
       u(4, 'Planes y comparaciones', ['Planes con ir a', 'Comparar', 'Salud y ayuda']),
+      u(5, 'Pronombres y órdenes', ['Pronombres de objeto directo e indirecto', 'El imperativo', 'Ser y estar: diferencias']),
     ]);
   lv('B1', 'Intermedio', 'Contar experiencias, dar opiniones, hablar de planes y entender conversaciones y textos de tema conocido.',
     ['Narrar con el pasado', 'Dar opiniones y consejos', 'Conectar ideas', 'Causas y consecuencias', 'Entender textos de longitud media'], [
@@ -416,6 +418,7 @@ window.LWS = window.LWS || {};
       u(2, 'Opiniones y planes', ['El futuro simple', 'Opinar y aconsejar', 'Causa y consecuencia']),
       u(3, 'Trabajo y estudios', ['El subjuntivo para deseos', 'Cartas y correos formales', 'La entrevista de trabajo']),
       u(4, 'Hipótesis y relatos', ['Condicional y cortesía', 'Hipótesis con si', 'Estilo indirecto']),
+      u(5, 'Estructuras clave', ['Pretérito pluscuamperfecto', 'Por y para', 'Oraciones de relativo']),
     ]);
   lv('B2', 'Intermedio alto', 'Discutir temas diversos, escribir textos claros y detallados y entender hablantes de distintos registros.',
     ['Argumentar y debatir', 'Textos claros y detallados', 'Estructuras variadas', 'Registros y variedades', 'Trabajo y estudio'], [
@@ -423,6 +426,7 @@ window.LWS = window.LWS || {};
       u(2, 'Textos escritos', ['El correo profesional', 'El artículo de opinión', 'Resumir un texto']),
       u(3, 'Registros y variedades', ['Formal e informal', 'Variedades del español', 'Humor e ironía']),
       u(4, 'Mundo laboral y académico', ['Reuniones y presentaciones', 'Exponer datos', 'Negociar y persuadir']),
+      u(5, 'Precisión gramatical', ['La pasiva y las construcciones con se', 'Hipótesis imposibles en el pasado', 'Tecnología, medio ambiente y sociedad']),
     ]);
   lv('C1', 'Avanzado', 'Comprender textos largos y exigentes, expresarte con fluidez y precisión y usar el idioma con flexibilidad.',
     ['Textos complejos', 'Fluidez y precisión', 'Expresiones idiomáticas', 'Matices de estilo', 'Escritura académica y profesional'], [
@@ -430,6 +434,7 @@ window.LWS = window.LWS || {};
       u(2, 'Textos exigentes', ['Lectura de prensa', 'Textos literarios breves', 'Cohesión y coherencia']),
       u(3, 'Escribir con rigor', ['El ensayo académico', 'El informe profesional', 'La reseña crítica']),
       u(4, 'Debate avanzado', ['Argumentación compleja', 'Debates y tertulias', 'Hablar en público']),
+      u(5, 'Dominio del idioma', ['Subjuntivo avanzado y matices', 'Oraciones enfáticas y orden de las palabras', 'Vocabulario abstracto: política, economía y ciencia']),
     ]);
 })(window.LWS);
 
@@ -4063,7 +4068,7 @@ window.LWS = window.LWS || {};
   'use strict';
   const C = L.C;
   // 25 niveles: cada nivel del MCER (A1–C1) se divide en 5 etapas
-  const SIZES = [3, 2, 3, 2, 2];
+  const SIZES = [3, 3, 3, 3, 3];
   let cache = null;
   function build() {
     const out = [];
